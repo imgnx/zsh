@@ -1,0 +1,43 @@
+# macOS system files
+.DS_Store
+.DS_Store?
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Zsh specific files that should not be committed
+.zcompdump*
+.zsh_history*
+zsh_history*
+history/
+history/.zsh_history*
+cache
+compdump/
+sessions/
+.zsh_sessions/
+
+# Backup and temporary files
+*~
+*.bak
+*.backup
+*.bk
+*.bkup
+*.swp
+*.save
+*#
+
+# Cache files
+.cache_*
+
+# Environment-specific files
+.env
+.env.local
+.env.*.local
+
+# Personal/sensitive data
+secrets/
+private/
+
