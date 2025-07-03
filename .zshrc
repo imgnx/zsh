@@ -51,24 +51,23 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
-                    # Check if there are any commits ahead or behind the remote origin
                     if git status --porcelain=2 --branch | grep -q "\[ahead" && git status --porcelain=2 --branch | grep -q "\[behind"; then
-                        echo magenta # Changes pushed to origin and not ahead or behind
+                        echo magenta
                     elif git status --porcelain=2 --branch | grep -q "\[ahead"; then
-                        echo magenta # There are commits ahead (not pushed)
+                        echo magenta
                     else
-                        echo green # All changes committed, no commits ahead or behind
+                        echo green
                     fi
                 else
-                    echo green # All changes committed but with uncommitted stashes
+                    echo green
                 fi
             elif git diff --quiet &>/dev/null; then
-                echo yellow # Changes are added but not committed yet
+                echo yellow
             else
-                echo red # There are un-added changes
+                echo red
             fi
         else
-            echo "#444" # Not in a Git repository
+            echo "#444"
         fi
     )'}%f %F{magenta}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f%F{cyan} =>%f '
 }
