@@ -45,18 +45,20 @@ fi
 
 # Better prompt with fixed slash and dimmed path
 # Update prompt dynamically on every directory change
-
 AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
     PS1='%n%F{magenta}@%f'$LOCAL_IP'
 %F{'$(
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
-                    # Check if there are any commits ahead of the remote origin
-                    if git status --porcelain=2 --branch | grep -q "\[ahead"; then
-                        echo magenta # Changes pushed to origin, no uncommitted changes
+                    status=$(git status --porcelain=2 --branch)
+                    # Check if there are any commits ahead or behind the remote origin
+                    if echo "$status" | grep -q "\[ahead" && echo "$status" | grep -q "\[behind"; then
+                        echo magenta # Changes pushed to origin and not ahead or behind
+                    elif echo "$status" | grep -q "\[ahead"; then
+                        echo magenta # There are commits ahead (not pushed)
                     else
-                        echo green # All changes committed, no uncommitted changes
+                        echo green # All changes committed, no commits ahead or behind
                     fi
                 else
                     echo green # All changes committed but with uncommitted stashes
