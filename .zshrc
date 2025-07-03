@@ -51,7 +51,11 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
 %F{'$(
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
-                echo green # All changes are committed and pushed
+                if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
+                    echo magenta # Everything is pushed, no changes, no uncommitted stashes
+                else
+                    echo green # All changes are committed and pushed, but there might be uncommitted stashes
+                fi
             elif git diff --quiet &>/dev/null; then
                 echo yellow # All changes are added but not yet committed
             else
