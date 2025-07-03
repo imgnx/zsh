@@ -51,11 +51,10 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
-                    status=$(git status --porcelain=2 --branch)
                     # Check if there are any commits ahead or behind the remote origin
-                    if echo "$status" | grep -q "\[ahead" && echo "$status" | grep -q "\[behind"; then
+                    if git status --porcelain=2 --branch | grep -q "\[ahead" && git status --porcelain=2 --branch | grep -q "\[behind"; then
                         echo magenta # Changes pushed to origin and not ahead or behind
-                    elif echo "$status" | grep -q "\[ahead"; then
+                    elif git status --porcelain=2 --branch | grep -q "\[ahead"; then
                         echo magenta # There are commits ahead (not pushed)
                     else
                         echo green # All changes committed, no commits ahead or behind
