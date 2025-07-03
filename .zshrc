@@ -56,9 +56,9 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
                     behind_count=$(echo "$branch_status" | grep -Eo 'branch.ab -([0-9]+)' | awk '{print $2}')
 
                     if [ "$ahead_count" -gt 0 ]; then
-                        echo magenta
-                    elif [ "$ahead_count" -eq 0 ] && [ "$behind_count" -eq 0 ]; then
                         echo green
+                    elif [ "$ahead_count" -eq 0 ] && [ "$behind_count" -eq 0 ]; then
+                        echo magenta
                     else
                         echo green
                     fi
