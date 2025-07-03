@@ -1,5 +1,45 @@
 # shellcheck shell=bash
 
+# ==============================
+# Emacs Configuration
+# ==============================
+export DOOMDIR="${DOOMDIR:-$XDG_CONFIG_HOME/doom}"
+export EMACS="${EMACS:-$XDG_CONFIG_HOME/emacs/init.el}"
+export EMACS_DUMP_FILE="${EMACS_DUMP_FILE:-$XDG_STATE_HOME/emacs/auto-save-list/.emacs.dumper}"
+export EMACS_DIR="${EMACS_DIR:-$XDG_CONFIG_HOME/emacs}"
+export EMACS_CONFIG_DIR="${EMACS_CONFIG_DIR:-$XDG_CONFIG_HOME/emacs}"
+export EMACS_LISP_DIR="${EMACS_LISP_DIR:-$XDG_DATA_HOME/emacs/site-lisp}"
+export EMACS_CACHE_DIR="${EMACS_CACHE_DIR:-$XDG_CACHE_HOME/emacs}"
+export EMACS_SAVEDIR="${EMACS_SAVEDIR:-$XDG_STATE_HOME/emacs}"
+export EMACS_BACKUP_DIR="${EMACS_BACKUP_DIR:-$XDG_STATE_HOME/emacs/backup}"
+export EMACS_TRASH_DIR="${EMACS_TRASH_DIR:-$XDG_STATE_HOME/emacs/trash}"
+export EMACS_SAVEDIR="${EMACS_SAVEDIR:-$XDG_STATE_HOME/emacs/saves}"
+
+# ==============================
+#  XDG Base Directories
+# ==============================
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# ==============================
+#  Zsh Configuration
+# ==============================
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+export ZINIT_HOME="${ZINIT_HOME:-$XDG_CONFIG_HOME/zinit}"
+export ZSH="${ZSH:-$XDG_CONFIG_HOME/zsh}"
+export ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}"
+export ZSH_COMPDUMP="${ZSH_COMPDUMP:-$XDG_CACHE_HOME/zsh/zcompdump}"
+export ZSH_LOG_DIR="${ZSH_LOG_DIR:-$XDG_CACHE_HOME/zsh/logs}"
+export ZSH_NN_DIR="${ZSH_NN_DIR:-$XDG_CACHE_HOME/zsh/nn}"
+export ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$ZSH/plugins}"
+
+# ============================
+# Tabula Rasa
+# ============================
 # "Tabula rasa" is a Latin term meaning "blank slate".
 # In philosophy and psychology, it refers to the idea
 # that individuals are born without built-in mental
@@ -58,9 +98,7 @@ export EXA_COLORS="ln=1;35"
 export ICLOUD_DRIVE="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
 export LABS="$WORKBENCH/_____LABS"
 export LIB="$HOME/lib"
-export LOGPATH="$ICLOUD_DRIVE/Logs/"
 export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
-export PATH="$CARGO_HOME/bin:$HOME/bin:$PATH"
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:$PKG_CONFIG_PATH"
 export RUSTUP_HOME="$HOME/.config/rustup"
 export SAMPLES="$ICLOUD_DRIVE/_____MEDIA/_____SAMPLES"
@@ -100,5 +138,4 @@ export BKGD="$SAMPLES/bkgd.mp3"
 export CONTAINERS="$HOME/_____CONTAINERS"
 export LABS="$WORKBENCH/_____LABS"
 export DOWNLOADS="$HOME/Downloads"
-export LOGPATH="$ICLOUD_DRIVE/Logs/"
 export CALCULATOR="/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"

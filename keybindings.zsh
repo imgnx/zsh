@@ -1,6 +1,6 @@
 # --- Keybindings ---
 
-print -n -P "[%F{#202020}keybindings%f]"
+print -n -P "[%F{green}keybindings%f]"
 
 bindkey -e
 bindkey "^A" beginning-of-line
@@ -40,3 +40,8 @@ bindkey "^X^R" _read_comp
 bindkey "^[<" beginning-of-buffer-or-history
 bindkey "^[>" end-of-buffer-or-history
 bindkey "\M-^?" self-insert
+# Key bindings for history search
+bindkey '^R' history-incremental-search-backward # Ctrl+R for reverse search
+bindkey '^S' history-incremental-search-forward  # Ctrl+S for forward search
+bindkey '^P' history-search-backward             # Ctrl+P for previous matching
+bindkey '^N' history-search-forward              # Ctrl+N for next matching

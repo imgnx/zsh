@@ -1,7 +1,5 @@
-# Only print banner if interactive
 if [[ -o interactive ]]; then
-    echo ""
-    print -n -P "[%F{cyan}.zshrc%f]"
+    print -n -P "[%F{green}.zshrc loaded at %D{%Y-%m-%d %H:%M:%S}%f]"
 fi
 
 if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
@@ -9,56 +7,7 @@ if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
     return 0
 fi
 
-# ==============================
-# Emacs Configuration
-# ==============================
-export DOOMDIR="${DOOMDIR:-$XDG_CONFIG_HOME/doom}"
-export EMACS="${EMACS:-$XDG_CONFIG_HOME/emacs/init.el}"
-export EMACS_DUMP_FILE="${EMACS_DUMP_FILE:-$XDG_STATE_HOME/emacs/auto-save-list/.emacs.dumper}"
-export EMACS_DIR="${EMACS_DIR:-$XDG_CONFIG_HOME/emacs}"
-export EMACS_CONFIG_DIR="${EMACS_CONFIG_DIR:-$XDG_CONFIG_HOME/emacs}"
-export EMACS_LISP_DIR="${EMACS_LISP_DIR:-$XDG_DATA_HOME/emacs/site-lisp}"
-export EMACS_CACHE_DIR="${EMACS_CACHE_DIR:-$XDG_CACHE_HOME/emacs}"
-export EMACS_SAVEDIR="${EMACS_SAVEDIR:-$XDG_STATE_HOME/emacs}"
-export EMACS_BACKUP_DIR="${EMACS_BACKUP_DIR:-$XDG_STATE_HOME/emacs/backup}"
-export EMACS_TRASH_DIR="${EMACS_TRASH_DIR:-$XDG_STATE_HOME/emacs/trash}"
-export EMACS_SAVEDIR="${EMACS_SAVEDIR:-$XDG_STATE_HOME/emacs/saves}"
-
-# ==============================
-#  XDG Base Directories
-# ==============================
-
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
-export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-
-# ==============================
-#  Zsh Configuration
-# ==============================
-export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
-export ZINIT_HOME="${ZINIT_HOME:-$XDG_CONFIG_HOME/zinit}"
-export ZSH="${ZSH:-$XDG_CONFIG_HOME/zsh}"
-export ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}"
-export ZSH_COMPDUMP="${ZSH_COMPDUMP:-$XDG_CACHE_HOME/zsh/zcompdump}"
-export ZSH_LOG_DIR="${ZSH_LOG_DIR:-$XDG_CACHE_HOME/zsh/logs}"
-export ZSH_NN_DIR="${ZSH_NN_DIR:-$XDG_CACHE_HOME/zsh/nn}"
-export ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$ZSH/plugins}"
-
-# Add cargo/bin to PATH if not present
-
-# Resource function: source file then add its base directory to PATH
-function resource() {
-    local file="$1"
-    if [[ -f "$file" ]]; then
-        source "$file"
-        local basedir=$(dirname "$file")
-        add2path "$basedir"
-    else
-        echo "Resource file '$file' not found."
-    fi
-}
+# Debugging: Log when .zshrc is loaded
 
 # Autoload Zsh modules
 autoload -Uz colors && colors
@@ -81,20 +30,13 @@ setopt INC_APPEND_HISTORY   # Append to history file immediately
 setopt SHARE_HISTORY        # Share history between all sessions
 setopt EXTENDED_HISTORY     # Save timestamp and duration
 
-# Key bindings for history search
-bindkey '^R' history-incremental-search-backward # Ctrl+R for reverse search
-bindkey '^S' history-incremental-search-forward  # Ctrl+S for forward search
-bindkey '^P' history-search-backward             # Ctrl+P for previous matching
-bindkey '^N' history-search-forward              # Ctrl+N for next matching
-
 # Zinit setup
-ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-[ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
-[ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
-. "${ZINIT_HOME}/zinit.zsh"
+# ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+# [ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
+# [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+# . "${ZINIT_HOME}/zinit.zsh"
 
 # Cargo and Zsh profile/login
-[ -f "$HOME/.config/cargo/env" ] && . "$HOME/.config/cargo/env"
 
 # Local IP address (cached)
 if [[ -z "$LOCAL_IP" ]]; then
@@ -102,7 +44,24 @@ if [[ -z "$LOCAL_IP" ]]; then
 fi
 
 # Better prompt with fixed slash and dimmed path
-PS1='%F{#444}%n@'$LOCAL_IP'%f:%F{#333}%f  '
+# Update prompt dynamically on every directory change
+
+AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
+    PS1='%n%F{magenta}@%f'$LOCAL_IP'
+%F{'$(
+        if git rev-parse --is-inside-work-tree &>/dev/null; then
+            if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
+                echo green # All changes are committed and pushed
+            elif git diff --quiet --cached &>/dev/null; then
+                echo yellow # All changes are staged but not committed
+            else
+                echo red # Some changes are not staged
+            fi
+        else
+            echo "#444" # Not in a Git repository
+        fi
+    )'}%f %F{magenta}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f%F{cyan} =>%f '
+}
 
 # Cache directory setup
 CACHE_DIR="$HOME/tmp"
@@ -110,77 +69,18 @@ CACHE_DIR="$HOME/tmp"
 SYSLINE_CACHE="$CACHE_DIR/sysline_cache"
 [[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
 
-# System Information
-function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
-
-    local ZSH_COUNT CPU_USAGE RAM
-    local mtime
-    if [[ "$OSTYPE" == darwin* ]]; then
-        mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-    else
-        mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-    fi
-    [[ ! -d "$HOME/tmp" ]] && mkdir -p "$HOME/tmp"
-    [[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
-    CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
-    if vm_stat >/dev/null 2>&1; then
-        RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
-    else
-        RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
-    fi
-    ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-    if [[ $ZSH_COUNT -gt 30 ]]; then
-        CONCURRENT_SHELLS="%K{#FF2000}%F{white} No. ${ZSH_COUNT} %f%k"
-    elif [[ $ZSH_COUNT -gt 20 ]]; then
-        CONCURRENT_SHELLS="%K{#FF8000}%F{white} No. ${ZSH_COUNT} %f%k"
-    elif [[ $ZSH_COUNT -gt 15 ]]; then
-        CONCURRENT_SHELLS="%K{#FFFF00}%F{white} No. ${ZSH_COUNT} %f%k"
-    elif [[ $ZSH_COUNT -gt 10 ]]; then
-        CONCURRENT_SHELLS="%K{#80FF00}%F{white} No. ${ZSH_COUNT} %f%k"
-    else
-        CONCURRENT_SHELLS="%K{black}%F{white} No. ${ZSH_COUNT} %f%k"
-    fi
-
-    # Newline for sparsity
-    echo -e "ID:| $CONCURRENT_SHELLS |\tCPU:| %K{black} ${CPU_USAGE}%% %k|\tRAM:| %K{black} ${RAM}MB %k" >"$SYSLINE_CACHE"
-}
-
-# Prompt
-function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
-    local mtime
-    if [[ "$OSTYPE" == darwin* ]]; then
-        mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-    else
-        mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-    fi
-    local now=$(date +%s)
-    if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
-        6D078F25_9FBE_4352_A453_71F7947A3B01
-
-    fi
-    local sysline=""
-    [[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
-
-    # Ensure a newline before sysline block
-    print -P "$(colorize \n$sysline)"
-}
-
 # --- Interactive-Only ---
 if [[ -o interactive ]]; then
     # Banner
     echo -e "\033[38;5;5m"
-    cat <<EOF
-88                                                             
-""                                                             
-                                                               
-88  88,dPYba,,adPYba,    ,adPPYb,d8  8b,dPPYba,   8b,     ,d8  
-88  88P'   "88"    "8a  a8"    \`Y88  88P'   \`"8a   \`Y8, ,8P'   
-88  88      88      88  8b       88  88       88     )888(     
-88  88      88      88  "8a,   ,d88  88       88   ,d8" "8b,   
-88  88      88      88   \`"YbbdP"Y8  88       88  8P'     \`Y8  
-                         aa,    ,88                            
-                          "Y8bbdP"                            
 
+    cat <<EOF
++__                               
+┌  ┐ ___     _____ ____ ___  ___
+│  │/   │__ /  ___\    \\\\  \/  /
+│  │  │    +  /_/   │  │     
+└──┘──│──\  \     /──│──│──/\  \\
+          \──────/           \──\\
 EOF
     echo -e "\033[0m"
 
@@ -190,9 +90,9 @@ EOF
             export PERIOD=10
             add-zsh-hook periodic 6D078F25_9FBE_4352_A453_71F7947A3B01
             add-zsh-hook precmd F6596432_CA98_4A50_9972_E10B0EE99CE9
+            add-zsh-hook precmd AAA52195_7126_4ECB_90D6_BCE64B3E0A5F
         fi
     fi
-
 fi
 
 # Create .gitignore if missing
@@ -217,3 +117,40 @@ __pycache__/
 tmp/
 EOF
 fi
+
+# | Glyph | Unicode | Name                 | Meaning                               |
+# | ----- | ------- | -------------------- | ------------------------------------- |
+# | `│`   | U+2502  | Vertical Line       | Used for vertical separation          |
+# | `─`   | U+2500  | Horizontal Line     | Used for horizontal separation        |
+# | `┌`   | U+250C  | | Top Left Corner    | Used for top-left corner of boxes     |
+# | `┐`   | U+2510  | Top Right Corner     | Used for top-right corner of boxes    |
+# | `└`   | U+2514  | Bottom Left Corner   | Used for bottom-left corner of boxes   |
+# | `┘`   | U+2518  | Bottom Right Corner  | Used for bottom-right corner of boxes  |
+# | `┬`   | U+252C  | Top T-Intersection   |                                       |
+# | `┴`   | U+2534  | Bottom T-Intersection|                                       |
+# | `├`   | U+251C  | Left T-Intersection  | Used for left-side transitions         |
+# | `┤`   | U+251E  | Right T-Intersection | Used for right-side transitions        |
+# | `┼`   | U+253C  | Cross T-Intersection | Used for intersections in boxes        |
+# | `┏`   | U+250F  | Top Left Box Corner  | Used for top-left corner of boxes     |
+# | `┓`   | U+2513  | Top Right Box Corner | Used for top-right corner of boxes    |
+# | `┗`   | U+2517  | Bottom Left Box Corner | Used for bottom-left corner of boxes |
+# | `┛`   | U+251B  | Bottom Right Box Corner| Used for bottom-right corner of boxes|
+# | `┝`   | U+252D  | Left Box T-Intersection| Used for left-side transitions      |
+# | `┥`   | U+2525  | Right Box T-Intersection| Used for right-side transitions     |
+# | `┯`   | U+2530  | Top Box T-Intersection | Used for top-side transitions       |
+# | `┷`   | U+2537  | Bottom Box T-Intersection| Used for bottom-side transitions   |
+# | `┸`   | U+2538  | Bottom Box T-Intersection | Used for bottom-side transitions   |
+# | `┰`   | U+E2520  | Top Box T-Intersection | Used for top-side transitions       |
+# | ``   | U+E0B0  | Right Separator      | Used to separate prompt segments      |
+# | ``   | U+E0B1  | Thin Right Separator |                                       |
+# | ``   | U+E0B2  | Left Separator       | For left-side transitions             |
+# | ``   | U+E0B3  | Thin Left Separator  |                                       |
+# | ``   | U+E0A0  | Branch               | Indicates Git branch                  |
+# | `≈`   | U+E0BA  | Left-facing Chevron  |
+# | ``   | U+E0B8  | Right-facing Chevron |
+# | ``   | U+E0BA  | Left-facing Chevron  |                                       |
+# | ``   | U+E0BC  | Right-facing Chevron |                                       |
+# | ``   | U+E0BD  | Left-facing Chevron |                                       |
+# | ``   | U+E0BE  | Right-facing Chevron |                                       |
+# | `` | U+E0BF  | Left-facing Chevron |                                       |
+# | ` ` | U+E0C0  | Right-facing Chevron |                                       |

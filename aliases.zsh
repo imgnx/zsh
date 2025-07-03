@@ -17,7 +17,6 @@ alias cash="$money"
 alias cdspc='codespace'
 alias clean-precmd="precmd_functions=()"
 alias cnt="cd ~/src"
-alias d="dirs -v | head -n 10"
 alias dw="$DOWNLOADS"
 alias dwn="$DOWNLOADS"
 alias e='emacs'
@@ -31,7 +30,7 @@ alias git-branch="git branch -v"
 alias git-remote="git remote -v"
 alias gl='git pull'
 alias gp='git push'
-alias grep='grep --color=auto'
+
 alias gs='git status'
 alias h='history'
 alias i=$ICLOUD_DRIVE
@@ -65,10 +64,8 @@ alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surg
 alias sync_icloud="isync"
 alias t='cd ~/test'
 alias tk=$TAKU
-alias WK_PATH="$WORKBENCH"
-alias wkbn='"$WORKBENCH"'
-alias WKBN='"$WORKBENCH"'
-alias WORKSPACE="$WORKBENCH"
+alias tr="+tabula_rasa"
+alias ttr="+tabula_rasa"
 alias x="sexy"
 alias xdg-open="open"
 
@@ -76,7 +73,6 @@ alias xdg-open="open"
 # Screencast Mode Aliases
 # ============================
 if [ "$SCREENCAST_MODE" = 1 ]; then
-    echo "Screencast mode is ON. Minimal output enabled."
     # Screencast mode - clean, minimal output, no secrets or hidden details
     alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
     alias ll='eza -la --icons --group-directories-first'
@@ -96,7 +92,6 @@ if [ "$SCREENCAST_MODE" = 1 ]; then
     # alias ps='ps aux'
     alias top='top -o cpu'
 else
-    echo "Screencast mode is OFF."
     # Normal mode - verbose, detailed output with all information
     alias df='df -ahicY'                                          # All filesystems, human readable, inodes, show type
     alias top='top -o cpu -stats pid,command,cpu,mem,pstate,time' # Detailed process info
@@ -105,6 +100,5 @@ else
     alias mount='mount | column -t'                               # Formatted mount points
     alias env='env | sort'                                        # Sorted environment variables
     alias history='fc -l 1'                                       # Full history
-    alias grep='grep --color=auto -n'                             # Line numbers and color
     alias tree='eza --tree --level=1 --color=always --group-directories-first --icons --long'
 fi

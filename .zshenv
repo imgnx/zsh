@@ -86,17 +86,19 @@ function import() {
 
 ### 🥾 PATH
 
+function add2path() {
+    $HOME/bin/add2path "$@"
+}
+add2path "$HOME/bin"
+# add2path "$HOME/.local/bin"
+# add2path "$HOME/.cargo/bin"
+
 ### 🌐 XDG
 
 # cargo config is located in $XDG_CONFIG_HOME/cargo/config.toml
-add2path "$XDG_CONFIG_HOME/cargo/bin"
-add2path "$CARGO_HOME"
-add2path "$RUSTUP_HOME"
-add2path "$HOME/go/bin"
-add2path "$BIN"
 
 for lib_dir in ~/lib/**/build; do
-    $HOME/bin/add2path "$lib_dir"
+    add2path "$lib_dir"
 done
 
 ### ✋ Modules
@@ -114,11 +116,20 @@ fi
 
 if [[ -o interactive ]]; then
 
-    print -n -P "[%F{#202020}.zshenv%f]"
-    . "${ZDOTDIR}/aliases.zsh"     # Load custom aliases
-    . "${ZDOTDIR}/variables.zsh"   # Load custom variables
-    . "${ZDOTDIR}/functions.zsh"   # Load custom functions
+    print -n -P "[%F{green}.zshenv%f]"
+    . "${ZDOTDIR}/variables.zsh" # Load custom variables
+    # ^ is a dependancy of v ...
+    . "${ZDOTDIR}/aliases.zsh" # Load custom aliases
+    # ^ is a dependancy of v ...
+    . "${ZDOTDIR}/functions.zsh" # Load custom functions
+    # ^ is a dependancy of v ...
     . "${ZDOTDIR}/keybindings.zsh" # Load custom keybindings
+    # ^ is a dependancy of v ...
+    . "${ZDOTDIR}/hashes.zsh" # Load custom keybindings
+    # ^ is a dependancy of v ...
+    . "${ZDOTDIR}/path.zsh" # Load custom keybindings
+    # Source Cargo
+    [ -f "$HOME/.config/cargo/env" ] && . "$HOME/.config/cargo/env"
 
     # Dotfiles Game Genie: USB-based config override
     autoload_usb_config() {
