@@ -52,9 +52,12 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
                     branch_status=$(git status --porcelain=2 --branch)
-                    if echo "$branch_status" | grep -q "\[ahead" && ! echo "$branch_status" | grep -q "\[behind"; then
+                    ahead_count=$(echo "$branch_status" | grep -oP '(?<=branch.ab \+)\d+')
+                    behind_count=$(echo "$branch_status" | grep -oP '(?<=branch.ab -)\d+')
+
+                    if [ "$ahead_count" -gt 0 ]; then
                         echo magenta
-                    elif ! echo "$branch_status" | grep -q "\[ahead" && ! echo "$branch_status" | grep -q "\[behind"; then
+                    elif [ "$ahead_count" -eq 0 ] && [ "$behind_count" -eq 0 ]; then
                         echo green
                     else
                         echo green
@@ -72,6 +75,7 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         fi
     )'}%f %F{magenta}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f%F{cyan} =>%f '
 }
+
 # test
 # Cache directory setup
 CACHE_DIR="$HOME/tmp"
