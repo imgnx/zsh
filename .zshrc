@@ -52,7 +52,11 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
-                    echo magenta # Everything is pushed, no changes, no uncommitted stashes
+                    if git status --porcelain=2 --branch | grep -q "\[ahead"; then
+                        echo green # All changes are committed, but there are pending commits
+                    else
+                        echo magenta # Everything is pushed, no changes, no uncommitted stashes, and no pending commits
+                    fi
                 else
                     echo green # All changes are committed and pushed, but there might be uncommitted stashes
                 fi
