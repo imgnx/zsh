@@ -52,16 +52,17 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
+                    # Check if there are any commits ahead of the remote origin
                     if git status --porcelain=2 --branch | grep -q "\[ahead"; then
-                        echo green # All changes are committed, but there are pending commits
+                        echo magenta # Changes pushed to origin, no uncommitted changes
                     else
-                        echo magenta # Everything is pushed, no changes, no uncommitted stashes, and no pending commits
+                        echo green # All changes committed, no uncommitted changes
                     fi
                 else
-                    echo green # All changes are committed and pushed, but there might be uncommitted stashes
+                    echo green # All changes committed but with uncommitted stashes
                 fi
             elif git diff --quiet &>/dev/null; then
-                echo yellow # All changes are added but not yet committed
+                echo yellow # Changes are added but not committed yet
             else
                 echo red # There are un-added changes
             fi
