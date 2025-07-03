@@ -2,7 +2,7 @@
 
 # Only print banner if interactive
 if [[ -o interactive ]]; then
-   echo ""
+    echo ""
     print -n -P "[%F{cyan}.zshrc%f]"
 fi
 
@@ -10,6 +10,10 @@ if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
     echo "Tabula Rasa mode is enabled. No configurations will be loaded."
     return 0
 fi
+
+for dir in ~/lib/**/build; do
+    [[ -d "$dir" && ":$PATH:" != *":$dir:"* ]] && export PATH="$dir:$PATH"
+done
 
 # Load variables and functions
 . "${ZDOTDIR}/aliases.zsh" # Load custom aliases
