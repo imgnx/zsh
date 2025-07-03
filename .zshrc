@@ -52,10 +52,10 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
         if git rev-parse --is-inside-work-tree &>/dev/null; then
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 echo green # All changes are committed and pushed
-            elif git diff --quiet --cached &>/dev/null; then
-                echo yellow # All changes are staged but not committed
+            elif git diff --quiet &>/dev/null; then
+                echo yellow # All changes are added but not yet committed
             else
-                echo red # Some changes are not staged
+                echo red # There are un-added changes
             fi
         else
             echo "#444" # Not in a Git repository
