@@ -1,4 +1,4 @@
-# ansicode-markup.awk
+# html2ansi.awk
 # This script colorizes the text between HTML-like tags in a file.
 # It uses ANSI escape codes to set the text color.
 # Supports predefined HTML-like tags and custom hex color codes.

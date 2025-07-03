@@ -1,5 +1,3 @@
-# Where is this? Collaborated real time collaborative. No time. Glad it is. Weird. Can you extract it? Source. There you go. Come on in. Come on, brother. Anime. Damn it. Yeah, buddy. Into. Disease. Buddy, shut the **** **** Kobe for Teen Booty the objective is to safely escort the VIP across the battlefield to the extraction vehicle while simultaneously trying to eliminate the other teams VIP by popping his Salute first team to safely deliver their VIP to the extraction point advances to Round 3. What's our strategy here for a second? We have three snipers ourselves, and we have here a group of 7 that's protecting you. The other 15 are going to be making habitable. Dude. Slow. Just too slow. But at the end of the day, we just have to be here. With my kids. So now that Watch Me Loose is going to be pretty awesome. Abby, abby. Abby. OK sweetie. The team it will be moving on to the finale. # ~/.zshrc - Cleaned
-
 # Only print banner if interactive
 if [[ -o interactive ]]; then
     echo ""
@@ -10,19 +8,6 @@ if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
     echo "Tabula Rasa mode is enabled. No configurations will be loaded."
     return 0
 fi
-
-for dir in ~/lib/**/build; do
-    [[ -d "$dir" && ":$PATH:" != *":$dir:"* ]] && export PATH="$dir:$PATH"
-done
-
-# Load variables and functions
-. "${ZDOTDIR}/aliases.zsh" # Load custom aliases
-# !!!! Already loaded in .zshenv
-# ! . "${ZDOTDIR}/functions.zsh"
-# ^ Load custom functions
-# ! Load delayed script loader hook
-. "${ZDOTDIR}/keybindings.zsh" # Load custom keybindings
-. "${ZDOTDIR}/variables.zsh"   # Load environment variables
 
 # ==============================
 # Emacs Configuration
@@ -63,18 +48,15 @@ export ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$ZSH/plugins}"
 
 # Add cargo/bin to PATH if not present
 
-# cargo config is located in $XDG_CONFIG_HOME/cargo/config.toml
-if [[ -d "$XDG_CONFIG_HOME/cargo/bin" && ":$PATH:" != *":$XDG_CONFIG_HOME/cargo/bin:"* ]]; then
-    export PATH="$XDG_CONFIG_HOME/cargo/bin:$PATH"
-fi
-
 # Resource function: source file then add its base directory to PATH
 function resource() {
     local file="$1"
     if [[ -f "$file" ]]; then
         source "$file"
         local basedir=$(dirname "$file")
-        [[ ":$PATH:" != *":$basedir:"* ]] && export PATH="$basedir:$PATH"
+        add2path "$basedir"
+    else
+        echo "Resource file '$file' not found."
     fi
 }
 
