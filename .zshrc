@@ -52,8 +52,8 @@ AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
             if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
                 if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
                     branch_status=$(git status --porcelain=2 --branch)
-                    ahead_count=$(echo "$branch_status" | grep -oP '(?<=branch.ab \+)\d+')
-                    behind_count=$(echo "$branch_status" | grep -oP '(?<=branch.ab -)\d+')
+                    ahead_count=$(echo "$branch_status" | grep -Eo 'branch.ab \+([0-9]+)' | awk '{print $2}')
+                    behind_count=$(echo "$branch_status" | grep -Eo 'branch.ab -([0-9]+)' | awk '{print $2}')
 
                     if [ "$ahead_count" -gt 0 ]; then
                         echo magenta
