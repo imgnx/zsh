@@ -32,7 +32,7 @@ if [[ -o interactive ]]; then
 
     # ? To get the path of a `brew` command:
     # ? brew --prefix cmd
-    export IMGNX_PATH="/Users/donaldmoore/bin:/usr/local/opt:/usr/local/bin:/Users/donaldmoore/.config/cargo/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/MacGPG2/bin:/Applications/Wireshark.app/Contents/MacOS"
+    export IMGNX_PATH="/Users/donaldmoore/bin:/usr/local/opt:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/MacGPG2/bin:/Applications/Wireshark.app/Contents/MacOS"
     export PATH="$IMGNX_PATH"
     export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
 
@@ -57,14 +57,15 @@ if [[ -o interactive ]]; then
 
     ### No-Name Directory (fallback for plugins)
     # Rust/Cargo
-    . "/Users/donaldmoore/.local/share/cargo/env"
-
+    # . "/Users/donaldmoore/dotfiles/.cargo/env"
+    # Source elsewhere...
+    
     . "${ZDOTDIR}/aliases.zsh"     # Load custom aliases
     . "${ZDOTDIR}/keybindings.zsh" # Load custom keybindings
     . "${ZDOTDIR}/hashes.zsh"      # Load custom hashes
     . "${ZDOTDIR}/path.zsh"        # Load custom path
     # Source Cargo
-    [ -f "$HOME/.config/cargo/env" ] && . "$HOME/.config/cargo/env"
+    [ -f "$HOME/dotfiles/.cargo/env" ] && . "$HOME/dotfiles/.cargo/env"
 
     # Dotfiles Game Genie: USB-based config override
     autoload_usb_config() {

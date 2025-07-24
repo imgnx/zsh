@@ -98,7 +98,7 @@ export BIN="$HOME/bin"
 export BKGD="$SAMPLES/bkgd.mp3"
 export BK="$ICLOUD_DRIVE/_____BACKUPS"
 export CALCULATOR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
-export CARGO_HOME="$HOME/.config/cargo"
+# export CARGO_HOME="$HOME/.config/cargo"
 #  ! This causes problems every time... Yes! You
 #  ! have to use --path=. !!!
 # export CARGO_TARGET_DIR="$XDG_CONFIG_HOME/cargo"
@@ -116,7 +116,7 @@ export LABS="$WORKBENCH/_____LABS"
 export LIB="$HOME/lib"
 export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:$PKG_CONFIG_PATH"
-export RUSTUP_HOME="$HOME/.config/rustup"
+# export RUSTUP_HOME="$HOME/.config/rustup"
 export SAMPLES="$ICLOUD_DRIVE/_____MEDIA/_____SAMPLES"
 export SCREENCAST_MODE=-1 # 0=off, 1=on, -1=ask
 export SCRIPTS="$HOME/scripts"

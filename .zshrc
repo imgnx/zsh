@@ -135,7 +135,9 @@ fi
 # | `` | U+E0BF  | Left-facing Chevron |                                       |
 # | ` ` | U+E0C0  | Right-facing Chevron |                                       |
 
-# PATH=~/.console-ninja/.bin:$PATHautoload -Uz compinit
+# autoload -Uz compinit
 # compinit
 
 IFS=$' \t\n'
+export CARGO_HOME="$HOME/dotfiles/.cargo"
+export RUSTUP_HOME="$HOME/dotfiles/.rustup"
