@@ -5,10 +5,10 @@
 function D36B034A_2E4A_4D7D_A93C_4C5EB0A197A7() {
     # Called once the prompt is ready to source extra scripts
     echo -e "[ delayed-script-loader ]"
-    printf '🔧 %s called. Sourcing scripts in %s/functions/scripts/**\n' \
+    printf '🔧 %s called. Sourcing scripts in %s/functions.zsh.d/scripts/**\n' \
         "${funcstack[1]}" "$ZDOTDIR"
 
-    for file in "$ZDOTDIR/functions/"*; do
+    for file in "$ZDOTDIR/functions.zsh.d/"*; do
         [[ -f $file ]] || continue
         local script_name=${file:t:r}
         if source "$file"; then

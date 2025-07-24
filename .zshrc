@@ -1,5 +1,10 @@
-if [[ -o interactive ]]; then
-    print -n -P "[%F{green}.zshrc loaded at %D{%Y-%m-%d %H:%M:%S}%f]"
+if [[ "${ZLOADING:-}" == ".zshrc" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
+    print -n -P "[%F{#444}skip%f(%F{white}%D{%S.%3.}%f)]"
+
+    return 0
+else
+    # print -n -P "[%F{green}.zshrc%f]"
+    export ZLOADING=".zshrc"
 fi
 
 if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
@@ -46,34 +51,8 @@ fi
 # Better prompt with fixed slash and dimmed path
 # Update prompt dynamically on every directory change
 AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
-    PS1='%n%F{magenta}@%f'$LOCAL_IP'
-%F{'$(
-        if git rev-parse --is-inside-work-tree &>/dev/null; then
-            if git diff --quiet --cached &>/dev/null && git diff --quiet &>/dev/null; then
-                if git stash list &>/dev/null && [[ -z $(git stash list) ]]; then
-                    branch_status=$(git status --porcelain=2 --branch)
-                    ahead_count=$(echo "$branch_status" | grep -Eo 'branch.ab \+([0-9]+)' | awk '{print $2}')
-                    behind_count=$(echo "$branch_status" | grep -Eo 'branch.ab -([0-9]+)' | awk '{print $2}')
-
-                    if [ "$ahead_count" -gt 0 ]; then
-                        echo green
-                    elif [ "$ahead_count" -eq 0 ] && [ "$behind_count" -eq 0 ]; then
-                        echo magenta
-                    else
-                        echo green
-                    fi
-                else
-                    echo green
-                fi
-            elif git diff --quiet &>/dev/null; then
-                echo yellow
-            else
-                echo red
-            fi
-        else
-            echo "#444"
-        fi
-    )'}%f %F{magenta}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f%F{cyan} =>%f '
+    PS1='%n%F{#FF1493}@%f'$LOCAL_IP'
+%F{'$(ggs)'}%f %F{#1493FF}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f %B=>%b '
 }
 
 # test
@@ -85,19 +64,6 @@ SYSLINE_CACHE="$CACHE_DIR/sysline_cache"
 
 # --- Interactive-Only ---
 if [[ -o interactive ]]; then
-    # Banner
-    echo -e "\033[38;5;5m"
-
-    cat <<EOF
-+__                               
-┌  ┐ ___     _____ ____ ___  ___
-│  │/   │__ /  ___\    \\\\  \/  /
-│  │  │    +  /_/   │  │     
-└──┘──│──\  \     /──│──│──/\  \\
-          \──────/           \──\\
-EOF
-    echo -e "\033[0m"
-
     # Hooks
     if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
         if typeset -f add-zsh-hook >/dev/null 2>&1; then
@@ -168,3 +134,8 @@ fi
 # | ``   | U+E0BE  | Right-facing Chevron |                                       |
 # | `` | U+E0BF  | Left-facing Chevron |                                       |
 # | ` ` | U+E0C0  | Right-facing Chevron |                                       |
+
+# PATH=~/.console-ninja/.bin:$PATHautoload -Uz compinit
+# compinit
+
+IFS=$' \t\n'

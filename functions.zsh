@@ -1,12 +1,78 @@
-#!/usr/bin/env zsh
-# shellcheck shell=zsh
+#!/bin/zsh
+#shellcheck shell=zsh
 
-print -n -P "[%F{green}${ZDOTDIR}/functions.sh%f]"
+function cd() {
+  builtin cd "$@" || return
+
+  if [[ "$PWD" == "$HOME/src" ]]; then
+    when | head -n 20
+  fi
+}
+
+dir() {
+    hash "$@"
+}
+
+
+copy() {
+    $@ | pbcopy
+    export v=$(pbpaste)
+}
+
+# v() {
+#  echo $(pbpaste)
+# }
+
+git() {
+    if [[ "$1" == "sum" ]]; then
+        git log --oneline
+        read -r -p "Press any key to continue..."
+		git status --short
+        /usr/local/bin/git diff --minimal --color=always | less -R
+    else
+        /usr/local/bin/git "$@"
+    fi
+}
+
+# Get the path of the current script
+script_path="${0}"
+
+echo "$PATH" | grep -q "/Users/donaldmoore/bin" || export PATH="$HOME/bin:$PATH"
+
+# Print the size of the current file.
+print -n -P "[%F{green}functions%f($(command stat -f %z "$0" | numfmt --to=iec --suffix=B))]"
+
 
 # Declare associative array for TODO cache
 typeset -gA __TODO_CACHE
+shellcheck() {
+	if cat "$1" | grep -q '^#!.*zsh'; then
+		echo "zsh -n \"$1\""
+		output=$(zsh -n "$1")
+		if [[ -n "$output" ]]; then
+			echo -e "❌ \033[38;5;1mFound issues:\033[0m"
+			echo "$output"
+		else
+			echo -e "✅ \033[38;5;2mNo issues found by shellcheck.\033[0m"
+		fi
+	else
+		command shellcheck "$1" 2>&1
+	fi
 
-toggle_tabula_rasa() {
+}
+add2path() {
+	# Add a directory to the PATH if it's not already present
+	local dir="$1"
+	if [[ ! -d "$dir" ]]; then
+		echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping PATH addition.\033[0m"
+		return
+	fi
+	if [[ ":$PATH:" != *":$dir:"* ]]; then
+		export PATH="$dir:$PATH"
+	fi
+}
+
+tabula_rasa() {
 	if [[ -z "$TABULA_RASA" ]]; then
 		export TABULA_RASA=1
 		echo "Tabula Rasa mode is enabled. No configurations will be loaded."
@@ -17,7 +83,7 @@ toggle_tabula_rasa() {
 			exec zsh -l
 		fi
 	else
-		unset TABULA_RASA
+		export TABULA_RASA=0
 		echo "Tabula Rasa mode is disabled. Configurations will be loaded."
 	fi
 }
@@ -51,21 +117,21 @@ imgnx_debug() {
 	history >"$HOME/+imgnx/command_history.txt"
 	echo "All debug information has been saved to $HOME/+imgnx/."
 }
-F6596432_CA98_4A50_9972_E10B0EE99CE9() {
-	local mtime
-	if [[ "$OSTYPE" == darwin* ]]; then
-		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-	else
-		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-	fi
-	local now=$(date +%s)
-	if [ -n "$mtime" ] && [ "$mtime" -lt $((now - 10)) ]; then
-		6D078F25_9FBE_4352_A453_71F7947A3B01
-	fi
-	local sysline=""
-	[ -f "$SYSLINE_CACHE" ] && sysline=$(<"$SYSLINE_CACHE")
-	print -P "$(colorize \n$sysline)"
-}
+# F6596432_CA98_4A50_9972_E10B0EE99CE9() {
+# 	local mtime
+# 	if [[ "$OSTYPE" == darwin* ]]; then
+# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
+# 	else
+# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
+# 	fi
+# 	local now=$(date +%s)
+# 	if [ -n "$mtime" ] && [ "$mtime" -lt $((now - 10)) ]; then
+# 		6D078F25_9FBE_4352_A453_71F7947A3B01
+# 	fi
+# 	local sysline=""
+# 	[ -f "$SYSLINE_CACHE" ] && sysline=$(<"$SYSLINE_CACHE")
+# 	print -P "$(colorize \n$sysline)"
+# }
 autoload_usb_config() {
 	for vol in /Volumes/*; do
 		if [[ -d "$vol" && -d "$vol/.config" ]]; then
@@ -85,10 +151,10 @@ brew() {
 	command brew "$@" 2>&1 | sed -e 's/^/🔧 /'
 	return ${pipestatus[1]:-$?}
 }
-cd() {
+icd() {
 	builtin cd "$@" || return
-	__TODO_CACHE[$PWD]=""
-	ls
+	__TODO_CACHE[$PWD]="" || return
+	ls || return
 }
 # clean-hooks() {
 # 	echo "Current hooks:"
@@ -105,27 +171,60 @@ cd() {
 # 	code -r "$WORKSPACE/.vscode/Workbench.code-workspace"
 # }
 colorize() {
-	local AWKDIR="$HOME/.config/zsh/functions"
-	if [[ "$1" == "-b" || "$1" == "--background" ]]; then
-		shift
-		echo "$*" | gawk -f "$AWKDIR/colorize.bkgd.awk"
-	elif [[ "$1" == "-f" || "$1" == "--foreground" ]]; then
-		shift
-		echo "$*" | gawk -f "$AWKDIR/colorize.fore.awk"
-	elif [[ "$1" == "-h" || "$1" == "--help" ]]; then
-		echo "Usage: colorize [-b|--background] [-f|--foreground] <text>"
+	if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+		echo "Usage: colorize [~|--foreground] [|--background] <text>"
 		echo "Options:"
-		echo "  -b, --background   Colorize text with background colors"
-		echo "  -f, --foreground   Colorize text with foreground colors"
+		echo "  ~, --foreground   Colorize text with foreground colors"
+		echo "  |, --background   Colorize text with background colors"
 		echo "  -h, --help         Show this help message"
 	else
-		echo "$*" | gawk -f "$AWKDIR/colorize.awk"
+		gawk 'BEGIN {
+			# Initialize colors
+			for (i = 0; i < 256; i++) {
+				if (i == 0 || i == 15 || i == 231 || i == 255) continue; # Skip black and white
+				r = int((i / 36) % 6) * 51; # Red component
+				g = int((i / 6) % 6) * 51;  # Green component
+				b = int(i % 6) * 51;        # Blue component
+				hex = sprintf("#%02X%02X%02X", r, g, b);
+				fgcolors[i] = "%F{" hex "}";
+				bgcolors[i] = "%K{" hex "}";
+			}
+			reset_fg = "%f";
+			reset_bg = "%k";
+		}
+		{
+			# Split input into segments by ~ and |
+			n = split($0, segs, /[~|]/);
+			out = "";
+			fg_idx = 0;
+			bg_idx = 0;
+			for (i = 1; i <= n; i++) {
+				if (match($0, "~")) {
+					if (fg_idx < 256) {
+						color = fgcolors[fg_idx++];
+						out = out color segs[i] reset_fg;
+					} else {
+						out = out "~" segs[i];
+					}
+				} else if (match($0, "|")) {
+					if (bg_idx < 256) {
+						color = bgcolors[bg_idx++];
+						out = out color segs[i] reset_bg;
+					} else {
+						out = out "|" segs[i];
+					}
+				} else {
+					out = out segs[i];
+				}
+			}
+			print out;
+		}' <<<"$*" | while IFS= read -r line; do
+			print -P -- "$line"
+		done
 	fi
 }
 
-config() {
-	emacs $WORKBENCH/.vscode/Workbench.code-workspace
-}
+
 console() {
 	logger -t "imgnx" $@
 }
@@ -146,18 +245,18 @@ diff() {
 	fi
 	if [ -d "$arg1" ] && [ -d "$arg2" ]; then
 		local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/diff"
-		mkdir -p -p "$cache_dir"
+		mkdir -p "$cache_dir"
 		local base1=$(basename "$arg1")
 		local base2=$(basename "$arg2")
 		local cache_file="$cache_dir/${base1}_vs_${base2}.txt"
 		command diff -qr "$arg1" "$arg2" | tee "$cache_file"
-		echo "Deleted (only in $arg1):"
+		echo -e "\033[33mgit status\033[0m: \033[31m❌ Missing from $arg2 (only in $arg1):\033[0m"
 		grep --color=auto -n "^Only in $arg1" "$cache_file" | sed "s|Only in $arg1/||"
 		echo
-		echo "Added   (only in $arg2):"
+		echo -e "\033[33mgit status\033[0m: \033[32m✅ New in $arg2 (only in $arg2):\033[0m"
 		grep --color=auto -n "^Only in $arg2" "$cache_file" | sed "s|Only in $arg2/||"
 		echo
-		echo "Modified:"
+		echo -e "\033[33mgit status\033[0m: \033[33m📝 Modified (different content):\033[0m"
 		grep --color=auto -n "^Files .* differ$" "$cache_file" | sed -e 's/^Files //' -e 's/ and \[.*\] differ$//'
 		echo "Would you like to compare differentiating files? (y/n)"
 		read -r answer
@@ -265,10 +364,6 @@ k() {
 }
 labs() {
 	cd $LABS
-}
-license() {
-	echo "Writing LICENSE file..."
-	cat ~/LICENSE | tee ./LICENSE
 }
 media() {
 	cd $MEDIA
@@ -497,19 +592,19 @@ function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
 	fi
 	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
 	if [[ $ZSH_COUNT -gt 30 ]]; then
-		CONCURRENT_SHELLS="%K{#FF2000}%F{white} No. ${ZSH_COUNT} %f%k"
+		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
 	elif [[ $ZSH_COUNT -gt 20 ]]; then
-		CONCURRENT_SHELLS="%K{#FF8000}%F{white} No. ${ZSH_COUNT} %f%k"
+		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
 	elif [[ $ZSH_COUNT -gt 15 ]]; then
-		CONCURRENT_SHELLS="%K{#FFFF00}%F{white} No. ${ZSH_COUNT} %f%k"
+		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
 	elif [[ $ZSH_COUNT -gt 10 ]]; then
-		CONCURRENT_SHELLS="%K{#80FF00}%F{white} No. ${ZSH_COUNT} %f%k"
+		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
 	else
-		CONCURRENT_SHELLS="%K{black}%F{white} No. ${ZSH_COUNT} %f%k"
+		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
 	fi
 
 	# Newline for sparsity
-	echo -e "ID:| $CONCURRENT_SHELLS |\tCPU:| %K{black} ${CPU_USAGE}%% %k|\tRAM:| %K{black} ${RAM}MB %k" >"$SYSLINE_CACHE"
+	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
 }
 
 # Prompt
@@ -529,5 +624,77 @@ function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
 
 	# Ensure a newline before sysline block
-	print -P "$(colorize \n$sysline)"
+	colorize $sysline
 }
+
+# Custom ls function with git status coloring
+statusls() {
+	# Check if we're in a git repository
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		# Set up XDG cache directory
+		local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ls-git-colors"
+		mkdir -p "$cache_dir"
+
+		# Create unique cache file based on current directory and ls arguments
+		local cache_key=$(echo "$PWD $*" | sha256sum | cut -d' ' -f1)
+		local ls_cache_file="$cache_dir/ls_output_${cache_key}"
+		local git_cache_file="$cache_dir/git_info_${cache_key}"
+
+		# Get git information efficiently
+		local git_status_output=$(git status --porcelain 2>/dev/null)
+		local git_tracked_output=$(git ls-files 2>/dev/null)
+
+		# Cache the original ls output
+		/bin/ls "$@" 2>/dev/null >"$ls_cache_file"
+
+		# Read the cached output
+		local ls_output=$(<"$ls_cache_file")
+		local colored_output="$ls_output"
+
+		# Process each actual file in the directory
+		for file in *; do
+			[[ ! -e "$file" ]] && continue
+
+			local color=""
+			local reset=$'\033[0m'
+
+			if echo "$git_tracked_output" | grep -q "^${file}$"; then
+				# File is tracked - check for modifications
+				if echo "$git_status_output" | grep -q "^.M ${file}$\|^M. ${file}$"; then
+					color=$'\033[33m' # Modified - yellow
+				elif echo "$git_status_output" | grep -q "^A. ${file}$"; then
+					color=$'\033[32m' # Added - green
+				elif echo "$git_status_output" | grep -q "^.D ${file}$\|^D. ${file}$"; then
+					color=$'\033[31m' # Deleted - red
+				else
+					color=$'\033[32m' # Tracked and clean - green
+				fi
+			elif echo "$git_status_output" | grep -q "^?? ${file}$"; then
+				color=$'\033[31m' # Untracked - red
+			fi
+
+			# Apply color if we have one - use awk for precise matching
+			if [[ -n "$color" ]]; then
+				colored_output=$(echo "$colored_output" | awk -v file="$file" -v color="$color" -v reset="$reset" '
+					{
+						# Split line into fields and reconstruct with colors
+						line = $0
+						gsub("\\<" file "\\>", color file reset, line)
+						print line
+					}
+				')
+			fi
+		done
+
+		# Clean up cache files
+		rm -f "$ls_cache_file" "$git_cache_file"
+
+		echo "$colored_output"
+	else
+		# Not in a git repository, use normal ls
+		/bin/ls "$@"
+	fi
+}
+
+
+

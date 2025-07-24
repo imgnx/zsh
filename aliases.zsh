@@ -1,98 +1,134 @@
 # shellcheck shell=bash
 
-print -n -P "[%F{#202020}aliases%f]"
+print -n -P "[%F{green}aliases%f]"
 
-alias _re="_reset"
-alias _reset="command reset"
-alias .......='cd ../../../../../..'
-alias ......='cd ../../../../..'
-alias .....='cd ../../../..'
-alias ....='cd ../../..'
-alias ...='cd ../..'
-alias ..='cd ..'
-alias 0bsd="license"
-alias b="cd ~/bin"
-alias bkgd='afplay "$BKGD" &'
-alias cash="$money"
-alias cdspc='codespace'
-alias clean-precmd="precmd_functions=()"
-alias cnt="cd ~/src"
-alias dw="$DOWNLOADS"
-alias dwn="$DOWNLOADS"
-alias e='emacs'
-alias edit='emacs'
-alias ga='git add'
-alias gb='git branch'
-alias gc='git commit'
-alias gco='git checkout'
-alias gd='git diff'
-alias git-branch="git branch -v"
-alias git-remote="git remote -v"
-alias gl='git pull'
-alias gp='git push'
+# ===================
+# Directory Shortcuts
+# ===================
 
-alias gs='git status'
-alias h='history'
-alias i=$ICLOUD_DRIVE
-alias icloud=$ICLOUD_DRIVE
-alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
-alias l.="eza -a | grep -E '^\.'"
-alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
-alias la='eza --long --all --group --group-directories-first'
-alias ld='eza -1 --color=always --group-directories-first --icons'
-alias lh="eza -a | grep -E '^\.'"
-alias list-hooks="echo 'All hooks:'; echo 'precmd:' \"\${precmd_functions[@]}\"; echo 'preexec:' \"\${preexec_functions[@]}\"; echo 'periodic:' \"\${periodic_functions[@]}\""
-alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions[@]}\""
-alias ll='eza -la --icons --octal-permissions --group-directories-first'
-alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
-alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
-alias m='"$MEDIA"'
-alias mkdir='mkdir -p'
-alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
-alias pip="python -m pip"
-alias pro="edit $ZDOTDIR/.zprofile"
-alias re='reset'                   # alias for reset
-alias refresh='reset'              # alias for reset
-alias reset='reset && exec zsh -l' # reset terminal in interactive mode.
-alias restart='reset'              # alias for reset
-alias rp=realpath
-alias s='cd ~/src'
-alias sam=$SAMPLES
-alias scr=$SCRIPTS
-alias sexy="open https://terminal.sexy/"
-alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surge XT/Patches/Templates"
-alias sync_icloud="isync"
-alias t='cd ~/test'
-alias tk=$TAKU
-alias tr="+tabula_rasa"
-alias ttr="+tabula_rasa"
-alias x="sexy"
-alias xdg-open="open"
+alias bin="cd $BIN"
+alias config="$XDG_CONFIG_HOME"
+alias labs="cd $LABS"
+alias lib="cd $LIB"
+alias src="cd $SRC"
+alias taku="cd $TAKU"
+alias test="cd $TEST"
+alias wk="cd $WORKBENCH"
+alias xdg="cd $XDG_CONFIG_HOME"
+alias cache="cd $XDG_CACHE_HOME"
+alias data="cd $XDG_DATA_HOME"
+alias rt="cd $XDG_RUNTIME_DIR"
+alias state="cd $XDG_STATE_HOME"
+alias z="cd $ZDOTDIR"
+alias samples='cd "/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/Media/_____SAMPLES"'
+alias surge="cd $SURGE"
+
+# ============================
+# Personal functions
+# ============================
+# copy: () => $@ | pbcopy
+alias copycat="copy"
+alias cc="copy"
+alias c=copy
+# wip: copy will currently set a global variable: $v
+# alias pastecat="paste"
+# alias pc="paste"
+# alias p="paste"
+# alias v="paste"
+alias pastecat="$v"
+alias pc="$v"
+alias p="$v"
+alias v="$v"
 
 # ============================
 # Screencast Mode Aliases
 # ============================
-if [ "$SCREENCAST_MODE" = 1 ]; then
-    # Screencast mode - clean, minimal output, no secrets or hidden details
-    alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
-    alias ll='eza -la --icons --group-directories-first'
+# Screencast mode - clean, minimal output, no secrets or hidden details
+alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
+alias ll='eza -la --icons --group-directories-first'
+alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
+alias la='ls -la'
+alias ld='eza -1 --color=always --group-directories-first --icons'
+alias l.="eza -a | grep -E '^\.'"
+alias lh="eza -a | grep -E '^\.|^total'"
+alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
+alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
+alias lsd='eza -d --color=always --group-directories-first --icons'
+alias lsd.="eza -d -a | grep -E '^\.'"
+alias lsdh="eza -d | grep -E '^\.'"
+alias lsdh.="eza -d -a | grep -E '^\.'"
+alias df='df -h'
+alias top='top -o cpu'
+
+if [ "$SCREENCAST_MODE" != 1 ]; then
+    # Normal mode - verbose, detailed output with all information
+    alias _re="_reset"
+    alias _reset="command reset"
+    alias .......='cd ../../../../../..'
+    alias ......='cd ../../../../..'
+    alias .....='cd ../../../..'
+    alias ....='cd ../../..'
+    alias ...='cd ../..'
+    alias ..='cd ..'
+    alias 0bsd="license"
+    alias b="cd ~/bin"
+    alias bkgd='afplay "$BKGD" &'
+    alias cash="$money"
+    alias cdspc='codespace'
+    alias clean-precmd="precmd_functions=()"
+    alias cnt="cd ~/src"
+    alias dw="$DOWNLOADS"
+    alias dwn="$DOWNLOADS"
+    alias e='emacs'
+    alias edit='emacs'
+    alias ga='git add'
+    alias gb='git branch'
+    alias gc='git commit'
+    alias gco='git checkout'
+    alias gd='git diff'
+    alias git-branch="git branch -v"
+    alias git-remote="git remote -v"
+    alias gl='git pull'
+    alias gp='git push'
+    alias grep='rg'
+    alias gs='git status'
+    alias h='history'
+    alias i=$ICLOUD_DRIVE
+    alias icloud=$ICLOUD_DRIVE
+    alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
+    alias l.="eza -a | grep -E '^\.'"
     alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
     alias la='eza --long --all --group --group-directories-first'
     alias ld='eza -1 --color=always --group-directories-first --icons'
-    alias l.="eza -a | grep -E '^\.'"
-    alias lh="eza -a | grep -E '^\.|^total'"
+    alias lh="eza -a | grep -E '^\.'"
+    alias list-hooks="echo 'All hooks:'; echo 'precmd:' \"\${precmd_functions[@]}\"; echo 'preexec:' \"\${preexec_functions[@]}\"; echo 'periodic:' \"\${periodic_functions[@]}\""
+    alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions[@]}\""
+    alias ll='eza -la --icons --octal-permissions --group-directories-first'
     alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
     alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
-    alias lsd='eza -d --color=always --group-directories-first --icons'
-    alias lsd.="eza -d -a | grep -E '^\.'"
-    alias lsdh="eza -d | grep -E '^\.'"
-    alias lsdh.="eza -d -a | grep -E '^\.'"
-    alias df='df -h'
-    # alias du='du -h'
-    # alias ps='ps aux'
-    alias top='top -o cpu'
-else
-    # Normal mode - verbose, detailed output with all information
+    alias m='"$MEDIA"'
+    alias mkdir='mkdir -p'
+    alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
+    alias pi="ssh pi@zero2w.local"
+    alias pip="python -m pip"
+    alias re='reset'                   # alias for reset
+    alias refresh='reset'              # alias for reset
+    alias reset='reset && exec zsh -l' # reset terminal in interactive mode.
+    alias restart='reset'              # alias for reset
+    alias rp=realpath
+    alias s='cd ~/src'
+    alias sam=$SAMPLES
+    alias scr=$SCRIPTS
+    alias sexy="open https://terminal.sexy/"
+    alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surge XT/Patches/Templates"
+    alias sync_icloud="isync"
+    alias t='cd ~/test'
+    alias tk=$TAKU
+    alias todo="todo.sh"
+    alias tr="tabula_rasa"
+    alias ttr="tabula_rasa"
+    alias x="sexy"
+    alias xdg-open="open"
     alias df='df -ahicY'                                          # All filesystems, human readable, inodes, show type
     alias top='top -o cpu -stats pid,command,cpu,mem,pstate,time' # Detailed process info
     alias free='vm_stat'                                          # Memory usage details on macOS
@@ -100,5 +136,5 @@ else
     alias mount='mount | column -t'                               # Formatted mount points
     alias env='env | sort'                                        # Sorted environment variables
     alias history='fc -l 1'                                       # Full history
-    alias tree='eza --tree --level=1 --color=always --group-directories-first --icons --long'
 fi
+

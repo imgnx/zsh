@@ -1,4 +1,10 @@
-# shellcheck shell=bash
+if [[ "${ZLOADING:-}" == ".zshenv" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
+    print -n -P "[%F{#444}skip%f(%F{white}%D{%S.%3.}%f)]"
+    return 0
+fi
+
+autoload -Uz compinit
+compinit
 
 COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
 
@@ -14,120 +20,49 @@ function import() {
 
 }
 
-# "Tabula rasa" is a Latin term meaning "blank slate".
-# In philosophy and psychology, it refers to the idea
-# that individuals are born without built-in mental
-# content and that all knowledge comes from experience
-# and sensory perception. This concept is central to
-# the empiricist view of learning and development,
-# contrasting with nativism, which suggests that some
-# knowledge is innate.
-# # Tabula Rasa will
-
-# function 1DABF50B_9CB5_4679_9B58_2F203D12C8F1() {
-#     echo -e "Active Mode: \033[38;5;2mNormal\033[0m"
-#     echo -e "Mode(s): \033[38;5;4mScreencast\033[0m, \033[38;5;64mZen Mode\033[39m, \033[38;5;84mTabula Rasa\033[0m, \033[38;5;6mCopilot\033[0m..."
-#     echo -e "Activate? [Y/n]:"
-
-#     read -k 1 init_response
-#     if [[ "$init_response" =~ ^[Yy]$ ]]; then
-
-#         # If screencast mode is set to -1, ask the user if they are screencasting.
-#         if [[ "$SCREENCAST_MODE" -eq -1 ]]; then
-#             # Screencast mode is not set. Do you want to enable it?
-#             # This will allow the terminal to be recorded in screencasts.
-#             # Ask about screencast mode
-#             echo -n " Are you \033[38;5;31mScreencasting\033[0m? [Y/n]:"
-#             # Read only the first character of input
-#             read -k 1 sc_response
-#             # Move to a new line after the keypress
-#             echo
-#             if [[ "$sc_response" =~ ^[Yy]$ ]]; then
-
-#             else
-
-#             fi
-#             clear
-#         else
-#             echo "Screencast mode is currently set to $SCREENCAST_MODE."
-#         fi
-
-#         # Tabula Rasa Mode
-#         if [[ "$TABULA_RASA" -eq -1 ]]; then
-#             # Tabula Rasa mode is not set. Do you want to enable it?
-#             # This will give you a blank slate — no configrations will be loaded.
-#             # Ask about tabula rasa mode
-#             echo -n " \033[38;5;2mTabula Rasa?\033[39m [y/N]: "
-#             read -k 1 tr_response
-#             # Move to a new line after the keypress
-#             echo
-#             if [[ "$tr_response" =~ ^[Yy]$ ]]; then
-
-#             else
-
-#             fi
-
-#             clear
-#             # # Clear the last two lines from the prompt above (the question and the response).
-#             # if [[ -n "$ZSH_VERSION" ]]; then
-#             #     # Zsh-specific way to clear lines
-#             #     print -n "\e[1A\e[2K"
-#             # else
-#             #     # Fallback for other shells (like bash)
-#             #     echo -e "\033[1A\033[2K"
-#             # fi
-#         fi
-#     fi
-# }
-
-# if [[ -o interactive ]]; then
-# 1DABF50B_9CB5_4679_9B58_2F203D12C8F1
-# fi
-
-### 🥾 PATH
-
-function add2path() {
-    $HOME/bin/add2path "$@"
-}
-add2path "$HOME/bin"
-# add2path "$HOME/.local/bin"
-# add2path "$HOME/.cargo/bin"
-
-### 🌐 XDG
-
-# cargo config is located in $XDG_CONFIG_HOME/cargo/config.toml
-
-for lib_dir in ~/lib/**/build; do
-    add2path "$lib_dir"
-done
-
-### ✋ Modules
-### source
-
-### GPG
-if command -v gpgconf >/dev/null 2>&1; then
-
-fi
-### ZSH
-
-### No-Name Directory (fallback for plugins)
-
-. "/Users/donaldmoore/.local/share/cargo/env"
-
 if [[ -o interactive ]]; then
+    export ZLOADING=".zshenv"
+    # Uncomment to disable preflight load check
+    # export SKIP_PREFLIGHT_LOAD_CHECK=0
+    echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
 
-    print -n -P "[%F{green}.zshenv%f]"
-    . "${ZDOTDIR}/variables.zsh" # Load custom variables
-    # ^ is a dependancy of v ...
-    . "${ZDOTDIR}/aliases.zsh" # Load custom aliases
-    # ^ is a dependancy of v ...
-    . "${ZDOTDIR}/functions.zsh" # Load custom functions
-    # ^ is a dependancy of v ...
+    . "/Users/donaldmoore/.config/zsh/variables.zsh" # Load custom variables
+    export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"   # Set ZDOTDIR if not already set
+    . "${ZDOTDIR}/functions.zsh"                     # Load custom functions
+
+    # ? To get the path of a `brew` command:
+    # ? brew --prefix cmd
+    export IMGNX_PATH="/Users/donaldmoore/bin:/usr/local/opt:/usr/local/bin:/Users/donaldmoore/.config/cargo/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/MacGPG2/bin:/Applications/Wireshark.app/Contents/MacOS"
+    export PATH="$IMGNX_PATH"
+    export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
+
+    # VS Code
+    if command -v code >/dev/null 2>&1; then
+        export VSCODE_SUGGEST=1
+    fi
+
+    ### 🥾 PATH
+
+    add2path "$HOME/bin"
+    # add2path "$HOME/.local/bin"
+    # add2path "$HOME/.cargo/bin"
+
+    ### 🌐 XDG
+
+    # cargo config is located in $XDG_CONFIG_HOME/cargo/config.toml
+
+    for lib_dir in ~/lib/**/build; do
+        add2path "$lib_dir"
+    done
+
+    ### No-Name Directory (fallback for plugins)
+    # Rust/Cargo
+    . "/Users/donaldmoore/.local/share/cargo/env"
+
+    . "${ZDOTDIR}/aliases.zsh"     # Load custom aliases
     . "${ZDOTDIR}/keybindings.zsh" # Load custom keybindings
-    # ^ is a dependancy of v ...
-    . "${ZDOTDIR}/hashes.zsh" # Load custom keybindings
-    # ^ is a dependancy of v ...
-    . "${ZDOTDIR}/path.zsh" # Load custom keybindings
+    . "${ZDOTDIR}/hashes.zsh"      # Load custom hashes
+    . "${ZDOTDIR}/path.zsh"        # Load custom path
     # Source Cargo
     [ -f "$HOME/.config/cargo/env" ] && . "$HOME/.config/cargo/env"
 
@@ -146,3 +81,6 @@ if [[ -o interactive ]]; then
     autoload_usb_config
 
 fi
+. "/Users/donaldmoore/.config/cargo/env"
+export VOLTA_HOME="$HOME/.config/volta"
+export PATH="$VOLTA_HOME/bin:$PATH"

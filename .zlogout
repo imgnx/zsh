@@ -1,6 +1,6 @@
 # shellcheck shell=zsh
 if [[ -o interactive ]]; then
-    print -n -P "[%F{#8800dd}.zlogout%f]"
+    print -n -P "[%F{red}.zlogout%f]"
 fi
 
 ### ============================

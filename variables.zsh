@@ -1,5 +1,15 @@
 # shellcheck shell=bash
 
+
+#`````````````````#
+#++ TEMPORARY ++++#
+#_________________#
+# Start TuxGuitar
+export MODEL=x86_64
+export OUTPUT_DIR=build_output
+export JAVA_HOME=$(/usr/libexec/java_home)
+# End TuxGuitar
+
 # ==============================
 # Emacs Configuration
 # ==============================
@@ -54,24 +64,28 @@ if [[ "$TABULA_RASA" == "1" ]]; then
     return
 fi
 
-print -n -P "[%F{#202020}variables%f]"
+print -n -P "[%F{green}variables%f]"
 # ============================
 # Named Directories
-hash -d Labs=$LABS
-hash -d bin=$BIN
-hash -d labs=$LABS
-hash -d lib=$LIB
-hash -d src=$SRC
-hash -d taku=$TAKU
-hash -d test=$TEST
-hash -d wk=$WORKBENCH
-hash -d xdg=$XDG_CONFIG_HOME
-hash -d xdg_cache=$XDG_CACHE_HOME
-hash -d xdg_data=$XDG_DATA_HOME
-hash -d xdg_runtime=$XDG_RUNTIME_DIR
-hash -d xdg_state=$XDG_STATE_HOME
-hash -d zcnf=$ZDOTDIR
-hash -d surge=$SURGE
+
+# Hashes are for executables...
+
+# hash -d bin=$BIN
+# hash -d labs=$LABS
+# hash -d lib=$LIB
+# hash -d src=$SRC
+# hash -d taku=$TAKU
+# hash -d test=$TEST
+# hash -d wk=$WORKBENCH
+# hash -d xdg=$XDG_CONFIG_HOME
+# hash -d cache=$XDG_CACHE_HOME
+# hash -d data=$XDG_DATA_HOME
+# hash -d rt=$XDG_RUNTIME_DIR
+# hash -d state=$XDG_STATE_HOME
+# hash -d zsh=$ZDOTDIR
+# hash -d zcnf=/Users/donaldmoore/config/zsh
+# hash -d surge=$SURGE
+
 # GPG
 export GPG_AGENT_INFO=$(gpgconf --list-dirs agent-socket)
 export GPG_TTY=$(tty)
@@ -85,7 +99,9 @@ export BKGD="$SAMPLES/bkgd.mp3"
 export BK="$ICLOUD_DRIVE/_____BACKUPS"
 export CALCULATOR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
 export CARGO_HOME="$HOME/.config/cargo"
-export CARGO_TARGET_DIR="$XDG_CONFIG_HOME/cargo"
+#  ! This causes problems every time... Yes! You
+#  ! have to use --path=. !!!
+# export CARGO_TARGET_DIR="$XDG_CONFIG_HOME/cargo"
 export CLOUDSDK_PYTHON="/Users/donaldmoore/.pyenv/versions/pitchfix/bin/python"
 export CONFIG="$XDG_CACHE_HOME"
 export CONTAINERS="$HOME/_____CONTAINERS"
@@ -139,3 +155,9 @@ export CONTAINERS="$HOME/_____CONTAINERS"
 export LABS="$WORKBENCH/_____LABS"
 export DOWNLOADS="$HOME/Downloads"
 export CALCULATOR="/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
+
+# =================
+# Volta
+# =================
+export VOLTA_HOME="$XDG_CONFIG_HOME/volta"
+export VOLTA_CACHE="$XDG_CACHE_HOME/volta"
