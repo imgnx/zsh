@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 // -*- coding: utf-8 -*-
 
 // ^ html2ansi.js
@@ -40,17 +41,7 @@ function hexToAnsi(hex) {
 }
 
 function colorize(input) {
-  return input.replace(/<([^>]+)>([^<]+)<\/\1>/g, (match, tag, content) => {
-    let color;
-    if (/^#[0-9a-fA-F]{6}$/.test(tag)) {
-      color = hexToAnsi(tag);
-    } else if (colors[tag]) {
-      color = colors[tag];
-    } else {
-      color = ""; // No color if tag is unrecognized
-    }
-    return `${color}${content}${colors.reset}`;
-  });
+  return;
 }
 
 function main() {

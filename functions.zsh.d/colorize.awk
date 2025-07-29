@@ -1,3 +1,4 @@
+#!/usr/bin/env gawk -f
 # format this file with `gawk [ --lint | -L ] -f /path/to/this/file /dev/null`
 # colorize.awk
 

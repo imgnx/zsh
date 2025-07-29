@@ -1,7 +1,9 @@
-#!/bin/bash
+#!/bin/zsh
+# shellcheck disable=SC1071
 
-function ls() {
-    if [ "$SCREENCAST_MODE" ]; then
+if [[ -n "$SCREENCAST_MODE" ]]; then
+    unalias ls 2>/dev/null
+    ls() {
         printf "\033[38;5;8mScreencast Mode is currently \033[38;5;10mon\033[38;5;8m."
         echo "Are you sure you want to display the contents of \`ls\`?"
         read -r confirmation
@@ -11,9 +13,5 @@ function ls() {
         else
             eza --color=always --group-directories-first --icons
         fi
-    else
-        eza --color=always --all --group-directories-first --icons
-        printf "\033[38;5;8mScreencast Mode is currently \033[38;5;9moff\033[38;5;8m. \`ls\` will not display hidden files and folders.\033[0m"
-    fi
-
-}
+    }
+fi
