@@ -1,0 +1,27 @@
+{
+  "name": "cfn_zsh",
+  "version": "1.0.0",
+  "description": "Zsh configuration files and environment setup. This is not a Node.js package.",
+  "main": ".zshenv",
+  "scripts": {
+    "test:zsh": "zsh -i ./test_zsh_config.sh",
+    "test:shellcheck": "bash ./test_shellcheck.sh",
+    "test": "concurrently \"npm run test:zsh\" \"npm run test:shellcheck\"",
+    "lint": "shellcheck ./*.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imgnx/zshconfig2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/imgnx/zshconfig2/issues"
+  },
+  "homepage": "https://github.com/imgnx/zshconfig2#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}
