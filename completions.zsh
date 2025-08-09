@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 
-echo -e "[\033[38;5;17mcompletions\033[0m]"
+echo -e "[\033[38;5;61mcompletions\033[0m]"
 
 # Custom completion for cd'ing into first-level directories
 _cd_first_level() {

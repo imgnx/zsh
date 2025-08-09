@@ -1,4 +1,70 @@
+
+# --- Better Prompt ---
+better_prompt() {
+    local color branch gitinfo stats stat_parts stat
+    color="$(ggs)"
+    stats="${IMGNX_STATS:-}"
+    
+    branch=""
+    gitinfo=""
+    
+    # Git info
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=${$(git rev-parse --abbrev-ref HEAD 2>/dev/null):-no git}
+        [[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
+        local remote="$(git remote 2>/dev/null)"
+        local remote_part=""
+        [[ -n "$remote" ]] && remote_part=" $remote"
+        gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
+    fi
+    
+    # Compose PS1
+    PS1=""
+    card=0
+    if [[ -n "$stats" ]]; then
+        card=$((card+1))
+        # Split stats by tabs, colorize each part
+        stat_parts=("${(@s:\t:)stats}")
+        for stat in $stat_parts; do
+            case card in
+                1) PS1+="%F{#FF007B}${stat}%f" ;; # CPU
+                2) PS1+="%F{#007BFF}${stat}%f" ;; # RAM
+                3) PS1+="%F{#7BFF00}${stat}%f" ;; # Zsh count
+                *) PS1+="%F{#fca864}${stat}%f" ;; # Default color
+            esac
+        done
+    fi
+    PS1+='%F{green}%n@'"${LOCAL_IP}"' %~%f'
+    [[ -n "$gitinfo" ]] && PS1+="
+$gitinfo"
+    PS1+="
+%B%F{#FF007B}$(basename $SHELL) %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
+"
+    RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+}
+
+# Lazy loader for delayed-script-loader.zsh
+
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd better_prompt
+
+function7FFA824F_5204_4508_B0FD_1AD917064BCF() {
+    local loader_path="$ZDOTDIR/functions.zsh.d/delayed-script-loader.zsh"
+    if [[ -z "$__SOURCED_DELAYED_SCRIPT_LOADER" ]]; then
+        if [[ -f "$loader_path" ]]; then
+            source "$loader_path"
+            typeset -g __SOURCED_DELAYED_SCRIPT_LOADER=1
+        else
+            echo "[delayed-script-loader] File not found: $loader_path" >&2
+        fi
+    fi
+}
+
+alias enable-dsc='function7FFA824F_5204_4508_B0FD_1AD917064BCF'
+
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+
 
 if [[ "${ZLOADING:-}" == ".zshenv" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
     print -n -P "[%F{#444}skip env%f(%F{white}%D{%S.%3.}%f)]"
@@ -7,16 +73,41 @@ fi
 
 COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
 
+functionD8EA8FE0_EE54_4EA2_AE42_6692B212B4D5() {
+    if [[ "${ZSH_DEBUG:-}" == "true" ]]; then
+        echo $@
+    fi
+}
+
+alias imgnx_debug='functionD8EA8FE0_EE54_4EA2_AE42_6692B212B4D5'
+
 # Guard function to source each file only once
 # `source_once`
 function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8() {
     local file="$1"
     local guard_var="__SOURCED_$(basename "$file" | tr -c '[:alnum:]_' '_' | tr -s '_')"
     if [[ -z "${(P)guard_var}" ]]; then
+        imgnx_debug "1 guard_var is not set if -z \${guard_var} == true"
+        imgnx_debug "2 \033[38;5;9m\${guard_var} is set to ${guard_var}\033[0m"
+        imgnx_debug "2.1 \${guard_var} is: \033[38;5;9m${(P)guard_var}\033[0m"
+        imgnx_debug "2.2 \${file} is: \033[38;5;208m$file\033[0m"
+        imgnx_debug "$(set | grep "^__SOURCED_" | sort)"
         typeset -g "$guard_var"=1
-        . "$file"
+        imgnx_debug "3 guard_var should now be 1: \033[38;5;10m$guard_var\033[0m"
+        imgnx_debug "4 \$file is: \033[38;5;208m$file\033[0m"
+        if [[ -f "$file" ]]; then
+            imgnx_debug -e "\033[38;5;11mSourcing: $file\033[0m"
+            . "$file" || { [[ "${ZSH_DEBUG:-}" == "true" ]] && imgnx_debug "Error sourcing $file (pipe)"; }
+        else
+            imgnx_debug -e "\033[38;5;10mFile not found: $file\033[0m"
+        fi
     fi
 }
+
+alias source_once='function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8'
+
+
+
 
 if [[ -o interactive ]]; then
     # MARK: Preflight check
@@ -29,13 +120,15 @@ if [[ -o interactive ]]; then
     export ZLOADING=".zshenv"
     export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
     
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/functions.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/variables.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/aliases.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/keybindings.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/hashes.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/paths.zsh"
-    # function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8 "${ZDOTDIR}/functions.zsh.d/delayed-script-loader.zsh"
+    # Load immediately:
+    source_once "${ZDOTDIR}/functions.zsh"
+    source_once "${ZDOTDIR}/variables.zsh"
+    source_once "${ZDOTDIR}/aliases.zsh"
+    source_once "${ZDOTDIR}/keybindings.zsh"
+    source_once "${ZDOTDIR}/paths.zsh"
+    
+    # Lazy loaded:
+    # source_once "${ZDOTDIR}/functions.zsh.d/delayed-script-loader.zsh"
     
     export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
     
@@ -45,46 +138,4 @@ if [[ -o interactive ]]; then
 fi
 
 
-# if [[ -o interactive ]]; then
-# export ZLOADING=".zshenv"
-# export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}" # Set ZDOTDIR if not already set
-# . "${ZDOTDIR}/functions.zsh" -                 # Load custom functions
-
-# # Load custom variables
-# . "$ZDOTDIR/variables.zsh"
-# # Load custom functions
-# . "$ZDOTDIR/functions.zsh"
-# # Load aliases, keybindings, hashes, paths
-# . "$ZDOTDIR/aliases.zsh"
-# . "$ZDOTDIR/keybindings.zsh"
-# . "$ZDOTDIR/hashes.zsh"
-# . "$ZDOTDIR/paths.zsh"
-
-# export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
-
-# VS Code
-# if command -v code >/dev/null 2>&1; then
-#     export VSCODE_SUGGEST=1
-# fi
-
-### 🥾 PATH
-
-# add2path "$HOME/bin"
-# add2path "$HOME/.local/bin"
-# add2path "$HOME/.cargo/bin"
-
-### 🌐 XDG
-
-### No-Name Directory (fallback for plugins)
-# Rust/Cargo
-# . "/Users/donaldmoore/dotfiles/.cargo/env"
-# Source elsewhere...
-
-# . "${ZDOTDIR}/aliases.zsh"                               # Load custom aliases
-# . "${ZDOTDIR}/keybindings.zsh"                           # Load custom keybindings
-# . "${ZDOTDIR}/hashes.zsh"                                # Load custom hashes
-# . "${ZDOTDIR}/paths.zsh"                                 # Load custom path variables
-# . "${ZDOTDIR}/functions.zsh.d/delayed-script-loader.zsh" # Load delayed script loader
-# Source Cargo environment if exists
-# [ -f "$HOME/dotfiles/.cargo/env" ] && . "$HOME/dotfiles/.cargo/env"
-# fi
+precmd_better_prompt='functionE2BBEF85_0229_4994_AA4A_0E9AD426573'

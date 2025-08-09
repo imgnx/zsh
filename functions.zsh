@@ -337,7 +337,7 @@ script_path="${0}"
 echo "$PATH" | grep -q "/Users/donaldmoore/bin" || export PATH="$HOME/bin:$PATH"
 
 # Print the size of the current file.
-print -n -P "[%F{green}functions%f($(command stat -f %z "$0" | numfmt --to=iec --suffix=B))]"
+print -n -P "[%F{green}functions%f]"
 
 # Declare associative array for TODO cache
 typeset -gA __TODO_CACHE
@@ -382,10 +382,10 @@ tabula_rasa() {
 		fi
 	else
 		export TABULA_RASA=0
-		echo "Tabula Rasa mode is disabled. Configurations will be loaded."
+		# echo "Tabula Rasa mode is disabled. Configurations will be loaded."
 	fi
 }
-imgnx_debug() {
+i_manifest_gods_not_exiles		() {
 	echo "This will output all relevant debug information into your home directory at $HOME/+imgnx/"
 	# Create the directory if it doesn't exist
 	mkdir -p "$HOME/+imgnx"

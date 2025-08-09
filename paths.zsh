@@ -65,7 +65,7 @@ fi
 #     fi
 # done
 
-# print -n -P "[%F{green}path%f]"
+print -n -P "[%F{green}paths%f]"
 
 # echo "Number of skipped config bin paths: ${#BLACKLISTED_CONFIG_BIN_PATHS[@]}"
 # echo -e "To edit skipped PATHS, run: \033[38;5;6mcode \"\$BLACKLISTED_CONFIG_BIN_PATH_FILE\"\033[0m"
