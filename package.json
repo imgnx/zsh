@@ -1,5 +1,5 @@
 {
-  "name": "cfn_zsh",
+  "name": "cnf_zsh",
   "version": "1.0.0",
   "description": "Zsh configuration files and environment setup. This is not a Node.js package.",
   "main": ".zshenv",
