@@ -2,26 +2,22 @@
 
 # Early exit if skipping preflight
 if [[ "${ZLOADING:-}" == ".zshrc" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
-	print -n -P "[%F{#444}skip rc%f(%F{white}%D{%S.%3.}%f)]"
-	return 0
+    print -n -P "[%F{#444}skip rc%f(%F{white}%D{%S.%3.}%f)]"
+    return 0
 fi
 
 if [[ -o interactive ]]; then
-	export ZLOADING=".zshrc"
-	echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshrc}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
+    export ZLOADING=".zshrc"
+    # echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshrc}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
 else
-	export ZLOADING=".zshrc"
+    export ZLOADING=".zshrc"
 fi
 
 # Early exit for tabula rasa mode
 if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
-	echo "Tabula Rasa mode is enabled. No configurations will be loaded."
-	return 0
+    echo "Tabula Rasa mode is enabled. No configurations will be loaded."
+    return 0
 fi
-
-# Ensure compinit is loaded for completions and compdef
-autoload -Uz compinit
-compinit -u
 
 # History settings
 HISTFORMAT="%F{blue}%n@%m:%~%f %(!.#.$) %F{green}[%*]%f %F{yellow}%B%?%b%f %F{red}[%?]%f"
@@ -50,7 +46,7 @@ setopt EXTENDED_HISTORY     # Save timestamp and duration
 
 # Local IP address (cached)
 if [[ -z "$LOCAL_IP" ]]; then
-	LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
+    LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
 fi
 
 # Cache directory setup
@@ -124,6 +120,4 @@ IFS=$' \t\n'
 export ZPLUG_HOME=/usr/local/opt/zplug
 source $ZPLUG_HOME/init.zsh
 
-
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-

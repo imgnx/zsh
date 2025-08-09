@@ -14,7 +14,8 @@ imgnx_update_stats() {
 	cpu=$(ps -A -o %cpu | awk 'NR>1 {s+=$1} END {printf "%.1f", s}')
 	mem=$(ps -A -o rss | awk 'NR>1 {s+=$1} END {printf "%.1f", s/1024}')
 	zshcount=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-	export IMGNX_STATS="ZshQ:\t${zshcount}\tCPU:\t${cpu}\tRAM:\t${mem}MB"
+	export IMGNX_STATS="
+ZshQ:\t${zshcount}\tCPU:\t${cpu}\tRAM:\t${mem}MB"
 }
 
 # Better Prompt
@@ -41,7 +42,6 @@ better_prompt() {
 	card=0
 	if [[ -n "$stats" ]]; then
 		card=$((card+1))
-		echo $card
 		# Split stats by tabs, colorize each part
 		stat_parts=("${(@s:\t:)stats}")
 		for stat in $stat_parts; do
@@ -76,6 +76,18 @@ whitelist() {
 	[[ -z "$new_path" ]] && echo "Usage: whitelist /path/to/bin" && return 1
 	grep -qxF "$new_path" "$WHITELISTED_CONFIG_BIN_PATH_FILE" 2>/dev/null && {
 		echo "$new_path already in whitelist"
+		if [[ "$DEBUG_MODE" == "true" ]]; then
+			echo "[DEBUG] $new_path is already whitelisted" >&2
+			# TEMP LOGGING: Log current whitelist and blacklist
+			if [[ -f "$WHITELISTED_CONFIG_BIN_PATH_FILE" ]]; then
+				echo "[LOG] Whitelisted paths:" >&2
+				cat "$WHITELISTED_CONFIG_BIN_PATH_FILE" >&2
+			fi
+			if [[ -f "$BLACKLISTED_CONFIG_BIN_PATH_FILE" ]]; then
+				echo "[LOG] Blacklisted paths:" >&2
+				cat "$BLACKLISTED_CONFIG_BIN_PATH_FILE" >&2
+			fi
+		fi
 		return 0
 	}
 	echo "$new_path" >>"$WHITELISTED_CONFIG_BIN_PATH_FILE"
@@ -152,8 +164,8 @@ alias_zsh_functions() {
 # --- Register hooks (autoload only once) ---
 # --- Interactive-Only ---
 if [[ -o interactive ]]; then
-	export ZLOADING=".zshenv"
-	echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
+	export ZLOADING="delayed-script-loader.zsh"
+	# echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
 
 	autoload -Uz colors && colors
 	autoload -Uz add-zsh-hook

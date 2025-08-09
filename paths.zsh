@@ -6,6 +6,17 @@ export PATH="$IMGNX_PATH"
 #     BLACKLISTED_CONFIG_BIN_PATHS=("${(@f)$(cat "$BLACKLISTED_CONFIG_BIN_PATH_FILE")}")
 # fi
 
+# Load Cargo. (copied from ~/dotfiles/.cargo/env)
+case ":${PATH}:" in
+    *:"$HOME/.cargo/bin":*)
+    ;;
+    *)
+        # Prepending path in case a system-installed rustc needs to be overridden
+        export PATH="$HOME/.cargo/bin:$PATH"
+    ;;
+esac
+
+
 # # Load whitelist paths from file if it exists, add to PATH if not present
 if [[ -f "$WHITELISTED_CONFIG_BIN_PATH_FILE" ]]; then
     while IFS= read -r whitelist_dir; do
@@ -30,7 +41,7 @@ fi
 #     else
 #         echo -e "$dir \033[38;5;6mnot found\033[0m in \033[38;5;1mBLACKLISTED_CONFIG_BIN_PATHS\033[0m"
 #     fi
-    
+
 #     if [[ " ${CONFIG_BIN_PATHS[@]} " != *" $dir "* ]]; then
 #         while true; do
 #             read -q "REPLY?Would you like to add $dir to your PATH? (y/n) "; echo

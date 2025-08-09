@@ -1,5 +1,30 @@
 #!/bin/zsh
-#shellcheck shell=zsh
+#shellcheck disable=SC1103
+#shellcheck disable=SC1071
+
+import() {
+    prompt=(
+        "Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
+        'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
+        "Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
+        'Is this what you meant to do? (y/N)'
+    )
+    
+    answer="$(safeguard "${prompt[@]}")"
+    
+}
+
+doom() {
+    emacs "$@"
+}
+
+emacs() {
+    /usr/local/bin/emacs -Q "$@"
+}
+
+function tree() {
+    command tree -C "$@"
+}
 
 function fzf_file_menu() {
 	# A function for opening files in a menu with `fzf`
@@ -420,10 +445,10 @@ brew() {
 	if [[ "$1" == "link" ]]; then
 		shift
 		command brew link --overwrite "$@" 2>&1 | sed -e 's/^/🔧 /'
-		return ${pipestatus[1]:-$?}
+		return "${pipestatus[1]:-$?}"
 	fi
 	command brew "$@" 2>&1 | sed -e 's/^/🔧 /'
-	return ${pipestatus[1]:-$?}
+	return "${pipestatus[1]:-$?}"
 }
 icd() {
 	builtin cd "$@" || return
@@ -622,9 +647,9 @@ import() {
 # }
 isdark() {
 	local COLOR="$1"
-	local R=$((0x$(echo $COLOR | cut -c2-3)))
-	local G=$((0x$(echo $COLOR | cut -c4-5)))
-	local B=$((0x$(echo $COLOR | cut -c6-7)))
+	local R=$((0x$(echo "$COLOR" | cut -c2-3)))
+	local G=$((0x$(echo "$COLOR" | cut -c4-5)))
+	local B=$((0x$(echo "$COLOR" | cut -c6-7)))
 	local LUMINANCE=$((R * 299 + G * 587 + B * 114))
 	if ((LUMINANCE < 128000)); then
 		return 0
@@ -647,7 +672,7 @@ truncate_ansi_to_columns() {
 	local count=0
 	result=""
 	i=1
-	while [ $i -le ${#input} ] && [ $count -lt $max ]; do
+	while [ $i -le ${#input} ] && [ $count -lt "$max" ]; do
 		chr="${input[i]}"
 		if [ "$chr" = $'\033' ]; then
 			while [ "${input[i]}" != "m" ] && [ $i -le ${#input} ]; do

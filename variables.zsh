@@ -14,8 +14,8 @@ export JAVA_HOME=$(/usr/libexec/java_home)
 # ==============================
 # Placeholder
 # ==============================
-PLACEHOLDER="cnf [<config-dir> (<file> ) - open in emacs ] - open in zsh"
-echo $PLACEHOLDER
+export PLACEHOLDER="cnf [<config-dir> (<file> ) - open in emacs ] - open in zsh"
+
 
 # ==============================
 # Emacs Configuration
