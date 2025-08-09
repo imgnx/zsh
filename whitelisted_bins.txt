@@ -1,0 +1,8 @@
+/Users/donaldmoore/.config/wrangler/bin
+/Users/donaldmoore/.config/sdkman/bin
+/Users/donaldmoore/.config/zinit/bin
+/Users/donaldmoore/.config/zinit/polaris/bin
+/Users/donaldmoore/.config/volta/bin
+/Users/donaldmoore/.config/emacs/bin
+/Users/donaldmoore/.config/local/bin
+/Users/donaldmoore/.config/.amplify/bin

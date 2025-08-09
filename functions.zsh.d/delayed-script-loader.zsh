@@ -14,60 +14,54 @@ imgnx_update_stats() {
 	cpu=$(ps -A -o %cpu | awk 'NR>1 {s+=$1} END {printf "%.1f", s}')
 	mem=$(ps -A -o rss | awk 'NR>1 {s+=$1} END {printf "%.1f", s/1024}')
 	zshcount=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-	export IMGNX_STATS="nzQt:  $zshcount        CPU: $cpu      RAM: $mem MB"
+	export IMGNX_STATS="ZshQ:\t${zshcount}\tCPU:\t${cpu}\tRAM:\t${mem}MB"
 }
 
 # Better Prompt
 better_prompt() {
-	COLOR="$(ggs)"
-	REMOTE=""
-	URL=""
-	# PS1="%K{#000000}%F{#FFFFFF}%n@%B%F{#00FFFF}$LOCAL_IP%b%f%k%s"
-	PS1='%F{green}%n@$LOCAL_IP %~%f
-'$(basename $SHELL)'%# '
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		# List each remote name and its URL, one per line
-		for remote in $(git remote); do
-			URL=$(git remote get-url "$REMOTE" 2>/dev/null)
-			PS1+='%F{'$COLOR'} '$(git remote 2>/dev/null)'%F{#8aa6c0}/'$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '%F{#202020}no git%f')'%f'
-		done
-	else
-		echo "no git"
-	fi
-	PS1+='
-'$(if [[ "$PWD" == "/" ]]; then echo "/"; elif [[ "$PWD" == "$HOME" ]]; then echo "~"; else dirname "${PWD/#$HOME/~}" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo ''; fi)'%f%B%F{#FFFF00}'/$(basename "$PWD")'%f%b
-%B%F{#FF007B}'$(basename $SHELL)' %f%F{#FFFFFF}%m =>%b %F{#7BFF00}'
-
-	# Set PS1 with performance stats, user, local IP, and git info
-	local stats="${IMGNX_STATS:-}"
-	local color branch gitinfo
+	local color branch gitinfo stats stat_parts stat
 	color="$(ggs)"
-	gitinfo=""
+	stats="${IMGNX_STATS:-}"
+	
 	branch=""
+	gitinfo=""
+
+	# Git info
 	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'no git')
-		gitinfo="%F{$color} $(git remote 2>/dev/null)%F{#8aa6c0}/$branch%f"
+		branch=${$(git rev-parse --abbrev-ref HEAD 2>/dev/null):-no git}
+		[[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
+		local remote="$(git remote 2>/dev/null)"
+		local remote_part=""
+		[[ -n "$remote" ]] && remote_part=" $remote"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
 	fi
+
+	# Compose PS1
 	PS1=""
-	[[ -n "$stats" ]] && PS1+="%F{yellow}$stats%f\n"
-	PS1+='%F{green}%n@$LOCAL_IP %~%f'
+	card=0
+	if [[ -n "$stats" ]]; then
+		card=$((card+1))
+		echo $card
+		# Split stats by tabs, colorize each part
+		stat_parts=("${(@s:\t:)stats}")
+		for stat in $stat_parts; do
+			case card in
+				1) PS1+="%F{#FF007B}${stat}%f" ;; # CPU
+				2) PS1+="%F{#007BFF}${stat}%f" ;; # RAM
+				3) PS1+="%F{#7BFF00}${stat}%f" ;; # Zsh count
+				*) PS1+="%F{#fca864}${stat}%f" ;; # Default color
+			esac
+		done
+	fi
+	PS1+='%F{green}%n@'"${LOCAL_IP}"' %~%f
+'
 	[[ -n "$gitinfo" ]] && PS1+=" $gitinfo"
-	PS1+='\n%B%F{#FF007B}'$(basename $SHELL)' %f%F{#FFFFFF}%m =>%b %F{#7BFF00}'
-	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f\n'
+	PS1+='
+%B%F{#FF007B}'"$(basename $SHELL)"' %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
+'
 
-	#     COLOR="$(ggs)"
-	#     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-	#         echo "no git"
-	#     else
-	#         git remote -v | awk '{print $1, $2}' | sort | uniq
-	#     fi
-	#     PS1='%F{'$COLOR'}%B '$(git remote 2>/dev/null)'%F{#8aa6c0}/'$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '%F{#202020}no git%f')'%f%b %n %B%F{#FF007B}'$LOCAL_IP'%b%f
-	# %F{#007BFF} '$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f
-	# %B%F{#FF007B}'$(basename $SHELL)' %f%F{#FFFFFF}=>%b %F{#00FF00}';
-
-	# Show "cnf [<config-dir> (<file>)]" before typing, then hide it once typing starts
-	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f''\n
-	'
+	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f
+'
 }
 # --- Prepend stats to prompt ---
 

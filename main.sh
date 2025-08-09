@@ -23,7 +23,8 @@ function remove-duplicates() {
         echo "📋 Checking $file for duplicates..."
 
         # Find duplicates with line numbers
-        local duplicates=$(awk '
+        local duplicates
+        duplicates=$(awk '
             {
                 lines[NR] = $0
                 if (seen[$0]) {

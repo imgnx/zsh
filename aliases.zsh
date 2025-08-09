@@ -1,49 +1,30 @@
-# shellcheck shell=bash
+# alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 
-print -n -P "[%F{green}aliases%f]"
-
-# ===================
-# Directory Shortcuts
-# ===================
-
+# Only define aliases here. No functions or script sourcing.
 alias bin="cd $BIN"
-alias config="$XDG_CONFIG_HOME"
+alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias jsh="jsh || cd $JSH"
 alias labs="cd $LABS"
 alias lib="cd $LIB"
 alias src="cd $SRC"
-alias taku="cd $TAKU"
+# alias taku="cd $TAKU" # Now a setup.sh as a function
 alias test="cd $TEST"
-alias wk="cd $WORKBENCH"
+alias wk="cd $SRC/__CODE_WORKSPACE__"
 alias xdg="cd $XDG_CONFIG_HOME"
 alias cache="cd $XDG_CACHE_HOME"
 alias data="cd $XDG_DATA_HOME"
 alias rt="cd $XDG_RUNTIME_DIR"
 alias state="cd $XDG_STATE_HOME"
-alias z="cd $ZDOTDIR"
 alias samples='cd "/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/Media/_____SAMPLES"'
 alias surge="cd $SURGE"
-
-# ============================
-# Personal functions
-# ============================
-# copy: () => $@ | pbcopy
 alias copycat="copy"
 alias cc="copy"
 alias c=copy
-# wip: copy will currently set a global variable: $v
-# alias pastecat="paste"
-# alias pc="paste"
-# alias p="paste"
-# alias v="paste"
 alias pastecat="$v"
 alias pc="$v"
 alias p="$v"
 alias v="$v"
-
-# ============================
-# Screencast Mode Aliases
-# ============================
-# Screencast mode - clean, minimal output, no secrets or hidden details
 alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
 alias ll='eza -la --icons --group-directories-first'
 alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
@@ -63,6 +44,7 @@ alias top='top -o cpu'
 if [ "$SCREENCAST_MODE" != 1 ]; then
     # Normal mode - verbose, detailed output with all information
     alias _re="_reset"
+    alias rest="reset"
     alias _reset="command reset"
     alias .......='cd ../../../../../..'
     alias ......='cd ../../../../..'

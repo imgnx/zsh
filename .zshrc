@@ -1,22 +1,27 @@
+# Always set ZLOADING for session tracking
+
+# Early exit if skipping preflight
 if [[ "${ZLOADING:-}" == ".zshrc" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
-    print -n -P "[%F{#444}skip%f(%F{white}%D{%S.%3.}%f)]"
+	print -n -P "[%F{#444}skip rc%f(%F{white}%D{%S.%3.}%f)]"
+	return 0
+fi
 
-    return 0
+if [[ -o interactive ]]; then
+	export ZLOADING=".zshrc"
+	echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshrc}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
 else
-    # print -n -P "[%F{green}.zshrc%f]"
-    export ZLOADING=".zshrc"
+	export ZLOADING=".zshrc"
 fi
 
+# Early exit for tabula rasa mode
 if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
-    echo "Tabula Rasa mode is enabled. No configurations will be loaded."
-    return 0
+	echo "Tabula Rasa mode is enabled. No configurations will be loaded."
+	return 0
 fi
 
-# Debugging: Log when .zshrc is loaded
-
-# Autoload Zsh modules
-autoload -Uz colors && colors
-autoload -Uz add-zsh-hook
+# Ensure compinit is loaded for completions and compdef
+autoload -Uz compinit
+compinit -u
 
 # History settings
 HISTFORMAT="%F{blue}%n@%m:%~%f %(!.#.$) %F{green}[%*]%f %F{yellow}%B%?%b%f %F{red}[%?]%f"
@@ -45,39 +50,18 @@ setopt EXTENDED_HISTORY     # Save timestamp and duration
 
 # Local IP address (cached)
 if [[ -z "$LOCAL_IP" ]]; then
-    LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
+	LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
 fi
 
-# Better prompt with fixed slash and dimmed path
-# Update prompt dynamically on every directory change
-AAA52195_7126_4ECB_90D6_BCE64B3E0A5F() {
-    PS1='%n%F{#FF1493}@%f'$LOCAL_IP'
-%F{'$(ggs)'}%f %F{#1493FF}'$(dirname "$PWD" | sed 's|\(.*\)\(.\{20\}\)$|…\2|' || echo '')'%f%F{yellow}'/$(basename "$PWD")'%f %B=>%b '
-}
-
-# test
 # Cache directory setup
 CACHE_DIR="$HOME/tmp"
 [[ ! -d "$CACHE_DIR" ]] && mkdir -p "$CACHE_DIR"
 SYSLINE_CACHE="$CACHE_DIR/sysline_cache"
 [[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
 
-# --- Interactive-Only ---
-if [[ -o interactive ]]; then
-    # Hooks
-    if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
-        if typeset -f add-zsh-hook >/dev/null 2>&1; then
-            export PERIOD=10
-            add-zsh-hook periodic 6D078F25_9FBE_4352_A453_71F7947A3B01
-            add-zsh-hook precmd F6596432_CA98_4A50_9972_E10B0EE99CE9
-            add-zsh-hook precmd AAA52195_7126_4ECB_90D6_BCE64B3E0A5F
-        fi
-    fi
-fi
-
 # Create .gitignore if missing
 if [[ ! -f "$HOME/.config/.gitignore" ]]; then
-    cat <<'EOF' >"$HOME/.config/.gitignore"
+	cat <<'EOF' >"$HOME/.config/.gitignore"
 # Emacs (Doom, Spacemacs, etc)
 emacs/.git/
 emacs/.gitmodules
@@ -135,9 +119,11 @@ fi
 # | `` | U+E0BF  | Left-facing Chevron |                                       |
 # | ` ` | U+E0C0  | Right-facing Chevron |                                       |
 
-# autoload -Uz compinit
-# compinit
-
 IFS=$' \t\n'
-export CARGO_HOME="$HOME/dotfiles/.cargo"
-export RUSTUP_HOME="$HOME/dotfiles/.rustup"
+
+export ZPLUG_HOME=/usr/local/opt/zplug
+source $ZPLUG_HOME/init.zsh
+
+
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+

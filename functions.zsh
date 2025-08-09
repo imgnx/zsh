@@ -1,22 +1,294 @@
 #!/bin/zsh
 #shellcheck shell=zsh
 
-function cd() {
-  builtin cd "$@" || return
+function fzf_file_menu() {
+	# A function for opening files in a menu with `fzf`
+	local file
+	file=$(find . -type f | fzf --preview 'cat {}' --preview-window=right:50%:wrap)
 
-  if [[ "$PWD" == "$HOME/src" ]]; then
-    when | head -n 20
-  fi
+	if [[ -n "$file" ]]; then
+		echo "Selected: $file"
+		# Add actions here, like opening or copying the file
+		selected_action=$(echo -e "Open\nCopy\nDelete" | fzf)
+		case "$selected_action" in
+		Open) open "$file" ;;
+		Copy) cp "$file" ~/Documents/ ;;
+		Delete) rm "$file" ;;
+		esac
+	fi
+}
+
+peachtree() {
+	for dir in $(find . -type d); do
+		count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+		echo "$dir ($count)"
+	done
+}
+
+ptree() {
+	local dir="$1"
+	local indent="$2"
+	local count
+
+	count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+	echo "${indent}$(basename "$dir") ($count files)"
+
+	setopt noglob
+
+	for subdir in "$dir"/*/; do
+		if [ -d "$subdir" ]; then
+			print_tree "$subdir" "$indent  ├─"
+		fi
+	done
+
+	unsetopt noglob
+}
+
+taku() {
+	#!/bin/bash
+
+	# Exit immediately if a command exits with a non-zero status
+	set -e
+
+	# Display the script's progress
+	echo "Starting setup..."
+
+	# 1. Create the project directory
+	echo "Creating project directory..."
+	mkdir -p web-audio-experiment
+	cd web-audio-experiment
+
+	# 2. Initialize a new Node.js project
+	echo "Initializing Node.js project..."
+	npm init -y
+
+	# 3. Install required dependencies
+	echo "Installing dependencies..."
+
+	# Install Webpack and required plugins
+	npm install --save-dev webpack webpack-cli webpack-dev-server html-webpack-plugin style-loader css-loader
+
+	# Install React and ReactDOM
+	npm install react react-dom --save
+
+	# Install Tailwind CSS for styling
+	npm install tailwindcss postcss autoprefixer --save-dev
+	npx tailwindcss init
+
+	# 4. Create the basic project structure
+	echo "Creating basic project structure..."
+
+	# Create the main HTML file
+	cat >index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Audio Experiment</title>
+</head>
+<body class="bg-gray-800 text-white">
+  <div id="root"></div>
+</body>
+</html>
+EOF
+
+	# Create the src directory
+	mkdir -p src
+
+	# Create the App.js file for React
+	cat >src/App.js <<EOF
+import React from 'react';
+import './App.css';
+import AudioPlayer from './AudioPlayer';
+
+function App() {
+  return (
+    <div className="App">
+      <AudioPlayer />
+    </div>
+  );
+}
+
+export default App;
+EOF
+
+	# Create the AudioPlayer.js file
+	cat >src/AudioPlayer.js <<EOF
+import React, { useEffect, useRef, useState } from 'react';
+
+const AudioPlayer = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioContext = useRef(null);
+  const oscillator = useRef(null);
+  const gainNode = useRef(null);
+  const filter = useRef(null);
+  const lfo = useRef(null);
+  const modulator = useRef(null);
+  const convolver = useRef(null);
+
+  useEffect(() => {
+    // Initialize Web Audio API context
+    audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Set up oscillator
+    oscillator.current = audioContext.current.createOscillator();
+    oscillator.current.type = 'sine';
+    oscillator.current.frequency.setValueAtTime(440, audioContext.current.currentTime); 
+
+    // Set up gain node (volume control)
+    gainNode.current = audioContext.current.createGain();
+    gainNode.current.gain.setValueAtTime(0.5, audioContext.current.currentTime); 
+
+    // Set up filter (low-pass)
+    filter.current = audioContext.current.createBiquadFilter();
+    filter.current.type = 'lowpass';
+    filter.current.frequency.setValueAtTime(1000, audioContext.current.currentTime);
+
+    // Set up LFO for tremolo effect
+    lfo.current = audioContext.current.createOscillator();
+    lfo.current.type = 'sine';
+    lfo.current.frequency.setValueAtTime(5, audioContext.current.currentTime);
+
+    modulator.current = audioContext.current.createGain();
+    modulator.current.gain.setValueAtTime(0.5, audioContext.current.currentTime);
+
+    // Set up reverb (convolution)
+    convolver.current = audioContext.current.createConvolver();
+    fetch('path/to/impulse-response.wav') 
+      .then((response) => response.arrayBuffer())
+      .then((buffer) => audioContext.current.decodeAudioData(buffer))
+      .then((decodedData) => {
+        convolver.current.buffer = decodedData;
+      });
+
+    // Connect everything
+    oscillator.current.connect(filter.current);
+    filter.current.connect(gainNode.current);
+    gainNode.current.connect(audioContext.current.destination);
+
+    // Connect LFO to modulator, and modulator to gain node
+    lfo.current.connect(modulator.current);
+    modulator.current.connect(gainNode.current);
+
+    // Start the LFO and oscillator
+    lfo.current.start();
+    oscillator.current.start();
+
+    return () => {
+      if (audioContext.current) {
+        oscillator.current.stop();
+        lfo.current.stop();
+        audioContext.current.close();
+      }
+    };
+  }, []);
+
+  const playTone = () => {
+    if (audioContext.current.state === 'suspended') {
+      audioContext.current.resume();
+    }
+    setIsPlaying(true);
+    oscillator.current.start();
+  };
+
+  const stopTone = () => {
+    oscillator.current.stop();
+    setIsPlaying(false);
+  };
+
+  return (
+    <div className="flex flex-col items-center p-4 bg-gray-800 text-white min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Web Audio API Experiment</h1>
+      <div className="space-x-4 mb-6">
+        <button onClick={playTone} disabled={isPlaying}>Play Tone</button>
+        <button onClick={stopTone} disabled={!isPlaying}>Stop Tone</button>
+      </div>
+    </div>
+  );
+};
+
+export default AudioPlayer;
+EOF
+
+	# Create a Tailwind CSS file for custom styling
+	cat >src/App.css <<EOF
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Arial', sans-serif;
+}
+EOF
+
+	# 5. Create Webpack configuration file
+	cat >webpack.config.js <<EOF
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: 'babel-loader',
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './index.html',
+    }),
+  ],
+  devServer: {
+    contentBase: './dist',
+    hot: true,
+  },
+};
+EOF
+
+	# 6. Set up Babel for React JSX support
+	npm install --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader
+
+	# 7. Set up npm scripts for start and build commands
+	echo "Configuring npm scripts..."
+
+	sed -i '' 's/"scripts": {/&\n    "start": "webpack serve --open",\n    "build": "webpack --mode production",/' package.json
+
+	# 8. Run the app (optional step, can be run later)
+	echo "Project setup complete! Run 'npm start' to start the app."
+}
+
+function cd() {
+	builtin cd "$@" || return
+
+	if [[ "$PWD" == "$HOME/src" ]]; then
+		when | head -n 20
+	fi
 }
 
 dir() {
-    hash "$@"
+	hash "$@"
 }
 
+cnf() {
+	cd "$HOME/.config/$1"
+}
 
 copy() {
-    $@ | pbcopy
-    export v=$(pbpaste)
+	$@ | pbcopy
+	export v=$(pbpaste)
 }
 
 # v() {
@@ -24,14 +296,14 @@ copy() {
 # }
 
 git() {
-    if [[ "$1" == "sum" ]]; then
-        git log --oneline
-        read -r -p "Press any key to continue..."
+	if [[ "$1" == "sum" ]]; then
+		git log --oneline
+		read -r -p "Press any key to continue..."
 		git status --short
-        /usr/local/bin/git diff --minimal --color=always | less -R
-    else
-        /usr/local/bin/git "$@"
-    fi
+		/usr/local/bin/git diff --minimal --color=always | less -R
+	else
+		/usr/local/bin/git "$@"
+	fi
 }
 
 # Get the path of the current script
@@ -41,7 +313,6 @@ echo "$PATH" | grep -q "/Users/donaldmoore/bin" || export PATH="$HOME/bin:$PATH"
 
 # Print the size of the current file.
 print -n -P "[%F{green}functions%f($(command stat -f %z "$0" | numfmt --to=iec --suffix=B))]"
-
 
 # Declare associative array for TODO cache
 typeset -gA __TODO_CACHE
@@ -64,11 +335,13 @@ add2path() {
 	# Add a directory to the PATH if it's not already present
 	local dir="$1"
 	if [[ ! -d "$dir" ]]; then
-		echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping PATH addition.\033[0m"
+		echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping...\033[0m"
 		return
 	fi
 	if [[ ":$PATH:" != *":$dir:"* ]]; then
 		export PATH="$dir:$PATH"
+	else
+		echo -e "\033[38;5;6madd2path: Directory '$dir' is already on the PATH.\033[0m"
 	fi
 }
 
@@ -132,16 +405,17 @@ imgnx_debug() {
 # 	[ -f "$SYSLINE_CACHE" ] && sysline=$(<"$SYSLINE_CACHE")
 # 	print -P "$(colorize \n$sysline)"
 # }
-autoload_usb_config() {
+detect_usb_config() {
+	# Too slow... maybe another time...
 	for vol in /Volumes/*; do
-		if [[ -d "$vol" && -d "$vol/.config" ]]; then
-			if [[ "$vol" == /Volumes/*[0-9]_[0-9]*[A-Z]* ]]; then
-				echo "🔌 Loaded config from USB: $vol"
-				return
-			fi
+		if [[ -d "$vol" && "$vol" =~ ^/Volumes/[0-9]+_([A-Z]+)$ && -d "$vol/**/.config" ]]; then
+
+			echo "🔌 Config found in drive: $vol"
+			return
 		fi
 	done
 }
+
 brew() {
 	if [[ "$1" == "link" ]]; then
 		shift
@@ -223,7 +497,6 @@ colorize() {
 		done
 	fi
 }
-
 
 console() {
 	logger -t "imgnx" $@
@@ -362,32 +635,10 @@ isdark() {
 k() {
 	pgrep "$1" | xargs kill
 }
-labs() {
-	cd $LABS
-}
-media() {
-	cd $MEDIA
-}
 pid() {
 	pgrep "$1" | pbcopy
 }
 
-resource() {
-	local file="$1"
-	if [ -f "$file" ]; then
-		source "$file"
-		local basedir=$(dirname "$file")
-		add2path "$basedir"
-	else
-		echo "Resource file '$file' not found."
-	fi
-}
-samp() {
-	cd $SAMPLES
-}
-scripts() {
-	cd $SCRIPTS
-}
 truncate_ansi_to_columns() {
 	local input="$1"
 	local clean visible raw_line result i chr
@@ -421,9 +672,7 @@ visual_length() {
 	local clean=$(print -r -- "$expanded" | sed $'s/\x1B\\[[0-9;]*[mGKH]//g')
 	print ${#clean}
 }
-wk() {
-	cd $WORKBENCH
-}
+# Removed 'wk' function to avoid conflict with alias 'wk' in aliases.zsh
 xdg-lint() {
 	echo "🔍 Scanning $HOME for non-XDG config files..."
 	for file in $HOME/.*; do
@@ -433,114 +682,6 @@ xdg-lint() {
 		echo "    $XDG_CONFIG_HOME/$name or $XDG_DATA_HOME/$name"
 	done
 }
-
-# add-zsh-hook () {
-# 	emulate -L zsh
-# 	local -a hooktypes
-# 	hooktypes=(chpwd precmd preexec periodic zshaddhistory zshexit zsh_directory_name)
-# 	local usage="Usage: add-zsh-hook hook function\nValid hooks are:\n  $hooktypes"
-# 	local opt
-# 	local -a autoopts
-# 	integer del list help
-# 	while getopts "dDhLUzk" opt
-# 	do
-# 		case $opt in
-# 			(d) del=1  ;;
-# 			(D) del=2  ;;
-# 			(h) help=1  ;;
-# 			(L) list=1  ;;
-# 			([Uzk]) autoopts+=(-$opt)  ;;
-# 			(*) return 1 ;;
-# 		esac
-# 	done
-# 	shift $(( OPTIND - 1 ))
-# 	if (( list ))
-# 	then
-# 		if [[ -n "$1" ]]; then
-# 			typeset -mp "${1}_functions"
-# 		else
-# 			for hook in $hooktypes; do
-# 				typeset -mp "${hook}_functions"
-# 			done
-# 		fi
-# 		return $?
-# 	elif (( help || ${#argv} != 2 || ! ${hooktypes[(r)$1]} )); then
-# 		local fd=$(( 2 - ${help} ))
-# 		print -u$fd $usage
-# 		return $(( 1 - ${help} ))
-# 	fi
-# 	local hook="${1}_functions"
-# 	local fn="$2"
-# 	if (( del ))
-# 	then
-# 		if (( ${(P)+hook} ))
-# 		then
-# 			if (( del == 2 ))
-# 			then
-# 				set -A $hook ${(P)hook:#${~fn}}
-# 			else
-# 				set -A $hook ${(P)hook:#$fn}
-# 			fi
-# 			if (( ! ${(P)#hook} ))
-# 			then
-# 				unset $hook
-# 			fi
-# 		fi
-# 	else
-# 		if (( ${(P)+hook} ))
-# 		then
-# 			if (( ${${(P)hook}[(I)$fn]} == 0 ))
-# 			then
-# 				typeset -ga $hook
-# 				set -A $hook ${(P)hook} $fn
-# 			fi
-# 		else
-# 			typeset -ga $hook
-# 			set -A $hook $fn
-# 		fi
-# 		autoload $autoopts -- $fn
-# 	fi
-# }
-
-# colors () {
-# 	emulate -L zsh
-# 	typeset -Ag color colour
-# 	color=(00 none 01 bold 02 faint 22 normal 03 italic 23 no-italic 04 underline 24 no-underline 05 blink 25 no-blink 07 reverse 27 no-reverse 08 conceal 28 no-conceal 30 black 40 bg-black 31 red 41 bg-red 32 green 42 bg-green 33 yellow 43 bg-yellow 34 blue 44 bg-blue 35 magenta 45 bg-magenta 36 cyan 46 bg-cyan 37 white 47 bg-white 39 default 49 bg-default)
-# 	local k
-# 	for k in ${(k)color}
-# 	do
-# 		color[${color[$k]}]=$k
-# 	done
-# 	for k in {30..37}
-# 	do
-# 		color[fg-${color[$k]}]=$k
-# 	done
-# 	for k in grey gray
-# 	do
-# 		color[$k]=${color[black]}
-# 		color[fg-$k]=${color[$k]}
-# 		color[bg-$k]=${color[bg-black]}
-# 	done
-# 	colour=(${(kv)color})
-# 	local lc=$'\e[' rc=m
-# 	typeset -Hg reset_color bold_color
-# 	reset_color="$lc${color[none]}$rc"
-# 	bold_color="$lc${color[bold]}$rc"
-# 	typeset -AHg fg fg_bold fg_no_bold
-# 	for k in ${(k)color[(I)fg-*]}
-# 	do
-# 		fg[${k#fg-}]="$lc${color[$k]}$rc"
-# 		fg_bold[${k#fg-}]="$lc${color[bold]};${color[$k]}$rc"
-# 		fg_no_bold[${k#fg-}]="$lc${color[normal]};${color[$k]}$rc"
-# 	done
-# 	typeset -AHg bg bg_bold bg_no_bold
-# 	for k in ${(k)color[(I)bg-*]}
-# 	do
-# 		bg[${k#bg-}]="$lc${color[$k]}$rc"
-# 		bg_bold[${k#bg-}]="$lc${color[bold]};${color[$k]}$rc"
-# 		bg_no_bold[${k#bg-}]="$lc${color[normal]};${color[$k]}$rc"
-# 	done
-# }
 
 # pmodload () {
 # 	local -A ices
@@ -561,71 +702,61 @@ xdg-lint() {
 # 		fi
 # 	done
 # }
-function resource() {
-	local file="$1"
-	if [[ -f "$file" ]]; then
-		source "$file"
-		local basedir=$(dirname "$file")
-		add2path "$basedir"
-	else
-		echo "Resource file '$file' not found."
-	fi
-}
 
 # System Information
-function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
+# function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
 
-	local ZSH_COUNT CPU_USAGE RAM
-	local mtime
-	if [[ "$OSTYPE" == darwin* ]]; then
-		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-	else
-		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-	fi
-	[[ ! -d "$HOME/tmp" ]] && mkdir -p "$HOME/tmp"
-	[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
-	CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
-	if vm_stat >/dev/null 2>&1; then
-		RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
-	else
-		RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
-	fi
-	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-	if [[ $ZSH_COUNT -gt 30 ]]; then
-		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
-	elif [[ $ZSH_COUNT -gt 20 ]]; then
-		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
-	elif [[ $ZSH_COUNT -gt 15 ]]; then
-		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
-	elif [[ $ZSH_COUNT -gt 10 ]]; then
-		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
-	else
-		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
-	fi
+# 	local ZSH_COUNT CPU_USAGE RAM
+# 	local mtime
+# 	if [[ "$OSTYPE" == darwin* ]]; then
+# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
+# 	else
+# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
+# 	fi
+# 	[[ ! -d "$HOME/tmp" ]] && mkdir -p "$HOME/tmp"
+# 	[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
+# 	CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
+# 	if vm_stat >/dev/null 2>&1; then
+# 		RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
+# 	else
+# 		RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
+# 	fi
+# 	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
+# 	if [[ $ZSH_COUNT -gt 30 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 20 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 15 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 10 ]]; then
+# 		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
+# 	else
+# 		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
+# 	fi
 
-	# Newline for sparsity
-	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
-}
+# 	# Newline for sparsity
+# 	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
+# }
 
 # Prompt
-function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
-	local mtime
-	if [[ "$OSTYPE" == darwin* ]]; then
-		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-	else
-		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-	fi
-	local now=$(date +%s)
-	if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
-		6D078F25_9FBE_4352_A453_71F7947A3B01
+# function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
+# 	local mtime
+# 	if [[ "$OSTYPE" == darwin* ]]; then
+# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
+# 	else
+# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
+# 	fi
+# 	local now=$(date +%s)
+# 	if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
+# 		6D078F25_9FBE_4352_A453_71F7947A3B01
 
-	fi
-	local sysline=""
-	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
+# 	fi
+# 	local sysline=""
+# 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
 
-	# Ensure a newline before sysline block
-	colorize $sysline
-}
+# 	# Ensure a newline before sysline block
+# 	colorize $sysline
+# }
 
 # Custom ls function with git status coloring
 statusls() {
@@ -695,6 +826,3 @@ statusls() {
 		/bin/ls "$@"
 	fi
 }
-
-
-

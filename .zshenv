@@ -1,87 +1,70 @@
 if [[ "${ZLOADING:-}" == ".zshenv" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
-    print -n -P "[%F{#444}skip%f(%F{white}%D{%S.%3.}%f)]"
-    return 0
+	print -n -P "[%F{#444}skip env%f(%F{white}%D{%S.%3.}%f)]"
+	return 0
 fi
-
-autoload -Uz compinit
-compinit
 
 COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
 
 function import() {
-    prompt=(
-        "Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
-        'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
-        "Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
-        'Is this what you meant to do? (y/N)'
-    )
+	prompt=(
+		"Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
+		'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
+		"Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
+		'Is this what you meant to do? (y/N)'
+	)
 
-    answer="$(safeguard "${prompt[@]}")"
+	answer="$(safeguard "${prompt[@]}")"
 
 }
 
 if [[ -o interactive ]]; then
-    export ZLOADING=".zshenv"
-    # Uncomment to disable preflight load check
-    # export SKIP_PREFLIGHT_LOAD_CHECK=0
-    echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
+	export ZLOADING=".zshenv"
+	# Uncomment to disable preflight load check
+	# export SKIP_PREFLIGHT_LOAD_CHECK=0
+	# echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
 
-    . "/Users/donaldmoore/.config/zsh/variables.zsh" # Load custom variables
-    export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"   # Set ZDOTDIR if not already set
-    . "${ZDOTDIR}/functions.zsh"                     # Load custom functions
+	export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}" # Set ZDOTDIR if not already set
+	. "${ZDOTDIR}/functions.zsh" -                 # Load custom functions
 
-    # ? To get the path of a `brew` command:
-    # ? brew --prefix cmd
-    export IMGNX_PATH="/Users/donaldmoore/bin:/usr/local/opt:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/usr/local/MacGPG2/bin:/Applications/Wireshark.app/Contents/MacOS"
-    export PATH="$IMGNX_PATH"
-    export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
+	# Load custom variables
+	. "$ZDOTDIR/variables.zsh"
+	# Load custom functions
+	. "$ZDOTDIR/functions.zsh"
+	# Load aliases, keybindings, hashes, paths
+	. "$ZDOTDIR/aliases.zsh"
+	. "$ZDOTDIR/keybindings.zsh"
+	. "$ZDOTDIR/hashes.zsh"
+	. "$ZDOTDIR/paths.zsh"
 
-    # VS Code
-    if command -v code >/dev/null 2>&1; then
-        export VSCODE_SUGGEST=1
-    fi
+	# Source Cargo environment if exists
+	[ -f "$HOME/dotfiles/.cargo/env" ] && . "$HOME/dotfiles/.cargo/env"
 
-    ### 🥾 PATH
+	export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
 
-    add2path "$HOME/bin"
-    # add2path "$HOME/.local/bin"
-    # add2path "$HOME/.cargo/bin"
+	# VS Code
+	if command -v code >/dev/null 2>&1; then
+		export VSCODE_SUGGEST=1
+	fi
 
-    ### 🌐 XDG
+	### 🥾 PATH
 
-    # cargo config is located in $XDG_CONFIG_HOME/cargo/config.toml
+	# add2path "$HOME/bin"
+	# add2path "$HOME/.local/bin"
+	# add2path "$HOME/.cargo/bin"
 
-    for lib_dir in ~/lib/**/build; do
-        add2path "$lib_dir"
-    done
+	### 🌐 XDG
 
-    ### No-Name Directory (fallback for plugins)
-    # Rust/Cargo
-    # . "/Users/donaldmoore/dotfiles/.cargo/env"
-    # Source elsewhere...
-    
-    . "${ZDOTDIR}/aliases.zsh"     # Load custom aliases
-    . "${ZDOTDIR}/keybindings.zsh" # Load custom keybindings
-    . "${ZDOTDIR}/hashes.zsh"      # Load custom hashes
-    . "${ZDOTDIR}/path.zsh"        # Load custom path
-    # Source Cargo
-    [ -f "$HOME/dotfiles/.cargo/env" ] && . "$HOME/dotfiles/.cargo/env"
+	### No-Name Directory (fallback for plugins)
+	# Rust/Cargo
+	# . "/Users/donaldmoore/dotfiles/.cargo/env"
+	# Source elsewhere...
 
-    # Dotfiles Game Genie: USB-based config override
-    autoload_usb_config() {
-        for vol in /Volumes/*; do
-            if [[ -d "$vol" && "$vol" =~ ^/Volumes/[0-9]+_([A-Z]+)$ && -d "$vol/.config" ]]; then
-
-                echo "🔌 Loaded config from USB: $vol"
-                return
-            fi
-        done
-
-    }
-
-    autoload_usb_config
+	. "${ZDOTDIR}/aliases.zsh"                               # Load custom aliases
+	. "${ZDOTDIR}/keybindings.zsh"                           # Load custom keybindings
+	. "${ZDOTDIR}/hashes.zsh"                                # Load custom hashes
+	. "${ZDOTDIR}/paths.zsh"                                 # Load custom path variables
+	. "${ZDOTDIR}/functions.zsh.d/delayed-script-loader.zsh" # Load delayed script loader
+	# Source Cargo
+	[ -f "$HOME/dotfiles/.cargo/env" ] && . "$HOME/dotfiles/.cargo/env"
 
 fi
-. "/Users/donaldmoore/.config/cargo/env"
-export VOLTA_HOME="$HOME/.config/volta"
-export PATH="$VOLTA_HOME/bin:$PATH"
