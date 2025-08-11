@@ -40,6 +40,7 @@ alias lsdh="eza -d | grep -E '^\.'"
 alias lsdh.="eza -d -a | grep -E '^\.'"
 alias df='df -h'
 alias top='top -o cpu'
+alias tmp="cd $HOME/tmp"
 
 if [ "$SCREENCAST_MODE" != 1 ]; then
     # Normal mode - verbose, detailed output with all information
