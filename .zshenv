@@ -19,24 +19,29 @@ better_prompt() {
     fi
     
     # Compose PS1
-    PS1=""
-    card=0
-    if [[ -n "$stats" ]]; then
-        card=$((card+1))
-        # Split stats by tabs, colorize each part
-        stat_parts=("${(@s:\t:)stats}")
-        for stat in $stat_parts; do
-            case card in
-                1) PS1+="%F{#FF007B}${stat}%f" ;; # CPU
-                2) PS1+="%F{#007BFF}${stat}%f" ;; # RAM
-                3) PS1+="%F{#7BFF00}${stat}%f" ;; # Zsh count
-                *) PS1+="%F{#fca864}${stat}%f" ;; # Default color
-            esac
-        done
-    fi
-    PS1+='%F{green}%n@'"${LOCAL_IP}"' %~%f'
+    PS1="
+"
     [[ -n "$gitinfo" ]] && PS1+="
-$gitinfo"
+$gitinfo "
+    # card=0
+    # if [[ -n "$stats" ]]; then
+    #     card=$((card+1))
+    #     # Split stats by tabs, colorize each part
+    #     stat_parts=("${(@s:\t:)stats}")
+    #     for stat in $stat_parts; do
+    #         case $card in
+    #         1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
+    #         2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
+    #         3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
+    #         *) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
+    #         esac
+    #         card=$((card+1)) # Increment card for each stat
+    #     done
+    # fi
+
+    # PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
+
+    PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
     PS1+="
 %B%F{#FF007B}$(basename $SHELL) %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
 "
