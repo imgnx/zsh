@@ -1,11 +1,7 @@
 #!/bin/zsh
 #shellcheck disable=all
 
-export ZSH_DEBUG="true"
-
 # Delayed script loader hook and periodic bin folder scanner
-
-
 
 # --- Periodic stats updater for prompt ---
 _imgnx_stats_last=0
@@ -75,16 +71,18 @@ scan_new_config_bins() {
 }
 
 # --- Alias all executables in ~/.config/zsh/functions ---
-alias_zsh_functions() {
-    local func_dir="$HOME/.config/zsh/functions"
-    if [[ -d "$func_dir" ]]; then
-        for file in "$func_dir"/*(.x); do
-            [[ -f $file && -x $file ]] || continue
-            local alias_name="${file:t}"
-            alias $alias_name="$file"
-        done
-    fi
-}
+
+# alias_zsh_functions() {
+#     local func_dir="$HOME/.config/zsh/functions"
+#     if [[ -d "$func_dir" ]]; then
+#         for file in "$func_dir"/*(.x); do
+#             [[ -f $file && -x $file ]] || continue
+#             local alias_name="${file:t}"
+#             alias $alias_name="$file"
+#         done
+#     fi
+# }
+
 
 # --- Delayed loader: source scripts in functions.zsh.d ---
 # function D36B034A_2E4A_4D7D_A93C_4C5EB0A197A7() {
@@ -116,34 +114,9 @@ alias_zsh_functions() {
 #     alias_zsh_functions
 # }
 
-# --- Register hooks (autoload only once) ---
-# --- Interactive-Only ---
-# ^ Replaced by guard script
-# if [[ -o interactive ]]; then
-# ^ Replaced by guard script
-    # export ZLOADING="delayed-script-loader.zsh"
-# ^ Replaced by guard script
-    # echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
-# ^ Replaced by guard script
-    # autoload -Uz add-zsh-hook
-# ^ Replaced by guard script
-    # 
-# ^ Replaced by guard script
-# fi
-
 # Hooks
 export PERIOD=300
-if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
-    if typeset -f add-zsh-hook >/dev/null 2>&1; then
-        export PERIOD_SCAN_BINS=300
-        export PERIOD_ALIAS_FUNCS=600
-        add-zsh-hook periodic scan_new_config_bins
-        add-zsh-hook periodic imgnx_update_stats
-        add-zsh-hook precmd even_better_prompt
-        add-zsh-hook chpwd pushd
-        echo -e "Press [Enter] to load hooks"
-    fi
-fi
+
 
 hooks() {
     echo "Current hooks:"
@@ -152,5 +125,20 @@ hooks() {
     echo "  periodic: ${periodic_functions[*]}"
 }
 
-    
+
+if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
+    if typeset -f add-zsh-hook >/dev/null 2>&1; then
+        export PERIOD_SCAN_BINS=300
+        export PERIOD_ALIAS_FUNCS=600
+        add-zsh-hook periodic scan_new_config_bins
+        add-zsh-hook periodic imgnx_update_stats
+        add-zsh-hook precmd even_better_prompt
+        # add-zsh-hook chpwd pushd
+        # unfunction pushd
+        echo -e "Press [Enter] to load hooks"
+    fi
+else
+    echo "Hooks already loaded."
+    hooks
+fi
 

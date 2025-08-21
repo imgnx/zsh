@@ -34,14 +34,13 @@ function4D17203C_6FD1_49C4_BB6C_D1DB91517FB8() {
     
     typeset -g "${guard_var}=1"
     
-    if [[ "${ZSH_DEBUG:-}" == "true" ]]; then
-        imgnx_debug "[source_once] guarding $(basename "$file") => " # The file itself will respond with a confirmation.
-    fi
+    
+    imgnx_debug "[source_once] guarding $(basename "$file") => " # The file itself will respond with a confirmation.
     
     if [[ -f "$file" ]]; then
-        . "$file" || { [[ "${ZSH_DEBUG:-}" == "true" ]] && imgnx_debug "[source_once] Error sourcing $file"; }
+        . "$file" || { imgnx_debug "[source_once] Error sourcing $file"; }
     else
-        [[ "${ZSH_DEBUG:-}" == "true" ]] && imgnx_debug "[source_once] Missing file: $file"
+        imgnx_debug "[source_once] Missing file: $file"
         return 2
     fi
 }
@@ -56,7 +55,10 @@ function7FFA824F_5204_4508_B0FD_1AD917064BCF() {
     local loader_path="$ZDOTDIR/functions.zsh.d/delayed-script-loader.zsh"
     if [[ -z "$__SOURCED_DELAYED_SCRIPT_LOADER" ]]; then
         if [[ -f "$loader_path" ]]; then
-            source_once "$loader_path"
+            for func in "${ZDOTDIR}/functions.zsh.d/"*.zsh; do
+                imgnx_debug "[delayed-script-loader] Sourcing: $(basename "$func")"
+                source_once "$func"
+            done
         else
             echo "[delayed-script-loader] File not found: $loader_path" >&2
         fi
@@ -69,13 +71,6 @@ alias enable-dsc='function7FFA824F_5204_4508_B0FD_1AD917064BCF'
 
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-
-
-if [[ "${ZLOADING:-}" == ".zshenv" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
-    print -n -P "[%F{#444}skip env%f(%F{white}%D{%S.%3.}%f)]"
-    return 0
-fi
-
 COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
 
 if [[ -o interactive ]]; then
@@ -86,14 +81,7 @@ if [[ -o interactive ]]; then
     # l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
     # ? MARK: End of Preflight check
     
-    export ZLOADING=".zshenv"
     export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
-    
-    # For Zplug
-    # export ZPLUG_HOME=/usr/local/opt/zplug
-    
-    # export ZSH_DEBUG="true"
-    export ZSH_DEBUG="false"
     
     # Load immediately:
     source_once "${ZDOTDIR}/functions.zsh"
@@ -102,7 +90,7 @@ if [[ -o interactive ]]; then
     source_once "${ZDOTDIR}/keybindings.zsh"
     source_once "${ZDOTDIR}/paths.zsh"
     
-    # For completions
+    # compinit
     zmodload zsh/complist
     zstyle ':completion:*' completer _complete
     zstyle ':completion:*' verbose yes
@@ -110,16 +98,19 @@ if [[ -o interactive ]]; then
     autoload -Uz compinit
     # `compinit` **before** the completion... who knows?... who cares?
     compinit
+    
+    # Completions
     source_once "${ZDOTDIR}/completions.zsh"
     
-    export ZSH_DEBUG="false"
     # For Zplug
-    source_once $ZPLUG_HOME/init.zsh
-    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+    # export ZPLUG_HOME=/usr/local/opt/zplug
+    # source_once $ZPLUG_HOME/init.zsh
+    # plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
     
     # Lazy loaded:
     # source_once "${ZDOTDIR}/functions.zsh.d/delayed-script-loader.zsh"
     
+    # Load user-defined functions
     
     
     if command -v code >/dev/null 2>&1; then

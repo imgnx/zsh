@@ -1,18 +1,3 @@
-# Always set ZLOADING for session tracking
-
-# Early exit if skipping preflight
-if [[ "${ZLOADING:-}" == ".zshrc" && "${SKIP_PREFLIGHT_LOAD_CHECK:-0}" != 1 ]]; then
-    print -n -P "[%F{#444}skip rc%f(%F{white}%D{%S.%3.}%f)]"
-    return 0
-fi
-
-if [[ -o interactive ]]; then
-    export ZLOADING=".zshrc"
-    # echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshrc}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
-else
-    export ZLOADING=".zshrc"
-fi
-
 # Early exit for tabula rasa mode
 if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
     echo "Tabula Rasa mode is enabled. No configurations will be loaded."
