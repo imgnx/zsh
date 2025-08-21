@@ -60,7 +60,7 @@ shelltrace() {
 }
 
 
-print -P "Loading time: [$diff]"
+print -P -n "%F{magenta}<shelltrace>%f Loading time: [$diff]"
 
 
 # Delay execution of enable-dsc until after the prompt is ready

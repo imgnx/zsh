@@ -1,5 +1,5 @@
-#!/bin/zsh
-#shellcheck disable=all
+# !/bin/zsh
+# shellcheck disable=all
 
 get_diff() {  
     curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
@@ -477,6 +477,7 @@ EOF
 }
 
 function cd() {
+	# which pushd
 	# If I try t cd into $HOME/bin, take me to ~/dist. There is an issue with corruption on the drive.
 
 	# Resolve paths for accurate comparison
@@ -505,12 +506,12 @@ function cd() {
 
 	if [[ "$PWD" == "$HOME/src" ]]; then
 		when () {
-	ufind ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file
-	do
-		echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
-	done
-}
-when | head -n 20
+			ufind ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file
+			do
+				echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
+			done
+		}
+		when | head -n 20
 	fi
 }
 
@@ -661,6 +662,7 @@ brew() {
 }
 
 ucd() {
+	# which pushd
 	builtin cd "$@" || return
 	__TODO_CACHE[$PWD]="" || return
 	ls || return

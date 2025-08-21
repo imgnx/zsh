@@ -90,7 +90,7 @@ if [[ -o interactive ]]; then
     export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
     
     # For Zplug
-    export ZPLUG_HOME=/usr/local/opt/zplug
+    # export ZPLUG_HOME=/usr/local/opt/zplug
     
     # export ZSH_DEBUG="true"
     export ZSH_DEBUG="false"
