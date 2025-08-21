@@ -1,6 +1,146 @@
 #!/bin/zsh
-#shellcheck disable=SC1103
-#shellcheck disable=SC1071
+#shellcheck disable=all
+
+get_diff() {  
+    curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
+    diff="$((curr - IMGNXZINIT))"
+    if [[ diff -gt 1000 ]]; then
+        diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
+        elif [[ diff -gt 300 ]]; then
+        diff="%F{green}$(printf "%dms" "$diff")%f"
+    else
+        diff="%F{magenta}$(printf "%dms" "$diff")%f"
+    fi
+
+	echo "$diff"
+}
+
+even_better_prompt() { 
+	local color branch gitinfo
+	color=$(ggs 2>/dev/null)
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		[[ -n $branch ]] && branch="/$branch"
+		local remote
+		remote=$(git remote 2>/dev/null | head -1)
+		local remote_part=""
+		[[ -n $remote ]] && remote_part=" $remote"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch}%f"
+	fi
+	PROMPT=""
+	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
+	PROMPT+='
+'
+	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
+	PROMPT+='
+'
+	PROMPT+=$''"${ZSH_NAME}"':%m => '
+
+	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+}
+
+better_prompt() {
+    local color branch gitinfo stats stat_parts stat
+    color="$(ggs)"
+    stats="${IMGNX_STATS:-}"
+    
+    branch=""
+    gitinfo=""
+    
+    # Git info
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=${$(git rev-parse --abbrev-ref HEAD 2>/dev/null):-no git}
+        [[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
+        local remote="$(git remote 2>/dev/null)"
+        local remote_part=""
+        [[ -n "$remote" ]] && remote_part=" $remote"
+        gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
+    fi
+    
+    # Compose PS1
+    PS1="
+"
+    [[ -n "$gitinfo" ]] && PS1+="
+$gitinfo "
+    card=0
+    if [[ -n "$stats" ]]; then
+        card=$((card+1))
+        # Split stats by tabs, colorize each part
+        stat_parts=("${(@s:\t:)stats}")
+        for stat in $stat_parts; do
+            case $card in
+            1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
+            2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
+            3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
+            *) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
+            esac
+            card=$((card+1)) # Increment card for each stat
+        done
+    fi
+
+    PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
+
+    PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
+    PS1+="
+%B%F{#FF007B}$(basename $SHELL) %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
+"
+    RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+}
+
+rm() {
+	local flags=()
+	local files=()
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			-*) flags+=("$1");;
+			*) files+=("$1");;
+		esac
+		shift
+	done
+	for file in "${files[@]}"; do
+		local abs_path="$(realpath "$file" 2>/dev/null)"
+		if [[ -e "$file" ]]; then
+			local trash_path="$HOME/.Trash$abs_path"
+			mkdir -p "$(dirname "$trash_path")"
+			mv "$file" "$trash_path"
+		fi
+	done
+	# If only flags were passed, fallback to system rm
+	if [[ ${#files[@]} -eq 0 ]]; then
+		/bin/rm "${flags[@]}"
+	fi
+}
+
+urm() {
+    /bin/rm "$@"
+}
+
+init() {
+    # Due to issues with corruption, this is the new ~/bin
+    . $HOME/src/init/main.sh
+}
+
+z() {
+    OPENAI_API_KEY="$(cat "$HOME/../.Trash/ /keys/chatgpt/.env")" codex "$@"
+}
+
+ufind() {
+    # Unix find
+    /usr/bin/find "$@"
+}
+
+find() {
+	echo "Would you like an elevated prompt? (Y/n)"
+	read -n 1 elevate
+	echo
+	echo "Searching..."
+	if [[ $elevate == "Y" || $elevate == "y" ]]; then
+		sudo /usr/bin/find "$@" 2>/dev/null
+		say "Search complete"
+	else
+		/usr/bin/find "$@"
+	fi
+}
 
 import() {
     prompt=(
@@ -14,13 +154,54 @@ import() {
     
 }
 
+dinglehopper() {
+    cd $SRC/dinglehopper
+}
+
+hop() {
+	before="$PWD"
+	cd $(realpath)
+	after="$PWD"
+	echo "$before -> $after"
+}
+
+clean() {
+	# Define directories to clean
+	local dirs_to_clean=(
+		"node_modules" "target" ".yarn" ".next" "venv" "dist" "build" "coverage"
+		".pytest_cache" ".cache" ".parcel-cache" ".svelte-kit" ".turbo" ".expo"
+		".angular" ".vercel" ".nuxt" "__pycache__" ".mypy_cache" ".sass-cache"
+		".grunt" ".bower_components" ".jspm_packages" ".serverless" ".firebase"
+		".idea"
+	)
+
+	# Define files to clean
+	local files_to_clean=(
+		".DS_Store" ".env" ".eslintcache"
+	)
+
+	# Remove directories
+	for dir in "${dirs_to_clean[@]}"; do
+		ufind . -maxdepth 3 -type d -name "$dir" -exec zsh -c "echo \"execute \033[14mrm -rf {}? | read\"" \; -exec rm -rf {} +
+	done
+
+	# Remove files
+	for file in "${files_to_clean[@]}"; do
+		ufind . -maxdepth 3 -type f -name "$file" -exec zsh -c "echo \"execute \033[14mrm -f {}? | read\"" \; -exec rm -f {} +
+	done
+}
+
+tile() {
+    open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
+}
+
 doom() {
     emacs "$@"
 }
 
-emacs() {
-    /usr/local/bin/emacs -Q "$@"
-}
+# emacs() {
+#     /usr/local/bin/emacs -Q "$@"
+# }
 
 function tree() {
     command tree -C "$@"
@@ -29,7 +210,7 @@ function tree() {
 function fzf_file_menu() {
 	# A function for opening files in a menu with `fzf`
 	local file
-	file=$(find . -type f | fzf --preview 'cat {}' --preview-window=right:50%:wrap)
+	file=$(ufind . -type f | fzf --preview 'cat {}' --preview-window=right:50%:wrap)
 
 	if [[ -n "$file" ]]; then
 		echo "Selected: $file"
@@ -44,8 +225,8 @@ function fzf_file_menu() {
 }
 
 peachtree() {
-	for dir in $(find . -type d); do
-		count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+	for dir in $(ufind . -type d); do
+		count=$(ufind "$dir" -maxdepth 1 -type f | wc -l)
 		echo "$dir ($count)"
 	done
 }
@@ -296,10 +477,40 @@ EOF
 }
 
 function cd() {
+	# If I try t cd into $HOME/bin, take me to ~/dist. There is an issue with corruption on the drive.
+
+	# Resolve paths for accurate comparison
+	local target_path
+	if [[ "$1" == "." || "$1" == "" ]]; then
+		target_path="$PWD"
+	elif [[ "$1" == "~"* ]]; then
+		target_path="${1/#\~/$HOME}"
+	elif [[ "$1" == /* ]]; then
+		target_path="$1"
+	else
+		target_path="$PWD/$1"
+	fi
+	
+	# Normalize the path by resolving any . or .. components
+	target_path=$(realpath "$target_path" 2>/dev/null || echo "$target_path")
+	
+	# Check if trying to cd to $HOME/bin specifically
+	if [[ "$target_path" == "$HOME/bin" ]]; then
+		echo "⚠️  Redirected from $HOME/bin to $HOME/dist to avoid The Corruption"
+		echo "💡 Use 'ucd' to access the actual Unix cd command if needed"
+		set -- "$HOME/dist"
+	fi
+
 	builtin cd "$@" || return
 
 	if [[ "$PWD" == "$HOME/src" ]]; then
-		when | head -n 20
+		when () {
+	ufind ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file
+	do
+		echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
+	done
+}
+when | head -n 20
 	fi
 }
 
@@ -336,8 +547,6 @@ script_path="${0}"
 
 echo "$PATH" | grep -q "/Users/donaldmoore/bin" || export PATH="$HOME/bin:$PATH"
 
-# Print the size of the current file.
-print -n -P "[%F{green}functions%f]"
 
 # Declare associative array for TODO cache
 typeset -gA __TODO_CACHE
@@ -450,25 +659,14 @@ brew() {
 	command brew "$@" 2>&1 | sed -e 's/^/🔧 /'
 	return "${pipestatus[1]:-$?}"
 }
-icd() {
+
+ucd() {
 	builtin cd "$@" || return
 	__TODO_CACHE[$PWD]="" || return
 	ls || return
 }
-# clean-hooks() {
-# 	echo "Current hooks:"
-# 	echo "  precmd: ${precmd_functions[*]}"
-# 	echo "  preexec: ${preexec_functions[*]}"
-# 	echo "  periodic: ${periodic_functions[*]}"
-# 	echo ""
-# 	echo "To clear hooks, run:"
-# 	echo "  precmd_functions=()"
-# 	echo "  preexec_functions=()"
-# 	echo "  periodic_functions=()"
-# }
-# codespace() {
-# 	code -r "$WORKSPACE/.vscode/Workbench.code-workspace"
-# }
+alias icd='ucd'
+
 colorize() {
 	if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 		echo "Usage: colorize [~|--foreground] [|--background] <text>"
@@ -851,3 +1049,27 @@ statusls() {
 		/bin/ls "$@"
 	fi
 }
+
+when() {
+	find ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file; do echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"; done
+}
+
+
+# clean-hooks() {
+# 	echo "Current hooks:"
+# 	echo "  precmd: ${precmd_functions[*]}"
+# 	echo "  preexec: ${preexec_functions[*]}"
+# 	echo "  periodic: ${periodic_functions[*]}"
+# 	echo ""
+# 	echo "To clear hooks, run:"
+# 	echo "  precmd_functions=()"
+# 	echo "  preexec_functions=()"
+# 	echo "  periodic_functions=()"
+# }
+# codespace() {
+# 	code -r "$WORKSPACE/.vscode/Workbench.code-workspace"
+# }
+
+
+# Print the size of the current file.
+# print -P -n "[%F{green}functions%f]"

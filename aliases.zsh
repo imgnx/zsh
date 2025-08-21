@@ -1,123 +1,179 @@
-# alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
+# shellcheck shell=bash
 
-# Only define aliases here. No functions or script sourcing.
-alias bin="cd $BIN"
-alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
-alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
-alias jsh="jsh || cd $JSH"
-alias labs="cd $LABS"
-alias lib="cd $LIB"
-alias src="cd $SRC"
-# alias taku="cd $TAKU" # Now a setup.sh as a function
-alias test="cd $TEST"
-alias wk="cd $SRC/__CODE_WORKSPACE__"
-alias xdg="cd $XDG_CONFIG_HOME"
-alias cache="cd $XDG_CACHE_HOME"
-alias data="cd $XDG_DATA_HOME"
-alias rt="cd $XDG_RUNTIME_DIR"
-alias state="cd $XDG_STATE_HOME"
-alias samples='cd "/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/Media/_____SAMPLES"'
-alias surge="cd $SURGE"
-alias copycat="copy"
-alias cc="copy"
-alias c=copy
-alias pastecat="$v"
-alias pc="$v"
-alias p="$v"
-alias v="$v"
-alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
-alias ll='eza -la --icons --group-directories-first'
-alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
-alias la='ls -la'
-alias ld='eza -1 --color=always --group-directories-first --icons'
-alias l.="eza -a | grep -E '^\.'"
-alias lh="eza -a | grep -E '^\.|^total'"
-alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
-alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
-alias lsd='eza -d --color=always --group-directories-first --icons'
-alias lsd.="eza -d -a | grep -E '^\.'"
-alias lsdh="eza -d | grep -E '^\.'"
-alias lsdh.="eza -d -a | grep -E '^\.'"
-alias df='df -h'
-alias top='top -o cpu'
-alias tmp="cd $HOME/tmp"
 
-if [ "$SCREENCAST_MODE" != 1 ]; then
-    # Normal mode - verbose, detailed output with all information
-    alias _re="_reset"
-    alias rest="reset"
-    alias _reset="command reset"
-    alias .......='cd ../../../../../..'
-    alias ......='cd ../../../../..'
-    alias .....='cd ../../../..'
-    alias ....='cd ../../..'
-    alias ...='cd ../..'
-    alias ..='cd ..'
-    alias 0bsd="license"
-    alias b="cd ~/bin"
-    alias bkgd='afplay "$BKGD" &'
-    alias cash="$money"
-    alias cdspc='codespace'
-    alias clean-precmd="precmd_functions=()"
-    alias cnt="cd ~/src"
-    alias dw="$DOWNLOADS"
-    alias dwn="$DOWNLOADS"
-    alias e='emacs'
-    alias edit='emacs'
-    alias ga='git add'
-    alias gb='git branch'
-    alias gc='git commit'
-    alias gco='git checkout'
-    alias gd='git diff'
-    alias git-branch="git branch -v"
-    alias git-remote="git remote -v"
-    alias gl='git pull'
-    alias gp='git push'
-    alias grep='rg'
-    alias gs='git status'
-    alias h='history'
-    alias i=$ICLOUD_DRIVE
-    alias icloud=$ICLOUD_DRIVE
-    alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
-    alias l.="eza -a | grep -E '^\.'"
-    alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
-    alias la='eza --long --all --group --group-directories-first'
-    alias ld='eza -1 --color=always --group-directories-first --icons'
-    alias lh="eza -a | grep -E '^\.'"
-    alias list-hooks="echo 'All hooks:'; echo 'precmd:' \"\${precmd_functions[@]}\"; echo 'preexec:' \"\${preexec_functions[@]}\"; echo 'periodic:' \"\${periodic_functions[@]}\""
-    alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions[@]}\""
-    alias ll='eza -la --icons --octal-permissions --group-directories-first'
-    alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
-    alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
-    alias m='"$MEDIA"'
-    alias mkdir='mkdir -p'
-    alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
-    alias pi="ssh pi@zero2w.local"
-    alias pip="python -m pip"
-    alias re='reset'                   # alias for reset
-    alias refresh='reset'              # alias for reset
-    alias reset='reset && exec zsh -l' # reset terminal in interactive mode.
-    alias restart='reset'              # alias for reset
-    alias rp=realpath
-    alias s='cd ~/src'
-    alias sam=$SAMPLES
-    alias scr=$SCRIPTS
-    alias sexy="open https://terminal.sexy/"
-    alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surge XT/Patches/Templates"
-    alias sync_icloud="isync"
-    alias t='cd ~/test'
-    alias tk=$TAKU
-    alias todo="todo.sh"
-    # alias tr="tabula_rasa"
-    alias tabula="tabula_rasa"
-    alias x="sexy"
-    alias xdg-open="open"
-    alias df='df -ahicY'                                          # All filesystems, human readable, inodes, show type
-    alias top='top -o cpu -stats pid,command,cpu,mem,pstate,time' # Detailed process info
-    alias free='vm_stat'                                          # Memory usage details on macOS
-    alias netstat='netstat -tuln'                                 # Network connections with details
-    alias mount='mount | column -t'                               # Formatted mount points
-    alias env='env | sort'                                        # Sorted environment variables
-    alias history='fc -l 1'                                       # Full history
+#`````````````````#
+#++ TEMPORARY ++++#
+#_________________#
+# Start TuxGuitar
+export MODEL=x86_64
+export OUTPUT_DIR=build_output
+export JAVA_HOME=$(/usr/libexec/java_home)
+# End TuxGuitar
+
+
+# ==============================
+# Placeholder
+# ==============================
+export PLACEHOLDER="cnf [<config-dir> (<file> ) - open in emacs ] - open in zsh"
+
+
+# ==============================
+# Emacs Configuration
+# ==============================
+
+export DOOMDIR="${XDG_CONFIG_HOME}/doom"
+export EMACSDIR="${XDG_CONFIG_HOME}/emacs"
+export EMACS="${XDG_CONFIG_HOME}/emacs"
+export EMACS_DUMP_FILE="${XDG_STATE_HOME}/emacs/auto-save-list/.emacs.dumper"
+export EMACS_DIR="${XDG_CONFIG_HOME}/emacs"
+export EMACS_CONFIG_DIR="${XDG_CONFIG_HOME}/emacs"
+export EMACS_LISP_DIR="${XDG_DATA_HOME}/emacs/site-lisp"
+export EMACS_CACHE_DIR="${XDG_CACHE_HOME}/emacs"
+export EMACS_SAVEDIR="${XDG_STATE_HOME}/emacs"
+export EMACS_BACKUP_DIR="${XDG_STATE_HOME}/emacs/backup"
+export EMACS_TRASH_DIR="${XDG_STATE_HOME}/emacs/trash"
+export EMACS_SAVEDIR="${XDG_STATE_HOME}/emacs/saves"
+
+# ==============================
+#  XDG Base Directories
+# ==============================
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+# ==============================
+#  Zsh Configuration
+# ==============================
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+export ZINIT_HOME="${ZINIT_HOME:-$XDG_CONFIG_HOME/zinit}"
+export ZSH="${ZSH:-$XDG_CONFIG_HOME/zsh}"
+export ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}"
+export ZSH_COMPDUMP="${ZSH_COMPDUMP:-$XDG_CACHE_HOME/zsh/zcompdump}"
+export ZSH_LOG_DIR="${ZSH_LOG_DIR:-$XDG_CACHE_HOME/zsh/logs}"
+export ZSH_NN_DIR="${ZSH_NN_DIR:-$XDG_CACHE_HOME/zsh/nn}"
+export ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$ZSH/plugins}"
+
+# ============================
+# Tabula Rasa
+# ============================
+# "Tabula rasa" is a Latin term meaning "blank slate".
+# In philosophy and psychology, it refers to the idea
+# that individuals are born without built-in mental
+# content and that all knowledge comes from experience
+# and sensory perception. This concept is central to
+# the empiricist view of learning and development,
+# contrasting with nativism, which suggests that some
+# knowledge is innate.
+# Tabula Rasa will
+export TABULA_RASA="${TABULA_RASA:--1}" # 0=off, 1=on, -1=ask
+if [[ "$TABULA_RASA" == "1" ]]; then
+    return
 fi
 
+# print -P -n "[%F{green}variables%f]"
+# ============================
+# Named Directories
+
+# Hashes are for executables...
+
+# hash -d bin=$BIN
+# hash -d labs=$LABS
+# hash -d lib=$LIB
+# hash -d src=$SRC
+# hash -d taku=$TAKU
+# hash -d test=$TEST
+# hash -d wk=$WORKBENCH
+# hash -d xdg=$XDG_CONFIG_HOME
+# hash -d cache=$XDG_CACHE_HOME
+# hash -d data=$XDG_DATA_HOME
+# hash -d rt=$XDG_RUNTIME_DIR
+# hash -d state=$XDG_STATE_HOME
+# hash -d zsh=$ZDOTDIR
+# hash -d zcnf=/Users/donaldmoore/config/zsh
+# hash -d surge=$SURGE
+
+# GPG
+if (gpgconf --list-dirs agent-socket &>/dev/null); then
+    # echo "GPG agent is running"
+    export GPG_AGENT_INFO=$(gpgconf --list-dirs agent-socket)
+    export SSH_AGENT_PID=$(gpgconf --list-dirs agent-pid)
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+else
+    # echo "GPG agent is not running, starting it with: gpgconf --launch gpg-agent"
+fi
+
+export GPG_TTY=$(tty)
+
+# ZSH
+export AWKDIR="$XDG_CONFIG_HOME/zsh/functions"
+export BACKUPS="$ICLOUD_DRIVE/_____BACKUPS"
+export BIN="$HOME/bin"
+export BKGD="$SAMPLES/bkgd.mp3"
+export BK="$ICLOUD_DRIVE/_____BACKUPS"
+export CALCULATOR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
+#  ! This causes problems every time... Yes! You
+#  ! have to use --path=. !!!
+export CARGO_HOME="$HOME/dotfiles/.cargo"
+
+export CLOUDSDK_PYTHON="/Users/donaldmoore/.pyenv/versions/pitchfix/bin/python"
+export CONFIG="$XDG_CACHE_HOME"
+export CONTAINERS="$HOME/_____CONTAINERS"
+export COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
+export DOOMDIR="$XDG_CONFIG_HOME/doom"
+export DOWNLOADS="$HOME/Downloads"
+export EDITOR="$HOME/bin/code-wait"
+export ESLINT_USE_FLAT_CONFIG=false
+export EXA_COLORS="ln=1;35"
+export ICLOUD_DRIVE="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
+export JSH="$SRC/jsh"
+export LABS="$WORKBENCH/_____LABS"
+export LIB="$HOME/lib"
+export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
+export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:$PKG_CONFIG_PATH"
+export RUSTUP_HOME="$HOME/dotfiles/.rustup"
+export SAMPLES="$ICLOUD_DRIVE/_____MEDIA/_____SAMPLES"
+export SCREENCAST_MODE=-1 # 0=off, 1=on, -1=ask
+export SCRIPTS="$HOME/scripts"
+export SRC="$HOME/src"
+export TAKU="$SRC/taku-4"
+export TEST="$HOME/test"
+export WORKBENCH="$HOME/_____WORKBENCH"
+export WORKSPACE="$WORKBENCH"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_RUNTIME_DIR="$HOME/.local/run"
+export XDG_STATE_HOME="$HOME/.local/state"
+export ZDOTDIR="$HOME/.config/zsh"
+export ZINIT_HOME="$XDG_CONFIG_HOME/zinit"
+export ZSH="$XDG_CONFIG_HOME/zsh"
+export ZSH_CACHE_DIR="$XDG_CACHE_HOME/zsh/cache"
+export ZSH_COMPDUMP="$XDG_CACHE_HOME/zsh/zcompdump"
+export ZSH_LOG_DIR="$XDG_CACHE_HOME/zsh/logs"
+export ZSH_NN_DIR="$XDG_CACHE_HOME/zsh/nn"
+
+# ============================
+# Environment Variables
+# ============================
+export EXA_COLORS="ln=1;35"
+export ICLOUD_DRIVE="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
+export BACKUPS="$ICLOUD_DRIVE/_____BACKUPS"
+export BK="$ICLOUD_DRIVE/_____BACKUPS"
+export WORKBENCH="$HOME/_____WORKBENCH"
+export SCRIPTS="$HOME/scripts"
+export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
+export SAMPLES="$ICLOUD_DRIVE/_____MEDIA/_____SAMPLES"
+export BKGD="$SAMPLES/bkgd.mp3"
+export CONTAINERS="$HOME/_____CONTAINERS"
+export LABS="$WORKBENCH/_____LABS"
+export DOWNLOADS="$HOME/Downloads"
+export CALCULATOR="/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
+
+# =================
+# Volta
+# =================
+export VOLTA_HOME="$XDG_CONFIG_HOME/volta"
+export VOLTA_CACHE="$XDG_CACHE_HOME/volta"

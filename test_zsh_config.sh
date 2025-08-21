@@ -5,11 +5,6 @@
 source ~/.zshenv
 source ~/.zshrc
 
-if ! type better_prompt &>/dev/null; then
-    echo "FAIL: better_prompt function is not defined"
-    exit 1
-fi
-
 if [[ -z "$ZDOTDIR" ]]; then
     echo "FAIL: ZDOTDIR is not set"
     exit 1

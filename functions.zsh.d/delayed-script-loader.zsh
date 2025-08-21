@@ -1,6 +1,11 @@
 #!/bin/zsh
+#shellcheck disable=all
+
+export ZSH_DEBUG="true"
 
 # Delayed script loader hook and periodic bin folder scanner
+
+
 
 # --- Periodic stats updater for prompt ---
 _imgnx_stats_last=0
@@ -117,11 +122,9 @@ if [[ -o interactive ]]; then
     export ZLOADING="delayed-script-loader.zsh"
     # echo -e "✅ INTERACTIVE │ l: [\033[38;5;207;3;4m${ZLOADING:-.zshenv}\033[0m] │ pfc: ${SKIP_PREFLIGHT_LOAD_CHECK:-0}"
     
-    autoload -Uz colors && colors
     autoload -Uz add-zsh-hook
-    autoload -Uz compinit
-    compinit
-    
+    add-zsh-hook chpwd pushd
+
 fi
 
 # Hooks
@@ -132,7 +135,8 @@ if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
         export PERIOD_ALIAS_FUNCS=600
         add-zsh-hook periodic scan_new_config_bins
         add-zsh-hook periodic imgnx_update_stats
-        add-zsh-hook precmd precmd_better_prompt
+        add-zsh-hook precmd even_better_prompt
+        echo -e "Press [Enter] to load hooks"
     fi
 fi
 
@@ -143,6 +147,5 @@ hooks() {
     echo "  periodic: ${periodic_functions[*]}"
 }
 
+    
 
-
-print -n -P "\n[%F{green}DScL%f]\n"

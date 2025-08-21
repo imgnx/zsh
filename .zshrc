@@ -117,12 +117,6 @@ fi
 
 # IFS=$' \t\n'
 
-export ZPLUG_HOME=/usr/local/opt/zplug
-source $ZPLUG_HOME/init.zsh
-
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
 
 
-# Load after changing directories...
-autoload -Uz add-zsh-hook
-
+autoload -Uz colors && colors

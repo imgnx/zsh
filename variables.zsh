@@ -73,7 +73,7 @@ if [[ "$TABULA_RASA" == "1" ]]; then
     return
 fi
 
-print -n -P "[%F{green}variables%f]"
+# print -P -n "[%F{green}variables%f]"
 # ============================
 # Named Directories
 

@@ -1,6 +1,6 @@
 # --- Keybindings ---
 
-print -n -P "[%F{green}keybindings%f]"
+# print -P -n "[%F{green}keybindings%f]"
 
 bindkey -e
 bindkey "^A" beginning-of-line

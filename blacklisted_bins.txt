@@ -68,7 +68,6 @@
 /Users/donaldmoore/.config/zinit/bin
 /Users/donaldmoore/.config/zinit/polaris/bin
 /Users/donaldmoore/.config/volta/bin
-/Users/donaldmoore/.config/emacs/bin
 /Users/donaldmoore/.config/emacs/.local/straight/repos/flycheck/test/resources/bin
 /Users/donaldmoore/.config/emacs/.local/straight/repos/flycheck/test/resources/language/rust/cargo-targets/src/bin
 /Users/donaldmoore/.config/emacs/.local/straight/repos/f.el/bin
