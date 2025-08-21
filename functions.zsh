@@ -27,7 +27,8 @@ even_better_prompt() {
 		[[ -n $remote ]] && remote_part=" $remote"
 		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch}%f"
 	fi
-	PROMPT=""
+	PROMPT='
+'
 	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
 	PROMPT+='
 '
