@@ -1,6 +1,26 @@
 # !/bin/zsh
 # shellcheck disable=all
 
+lock() {
+    chflags -R uchg "$@"
+}
+
+unlock() {
+    chflags -R nouchg "$@"
+}
+
+tuner() {
+  open -a "Universal Tuner"
+}
+
+visudo() {
+  /usr/sbin/visudo VISUAL="emacs"
+}
+
+dh() {
+    cd "$HOME/src/dinglehopper"
+}
+
 get_diff() {  
     curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
     diff="$((curr - IMGNXZINIT))"
@@ -502,7 +522,7 @@ function cd() {
 		echo "💡 Use 'ucd' to access the actual Unix cd command if needed"
 		set -- "$HOME/dist"
 	fi
-
+    pushd "$@"
 	builtin cd "$@" || return
 
 	if [[ "$PWD" == "$HOME/src" ]]; then
@@ -567,8 +587,16 @@ shellcheck() {
 	fi
 
 }
+
+local add2pathCounter=0
+local ignoredPaths=0
 add2path() {
+	# Initialize a counter variable
+	add2pathCounter=$((add2pathCounter + 1))
 	# Add a directory to the PATH if it's not already present
+	if (( add2pathCounter % 100 == 0 )); then
+		echo -e "\033[38;5;3mWarning: add2path Counter reached the 100 times checkpoint.\033[0m"
+	fi
 	local dir="$1"
 	if [[ ! -d "$dir" ]]; then
 		echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping...\033[0m"
@@ -577,9 +605,19 @@ add2path() {
 	if [[ ":$PATH:" != *":$dir:"* ]]; then
 		export PATH="$dir:$PATH"
 	else
-		echo -e "\033[38;5;6madd2path: Directory '$dir' is already on the PATH.\033[0m"
+		ignoredPaths=$((ignoredPaths + 1))
+		if (( add2pathCounter % 100 == 0 )); then
+			echo -e "\033[38;5;3mWarning: Reached the 100 times checkpoint.\033[0m"
+		fi
 	fi
 }
+
+if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
+	export POST_LOGIN_HOOK_RAN=1
+	add-zsh-hook precmd scan_new_config_bins
+	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
+fi
+
 
 tabula_rasa() {
 	if [[ -z "$TABULA_RASA" ]]; then
@@ -1090,3 +1128,17 @@ EOF
 
 # Print the size of the current file.
 # print -P -n "[%F{green}functions%f]"
+
+spinner() {
+  local pid=$1
+  local delay=0.1
+  local spinstr='|/-\'
+  while kill -0 "$pid" 2>/dev/null; do
+    local temp=${spinstr#?}
+    printf " [%c]  " "$spinstr"
+    spinstr=$temp${spinstr%"$temp"}
+    sleep "$delay"
+    printf "\b\b\b\b\b\b"
+  done
+  printf "    \b\b\b\b"
+}

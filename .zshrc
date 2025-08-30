@@ -27,8 +27,6 @@ setopt EXTENDED_HISTORY     # Save timestamp and duration
 # [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 # . "${ZINIT_HOME}/zinit.zsh"
 
-# Cargo and Zsh profile/login
-
 # Local IP address (cached)
 if [[ -z "$LOCAL_IP" ]]; then
     LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
