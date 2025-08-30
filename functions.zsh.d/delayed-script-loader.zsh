@@ -44,6 +44,8 @@ whitelist() {
     echo "$new_path" >>"$WHITELISTED_CONFIG_BIN_PATH_FILE"
     # Was `export PATH="$new_path:$PATH"`
     add2path "$new_path"
+
+    echo "Added $HOME/dist to $PATH"
     if [[ $? -ne 0 ]]; then
         echo "Failed to add $new_path to PATH"
     else
@@ -141,4 +143,8 @@ else
     echo "Hooks already loaded."
     hooks
 fi
+
+add2path "$HOME/dist"
+add2path "$HOME/.config/cargo/bin"
+
 
