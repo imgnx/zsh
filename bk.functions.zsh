@@ -1,201 +1,36 @@
 # !/bin/zsh
 # shellcheck disable=all
 
-# if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
-#	export POST_LOGIN_HOOK_RAN=1
-# 	add-zsh-hook precmd scan_new_config_bins
-# 	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
-# fi
-
-
-	# --- gpt: Chat with OpenAI from your terminal --------------------------------
-	# deps: curl, jq
-	# env: OPENAI_API_KEY (required)
-	#       GPT_MODEL (default: gpt-4o-mini)
-	#       GPT_SYSTEM (default: "You are a concise CLI assistant.")
-	#       GPT_TEMPERATURE (default: 0.3)
-	#
-	# usage:
-	#   gpt "Explain comb filters like I'm five"
-	#   echo "Summarize this text..." | gpt
-	#   gpt -m gpt-4o -t 0.1 "5 bullet tips for Logic Pro routing"
-	#   gpt -s "You are terse." "One-liner on Webpack HMR"
-	#   gpt --stream "Write a single haiku about Zsh"
-	#
-	# flags:
-	#   -m <model>         Override model (e.g., gpt-4o, gpt-4o-mini)
-	#   -s <system>        System prompt
-	#   -t <temperature>   0.0–1.0 (default 0.3)
-	#   --stream           Stream tokens live (Ctrl-C to stop)
-	#   -h|--help          Show help
-
-	gpt() {
-		# --- sanity ---------------------------------------------------------------
-		command -v curl >/dev/null || { echo "gpt: curl not found"; return 127; }
-		command -v jq >/dev/null || { echo "gpt: jq not found"; return 127; }
-		[[ -n "$OPENAI_API_KEY" ]] || { echo "gpt: set \$OPENAI_API_KEY"; return 1; }
-
-		# --- defaults -------------------------------------------------------------
-		local model="${GPT_MODEL:-gpt-4o-mini}"
-		local system="${GPT_SYSTEM:-You are a concise CLI assistant.}"
-		local temperature="${GPT_TEMPERATURE:-0.3}"
-		local stream="false"
-
-		# --- parse args -----------------------------------------------------------
-		local argv=()
-		while [[ $# -gt 0 ]]; do
-			case "$1" in
-				-m) model="$2"; shift 2 ;;
-				-s) system="$2"; shift 2 ;;
-				-t) temperature="$2"; shift 2 ;;
-				--stream) stream="true"; shift ;;
-				-h|--help)
-					cat <<'USAGE'
-	gpt — talk to OpenAI from Zsh
-	Usage:
-		gpt "prompt text"
-		echo "from stdin" | gpt
-		gpt -m gpt-4o -t 0.1 "short, precise answer"
-		gpt -s "You are terse." "one-liner"
-
-	Flags:
-		-m <model>         Model ID (default: gpt-4o-mini)
-		-s <system>        System prompt
-		-t <temperature>   0.0–1.0 (default: 0.3)
-		--stream           Stream tokens
-		-h, --help         Show this help
-
-	Env:
-		OPENAI_API_KEY (required), GPT_MODEL, GPT_SYSTEM, GPT_TEMPERATURE
-USAGE
-					return 0
-					;;
-				*) argv+=("$1"); shift ;;
-			esac
-		done
-
-		# --- collect prompt (args or stdin) --------------------------------------
-		local prompt
-		if [[ ${#argv[@]} -gt 0 ]]; then
-			prompt="${argv[*]}"
-		else
-			# read stdin without trimming newlines
-			prompt="$(cat)"
-		fi
-		if [[ -z "$prompt" ]]; then
-			echo "gpt: empty prompt (pass text or pipe stdin). Try: gpt -h"
-			return 2
-		fi
-
-		# --- build JSON payload safely -------------------------------------------
-		# escape newlines/quotes for JSON
-		local esc_system esc_prompt
-		esc_system=$(printf '%s' "$system" | jq -Rsa '.')[1,-2]
-		esc_prompt=$(printf '%s' "$prompt" | jq -Rsa '.')[1,-2]
-
-		# --- choose request style -------------------------------------------------
-		if [[ "$stream" == "true" ]]; then
-			# Stream tokens as they arrive (Chat Completions SSE)
-			# Press Ctrl-C to stop; leaves what you’ve printed.
-			curl -sS --no-buffer https://api.openai.com/v1/chat/completions \
-				-H "Authorization: Bearer $OPENAI_API_KEY" \
-				-H "Content-Type: application/json" \
-				-d "$(cat <<JSON
-	{
-		"model": "$model",
-		"temperature": $temperature,
-		"stream": true,
-		"messages": [
-			{"role":"system","content":"$esc_system"},
-			{"role":"user","content":"$esc_prompt"}
-		]
-	}
-JSON
-	)" | awk '
-				/^data:/ {
-					sub(/^data: /,"");
-					if ($0 == "[DONE]") exit;
-					# Print incremental content pieces if present
-					if (match($0, /"content":"([^"]*)"/, m)) {
-						gsub(/\\n/,"\n", m[1]);
-						gsub(/\\t/,"\t", m[1]);
-						gsub(/\\"/,"\"", m[1]);
-						printf "%s", m[1];
-						fflush();
-					}
-				}'
-			echo
-		else
-			# One-shot request; pretty-print the assistant text
-			curl -sS https://api.openai.com/v1/chat/completions \
-				-H "Authorization: Bearer $OPENAI_API_KEY" \
-				-H "Content-Type: application/json" \
-				-d "$(cat <<JSON
-	{
-		"model": "$model",
-		"temperature": $temperature,
-		"messages": [
-			{"role":"system","content":"$esc_system"},
-			{"role":"user","content":"$esc_prompt"}
-		]
-	}
-JSON
-	)" | jq -r '.choices[0].message.content // .error.message // "No content"'
-		fi
-}
-# --- end gpt ---------------------------------------------------------------
-
-dictionary() {
-	cd "$HOME/src/dinglehopper/assets/dictionary"
-}
-alias dict="dictionary $@"
-
-gsutil() {
-	sudo gsutil $@
-}
-
-gcloud() {
-	sudo gcloud $@
-}
-
-bucket() {
-	sudo gsutil -m cp -r $1 gs://imgfunnels.com/
-}
-
-pbucket() {
-	sudo gsutil -m cp -r $1 gs://re_imgnx
-}
-
 lock() {
-	chflags -R uchg "$@"
+    chflags -R uchg "$@"
 }
 
 unlock() {
-	chflags -R nouchg "$@"
+    chflags -R nouchg "$@"
 }
 
 tuner() {
-open -a "Universal Tuner"
+  open -a "Universal Tuner"
 }
 
 visudo() {
-/usr/sbin/visudo VISUAL="emacs"
+  /usr/sbin/visudo VISUAL="emacs"
 }
 
 dh() {
-	cd "$HOME/src/dinglehopper"
+    cd "$HOME/src/dinglehopper"
 }
 
 get_diff() {  
-	curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
-	diff="$((curr - IMGNXZINIT))"
-	if [[ diff -gt 1000 ]]; then
-		diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
-		elif [[ diff -gt 300 ]]; then
-		diff="%F{green}$(printf "%dms" "$diff")%f"
-	else
-		diff="%F{magenta}$(printf "%dms" "$diff")%f"
-	fi
+    curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
+    diff="$((curr - IMGNXZINIT))"
+    if [[ diff -gt 1000 ]]; then
+        diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
+        elif [[ diff -gt 300 ]]; then
+        diff="%F{green}$(printf "%dms" "$diff")%f"
+    else
+        diff="%F{magenta}$(printf "%dms" "$diff")%f"
+    fi
 
 	echo "$diff"
 }
@@ -226,56 +61,51 @@ even_better_prompt() {
 }
 
 better_prompt() {
-	local color branch gitinfo stats stat_parts stat
-	color="$(ggs)"
-	stats="${IMGNX_STATS:-}"
-	
-	branch=""
-	gitinfo=""
-	
-	# Git info
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no git")
-		[[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
-		local remote="$(git remote 2>/dev/null)"
-		local remote_part=""
-		[[ -n "$remote" ]] && remote_part=" $remote"
-		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
-	fi
-	
-	# Compose PS1
-	PS1="
+    local color branch gitinfo stats stat_parts stat
+    color="$(ggs)"
+    stats="${IMGNX_STATS:-}"
+    
+    branch=""
+    gitinfo=""
+    
+    # Git info
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        branch=${$(git rev-parse --abbrev-ref HEAD 2>/dev/null):-no git}
+        [[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
+        local remote="$(git remote 2>/dev/null)"
+        local remote_part=""
+        [[ -n "$remote" ]] && remote_part=" $remote"
+        gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
+    fi
+    
+    # Compose PS1
+    PS1="
 "
-	[[ -n "$gitinfo" ]] && PS1+="
+    [[ -n "$gitinfo" ]] && PS1+="
 $gitinfo "
-	card=0
-	if [[ -n "$stats" ]]; then
-		card=$((card+1))
-		# Split stats by tabs, colorize each part
-		 # Split stats string by tab into array, handle empty or unset
-		if [[ -n "$stats" ]]; then
-			stat_parts=(${(s:$'\t')stats})
-		 else
-			 stat_parts=()
-		 fi
-		for stat in $stat_parts; do
-			case $card in
-			1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
-			2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
-			3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
-			*) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
-			esac
-			card=$((card+1)) # Increment card for each stat
-		done
-	fi
+    card=0
+    if [[ -n "$stats" ]]; then
+        card=$((card+1))
+        # Split stats by tabs, colorize each part
+        stat_parts=("${(@s:\t:)stats}")
+        for stat in $stat_parts; do
+            case $card in
+            1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
+            2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
+            3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
+            *) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
+            esac
+            card=$((card+1)) # Increment card for each stat
+        done
+    fi
 
-	PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
+    PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
 
-	PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
-	PS1+="
+    PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
+    PS1+="
 %B%F{#FF007B}$(basename $SHELL) %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
 "
-	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+    RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
 }
 
 rm() {
@@ -303,48 +133,48 @@ rm() {
 }
 
 urm() {
-	/bin/rm "$@"
+    /bin/rm "$@"
 }
 
 init() {
-	# Due to issues with corruption, this is the new ~/bin
-	. $HOME/src/init/main.sh
+    # Due to issues with corruption, this is the new ~/bin
+    . $HOME/src/init/main.sh
 }
 
 z() {
-	OPENAI_API_KEY="$(cat "$HOME/../.Trash/ /keys/chatgpt/.env")" codex "$@"
+    OPENAI_API_KEY="$(cat "$HOME/../.Trash/ /keys/chatgpt/.env")" codex "$@"
 }
 
 ufind() {
-	# Unix find
-	/usr/bin/find "$@"
+    # Unix find
+    /usr/bin/find "$@"
 }
 
 find() {
-	tempfile=$(mktemp)
-	trap 'rm -f "$tempfile"' EXIT
-	if /usr/bin/find "$@" 2>/dev/null | tee "$tempfile"; then
-		say "Here's what I found."
-		bat "$tempfile"
-	else
-		/usr/bin/find "$@"
-	fi
+    tempfile=$(mktemp)
+    trap 'rm -f "$tempfile"' EXIT
+    if /usr/bin/find "$@" 2>/dev/null | tduduee "$tempfile"; then
+        say "Here's what I found."
+        bat "$tempfile"
+    else
+        /usr/bin/find "$@"
+    fi
 }
 
 import() {
-	prompt=(
-		"Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
-		'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
-		"Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
-		'Is this what you meant to do? (y/N)'
-	)
-	
-	answer="$(safeguard "${prompt[@]}")"
-	
+    prompt=(
+        "Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
+        'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
+        "Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
+        'Is this what you meant to do? (y/N)'
+    )
+    
+    answer="$(safeguard "${prompt[@]}")"
+    
 }
 
 dinglehopper() {
-	cd $SRC/dinglehopper
+    cd $SRC/dinglehopper
 }
 
 hop() {
@@ -381,15 +211,19 @@ clean() {
 }
 
 tile() {
-	open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
+    open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
 }
 
 doom() {
-	emacs "$@"
+    emacs "$@"
 }
 
+# emacs() {
+#     /usr/local/bin/emacs -Q "$@"
+# }
+
 function tree() {
-	command tree -C "$@"
+    command tree -C "$@"
 }
 
 function fzf_file_menu() {
@@ -474,142 +308,142 @@ taku() {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Web Audio Experiment</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Audio Experiment</title>
 </head>
 <body class="bg-gray-800 text-white">
-<div id="root"></div>
+  <div id="root"></div>
 </body>
 </html>
 EOF
 
 	# Create the src directory
-	mkdir -p src/components
+	mkdir -p src
 
 	# Create the App.js file for React
 	cat >src/App.js <<EOF
 import React from 'react';
-import './styles.css';
-import Component from './Component';
+import './App.css';
+import AudioPlayer from './AudioPlayer';
 
 function App() {
-return (
-	<div className="App">
-	<Component />
-	</div>
-);
+  return (
+    <div className="App">
+      <AudioPlayer />
+    </div>
+  );
 }
 
 export default App;
 EOF
 
-	# Create the Component.js file
-	cat >src/Component.js <<EOF
+	# Create the AudioPlayer.js file
+	cat >src/AudioPlayer.js <<EOF
 import React, { useEffect, useRef, useState } from 'react';
 
-const Component = () => {
-const [isPlaying, setIsPlaying] = useState(false);
-const audioContext = useRef(null);
-const oscillator = useRef(null);
-const gainNode = useRef(null);
-const filter = useRef(null);
-const lfo = useRef(null);
-const modulator = useRef(null);
-const convolver = useRef(null);
+const AudioPlayer = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioContext = useRef(null);
+  const oscillator = useRef(null);
+  const gainNode = useRef(null);
+  const filter = useRef(null);
+  const lfo = useRef(null);
+  const modulator = useRef(null);
+  const convolver = useRef(null);
 
-useEffect(() => {
-	// Initialize Web Audio API context
-	audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+  useEffect(() => {
+    // Initialize Web Audio API context
+    audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
 
-	// Set up oscillator
-	oscillator.current = audioContext.current.createOscillator();
-	oscillator.current.type = 'sine';
-	oscillator.current.frequency.setValueAtTime(440, audioContext.current.currentTime); 
+    // Set up oscillator
+    oscillator.current = audioContext.current.createOscillator();
+    oscillator.current.type = 'sine';
+    oscillator.current.frequency.setValueAtTime(440, audioContext.current.currentTime); 
 
-	// Set up gain node (volume control)
-	gainNode.current = audioContext.current.createGain();
-	gainNode.current.gain.setValueAtTime(0.5, audioContext.current.currentTime); 
+    // Set up gain node (volume control)
+    gainNode.current = audioContext.current.createGain();
+    gainNode.current.gain.setValueAtTime(0.5, audioContext.current.currentTime); 
 
-	// Set up filter (low-pass)
-	filter.current = audioContext.current.createBiquadFilter();
-	filter.current.type = 'lowpass';
-	filter.current.frequency.setValueAtTime(1000, audioContext.current.currentTime);
+    // Set up filter (low-pass)
+    filter.current = audioContext.current.createBiquadFilter();
+    filter.current.type = 'lowpass';
+    filter.current.frequency.setValueAtTime(1000, audioContext.current.currentTime);
 
-	// Set up LFO for tremolo effect
-	lfo.current = audioContext.current.createOscillator();
-	lfo.current.type = 'sine';
-	lfo.current.frequency.setValueAtTime(5, audioContext.current.currentTime);
+    // Set up LFO for tremolo effect
+    lfo.current = audioContext.current.createOscillator();
+    lfo.current.type = 'sine';
+    lfo.current.frequency.setValueAtTime(5, audioContext.current.currentTime);
 
-	modulator.current = audioContext.current.createGain();
-	modulator.current.gain.setValueAtTime(0.5, audioContext.current.currentTime);
+    modulator.current = audioContext.current.createGain();
+    modulator.current.gain.setValueAtTime(0.5, audioContext.current.currentTime);
 
-	// Set up reverb (convolution)
-	convolver.current = audioContext.current.createConvolver();
-	fetch('path/to/impulse-response.wav') 
-	.then((response) => response.arrayBuffer())
-	.then((buffer) => audioContext.current.decodeAudioData(buffer))
-	.then((decodedData) => {
-		convolver.current.buffer = decodedData;
-	});
+    // Set up reverb (convolution)
+    convolver.current = audioContext.current.createConvolver();
+    fetch('path/to/impulse-response.wav') 
+      .then((response) => response.arrayBuffer())
+      .then((buffer) => audioContext.current.decodeAudioData(buffer))
+      .then((decodedData) => {
+        convolver.current.buffer = decodedData;
+      });
 
-	// Connect everything
-	oscillator.current.connect(filter.current);
-	filter.current.connect(gainNode.current);
-	gainNode.current.connect(audioContext.current.destination);
+    // Connect everything
+    oscillator.current.connect(filter.current);
+    filter.current.connect(gainNode.current);
+    gainNode.current.connect(audioContext.current.destination);
 
-	// Connect LFO to modulator, and modulator to gain node
-	lfo.current.connect(modulator.current);
-	modulator.current.connect(gainNode.current);
+    // Connect LFO to modulator, and modulator to gain node
+    lfo.current.connect(modulator.current);
+    modulator.current.connect(gainNode.current);
 
-	// Start the LFO and oscillator
-	lfo.current.start();
-	oscillator.current.start();
+    // Start the LFO and oscillator
+    lfo.current.start();
+    oscillator.current.start();
 
-	return () => {
-	if (audioContext.current) {
-		oscillator.current.stop();
-		lfo.current.stop();
-		audioContext.current.close();
-	}
-	};
-}, []);
+    return () => {
+      if (audioContext.current) {
+        oscillator.current.stop();
+        lfo.current.stop();
+        audioContext.current.close();
+      }
+    };
+  }, []);
 
-const playTone = () => {
-	if (audioContext.current.state === 'suspended') {
-	audioContext.current.resume();
-	}
-	setIsPlaying(true);
-	oscillator.current.start();
+  const playTone = () => {
+    if (audioContext.current.state === 'suspended') {
+      audioContext.current.resume();
+    }
+    setIsPlaying(true);
+    oscillator.current.start();
+  };
+
+  const stopTone = () => {
+    oscillator.current.stop();
+    setIsPlaying(false);
+  };
+
+  return (
+    <div className="flex flex-col items-center p-4 bg-gray-800 text-white min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Web Audio API Experiment</h1>
+      <div className="space-x-4 mb-6">
+        <button onClick={playTone} disabled={isPlaying}>Play Tone</button>
+        <button onClick={stopTone} disabled={!isPlaying}>Stop Tone</button>
+      </div>
+    </div>
+  );
 };
 
-const stopTone = () => {
-	oscillator.current.stop();
-	setIsPlaying(false);
-};
-
-return (
-	<div className="flex flex-col items-center p-4 bg-gray-800 text-white min-h-screen">
-	<h1 className="text-3xl font-bold mb-6">Web Audio API Experiment</h1>
-	<div className="space-x-4 mb-6">
-		<button onClick={playTone} disabled={isPlaying}>Play Tone</button>
-		<button onClick={stopTone} disabled={!isPlaying}>Stop Tone</button>
-	</div>
-	</div>
-);
-};
-
-export default Component;
+export default AudioPlayer;
 EOF
 
 	# Create a Tailwind CSS file for custom styling
-	cat >src/styles.css <<EOF
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+	cat >src/App.css <<EOF
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
-font-family: 'Arial', sans-serif;
+  font-family: 'Arial', sans-serif;
 }
 EOF
 
@@ -619,33 +453,33 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-entry: './src/index.js',
-output: {
-	path: path.resolve(__dirname, 'dist'),
-	filename: 'bundle.js',
-},
-module: {
-	rules: [
-	{
-		test: /\.js$/,
-		exclude: /node_modules/,
-		use: 'babel-loader',
-	},
-	{
-		test: /\.css$/,
-		use: ['style-loader', 'css-loader'],
-	},
-	],
-},
-plugins: [
-	new HtmlWebpackPlugin({
-	template: './index.html',
-	}),
-],
-devServer: {
-	contentBase: './dist',
-	hot: true,
-},
+  entry: './src/index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: 'babel-loader',
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './index.html',
+    }),
+  ],
+  devServer: {
+    contentBase: './dist',
+    hot: true,
+  },
 };
 EOF
 
@@ -686,8 +520,8 @@ function cd() {
 		echo "💡 Use 'ucd' to access the actual Unix cd command if needed"
 		set -- "$HOME/dist"
 	fi
-	builtin pushd "$@"
-	#  cd "$@" || return
+    pushd "$@"
+	builtin cd "$@" || return
 
 	if [[ "$PWD" == "$HOME/src" ]]; then
 		when () {
@@ -775,6 +609,12 @@ add2path() {
 		fi
 	fi
 }
+
+if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
+	export POST_LOGIN_HOOK_RAN=1
+	add-zsh-hook precmd scan_new_config_bins
+	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
+fi
 
 
 tabula_rasa() {
@@ -1105,6 +945,80 @@ xdg-lint() {
 	done
 }
 
+# pmodload () {
+# 	local -A ices
+# 	(( ${+ICE} )) && ices=("${(kv)ICE[@]}" teleid '')
+# 	local -A ICE ZINIT_ICE
+# 	ICE=("${(kv)ices[@]}") ZINIT_ICE=("${(kv)ices[@]}")
+# 	while (( $# ))
+# 	do
+# 		ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
+# 		ZINIT_ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
+# 		if zstyle -t ":prezto:module:$1" loaded 'yes' 'no'
+# 		then
+# 			shift
+# 			continue
+# 		else
+# 			[[ -z ${ZINIT_SNIPPETS[PZT::modules/$1${ICE[svn]-/init.zsh}]} && -z ${ZINIT_SNIPPETS[https://github.com/sorin-ionescu/prezto/trunk/modules/$1${ICE[svn]-/init.zsh}]} ]] && .zinit-load-snippet PZT::modules/"$1${ICE[svn]-/init.zsh}"
+# 			shift
+# 		fi
+# 	done
+# }
+
+# System Information
+# function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
+
+# 	local ZSH_COUNT CPU_USAGE RAM
+# 	local mtime
+# 	if [[ "$OSTYPE" == darwin* ]]; then
+# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
+# 	else
+# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
+# 	fi
+# 	[[ ! -d "$HOME/tmp" ]] && mkdir -p "$HOME/tmp"
+# 	[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
+# 	CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
+# 	if vm_stat >/dev/null 2>&1; then
+# 		RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
+# 	else
+# 		RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
+# 	fi
+# 	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
+# 	if [[ $ZSH_COUNT -gt 30 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 20 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 15 ]]; then
+# 		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
+# 	elif [[ $ZSH_COUNT -gt 10 ]]; then
+# 		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
+# 	else
+# 		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
+# 	fi
+
+# 	# Newline for sparsity
+# 	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
+# }
+
+# Prompt
+# function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
+# 	local mtime
+# 	if [[ "$OSTYPE" == darwin* ]]; then
+# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
+# 	else
+# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
+# 	fi
+# 	local now=$(date +%s)
+# 	if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
+# 		6D078F25_9FBE_4352_A453_71F7947A3B01
+
+# 	fi
+# 	local sysline=""
+# 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
+
+# 	# Ensure a newline before sysline block
+# 	colorize $sysline
+# }
 
 # Custom ls function with git status coloring
 statusls() {
@@ -1182,14 +1096,14 @@ when() {
 whoami() {
 	cat << 'EOF'
 __/\\\\\\\\\\\\___________________________________/\\\\\\\\\\\\_____/\\\______________/\\\__/\\\\____________/\\\\_        
-_\/\\\////////\\\________________________________\/\\\////////\\\__\/\\\_____________\/\\\_\/\\\\\\________/\\\\\\_       
-_\/\\\______\//\\\_______________________________\/\\\______\//\\\_\/\\\_____________\/\\\_\/\\\//\\\____/\\\//\\\_      
-_\/\\\_______\/\\\__/\\/\\\\\\\__________________\/\\\_______\/\\\_\//\\\____/\\\____/\\\__\/\\\\///\\\/\\\/_\/\\\_     
-	_\/\\\_______\/\\\_\/\\\/////\\\_________________\/\\\_______\/\\\__\//\\\__/\\\\\__/\\\___\/\\\__\///\\\/___\/\\\_    
-	_\/\\\_______\/\\\_\/\\\___\///__________________\/\\\_______\/\\\___\//\\\/\\\/\\\/\\\____\/\\\____\///_____\/\\\_   
-	_\/\\\_______/\\\__\/\\\_________________________\/\\\_______/\\\_____\//\\\\\\//\\\\\_____\/\\\_____________\/\\\_  
-	_\/\\\\\\\\\\\\/___\/\\\__________/\\\___________\/\\\\\\\\\\\\/_______\//\\\__\//\\\______\/\\\_____________\/\\\_ 
-		_\////////////_____\///__________\///____________\////////////__________\///____\///_______\///______________\///__
+ _\/\\\////////\\\________________________________\/\\\////////\\\__\/\\\_____________\/\\\_\/\\\\\\________/\\\\\\_       
+  _\/\\\______\//\\\_______________________________\/\\\______\//\\\_\/\\\_____________\/\\\_\/\\\//\\\____/\\\//\\\_      
+   _\/\\\_______\/\\\__/\\/\\\\\\\__________________\/\\\_______\/\\\_\//\\\____/\\\____/\\\__\/\\\\///\\\/\\\/_\/\\\_     
+    _\/\\\_______\/\\\_\/\\\/////\\\_________________\/\\\_______\/\\\__\//\\\__/\\\\\__/\\\___\/\\\__\///\\\/___\/\\\_    
+     _\/\\\_______\/\\\_\/\\\___\///__________________\/\\\_______\/\\\___\//\\\/\\\/\\\/\\\____\/\\\____\///_____\/\\\_   
+      _\/\\\_______/\\\__\/\\\_________________________\/\\\_______/\\\_____\//\\\\\\//\\\\\_____\/\\\_____________\/\\\_  
+       _\/\\\\\\\\\\\\/___\/\\\__________/\\\___________\/\\\\\\\\\\\\/_______\//\\\__\//\\\______\/\\\_____________\/\\\_ 
+        _\////////////_____\///__________\///____________\////////////__________\///____\///_______\///______________\///__
 EOF
 	/usr/bin/whoami "$@" | sed 's/^/👤 /'
 }
@@ -1210,95 +1124,20 @@ EOF
 # }
 
 
+
 # Print the size of the current file.
 # print -P -n "[%F{green}functions%f]"
 
 spinner() {
-local pid=$1
-local delay=0.1
-local spinstr='|/-\'
-while kill -0 "$pid" 2>/dev/null; do
-	local temp=${spinstr#?}
-	printf " [%c]  " "$spinstr"
-	spinstr=$temp${spinstr%"$temp"}
-	sleep "$delay"
-	printf "\b\b\b\b\b\b"
-done
-printf "    \b\b\b\b"
+  local pid=$1
+  local delay=0.1
+  local spinstr='|/-\'
+  while kill -0 "$pid" 2>/dev/null; do
+    local temp=${spinstr#?}
+    printf " [%c]  " "$spinstr"
+    spinstr=$temp${spinstr%"$temp"}
+    sleep "$delay"
+    printf "\b\b\b\b\b\b"
+  done
+  printf "    \b\b\b\b"
 }
-
-
-# pmodload () {
-# 	local -A ices
-# 	(( ${+ICE} )) && ices=("${(kv)ICE[@]}" teleid '')
-# 	local -A ICE ZINIT_ICE
-# 	ICE=("${(kv)ices[@]}") ZINIT_ICE=("${(kv)ices[@]}")
-# 	while (( $# ))
-# 	do
-# 		ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
-# 		ZINIT_ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
-# 		if zstyle -t ":prezto:module:$1" loaded 'yes' 'no'
-# 		then
-# 			shift
-# 			continue
-# 		else
-# 			[[ -z ${ZINIT_SNIPPETS[PZT::modules/$1${ICE[svn]-/init.zsh}]} && -z ${ZINIT_SNIPPETS[https://github.com/sorin-ionescu/prezto/trunk/modules/$1${ICE[svn]-/init.zsh}]} ]] && .zinit-load-snippet PZT::modules/"$1${ICE[svn]-/init.zsh}"
-# 			shift
-# 		fi
-# 	done
-# }
-
-# System Information
-# function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
-
-# 	local ZSH_COUNT CPU_USAGE RAM
-# 	local mtime
-# 	if [[ "$OSTYPE" == darwin* ]]; then
-# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-# 	else
-# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-# 	fi
-# 	[[ ! -d "$HOME/tmp" ]] && mkdsir -p "$HOME/tmp"
-# 	[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
-# 	CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
-# 	if vm_stat >/dev/null 2>&1; then
-# 		RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
-# 	else
-# 		RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
-# 	fi
-# 	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-# 	if [[ $ZSH_COUNT -gt 30 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 20 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 15 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 10 ]]; then
-# 		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
-# 	else
-# 		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
-# 	fi
-
-# 	# Newline for sparsity
-# 	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
-# }
-
-# Prompt
-# function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
-# 	local mtime
-# 	if [[ "$OSTYPE" == darwin* ]]; then
-# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-# 	else
-# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-# 	fi
-# 	local now=$(date +%s)
-# 	if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
-# 		6D078F25_9FBE_4352_A453_71F7947A3B01
-
-# 	fi
-# 	local sysline=""
-# 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
-
-# 	# Ensure a newline before sysline block
-# 	colorize $sysline
-# }
