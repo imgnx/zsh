@@ -7,6 +7,16 @@
 # 	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
 # fi
 
+# --- wrapper helpers (must be defined before use) ----------------------------
+# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
+__wrap_notice() {
+  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
+    local name="$1" path
+    path=$(command -v "$name" 2>/dev/null || true)
+    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
+  fi
+}
+
 
 	# --- gpt: Chat with OpenAI from your terminal --------------------------------
 	# deps: curl, jq
@@ -29,7 +39,8 @@
 	#   --stream           Stream tokens live (Ctrl-C to stop)
 	#   -h|--help          Show help
 
-	gpt() {
+
+gpt() {
 		# --- sanity ---------------------------------------------------------------
 		command -v curl >/dev/null || { echo "gpt: curl not found"; return 127; }
 		command -v jq >/dev/null || { echo "gpt: jq not found"; return 127; }
@@ -143,27 +154,40 @@ JSON
 	)" | jq -r '.choices[0].message.content // .error.message // "No content"'
 		fi
 }
-# --- end gpt ---------------------------------------------------------------
 
 dictionary() {
 	cd "$HOME/src/dinglehopper/assets/dictionary"
 }
-alias dict="dictionary $@"
+# Provide a simple alias; arguments are forwarded by the shell
+alias dict="dictionary"
 
+__wrap_notice gsutil
 gsutil() {
-	sudo gsutil $@
+	sudo command gsutil "$@"
 }
 
+__wrap_notice gcloud
 gcloud() {
-	sudo gcloud $@
+	sudo command gcloud "$@"
 }
 
 bucket() {
-	sudo gsutil -m cp -r $1 gs://imgfunnels.com/
+	sudo command gsutil -m cp -r "$1" gs://imgfunnels.com/
 }
 
 pbucket() {
-	sudo gsutil -m cp -r $1 gs://re_imgnx
+    sudo command gsutil -m cp -r "$1" gs://re_imgnx
+}
+
+# Ensure Emacs uses XDG init dir (Emacs 29+: --init-directory)
+__wrap_notice emacs
+emacs() {
+    local initdir="${EMACSDIR:-$XDG_CONFIG_HOME/emacs}"
+    if command emacs --help 2>&1 | grep -q -- '--init-directory'; then
+        command emacs --init-directory "$initdir" "$@"
+    else
+        EMACSDIR="$initdir" DOOMDIR="${DOOMDIR:-$XDG_CONFIG_HOME/doom}" DOOMLOCALDIR="${DOOMLOCALDIR:-$XDG_CONFIG_HOME/emacs/.local}" command emacs "$@"
+    fi
 }
 
 lock() {
@@ -189,9 +213,9 @@ dh() {
 get_diff() {  
 	curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
 	diff="$((curr - IMGNXZINIT))"
-	if [[ diff -gt 1000 ]]; then
+	if [[ $diff -gt 1000 ]]; then
 		diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
-		elif [[ diff -gt 300 ]]; then
+		elif [[ $diff -gt 300 ]]; then
 		diff="%F{green}$(printf "%dms" "$diff")%f"
 	else
 		diff="%F{magenta}$(printf "%dms" "$diff")%f"
@@ -278,6 +302,7 @@ $gitinfo "
 	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
 }
 
+__wrap_notice rm
 rm() {
 	local flags=()
 	local files=()
@@ -311,15 +336,12 @@ init() {
 	. $HOME/src/init/main.sh
 }
 
-z() {
-	OPENAI_API_KEY="$(cat "$HOME/../.Trash/ /keys/chatgpt/.env")" codex "$@"
-}
-
 ufind() {
 	# Unix find
 	/usr/bin/find "$@"
 }
 
+__wrap_notice find
 find() {
 	tempfile=$(mktemp)
 	trap 'rm -f "$tempfile"' EXIT
@@ -1298,6 +1320,16 @@ printf "    \b\b\b\b"
 # 	fi
 # 	local sysline=""
 # 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
+
+# --- wrapper helpers ---------------------------------------------------------
+# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
+__wrap_notice() {
+  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
+    local name="$1" path
+    path=$(command -v "$name" 2>/dev/null || true)
+    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
+  fi
+}
 
 # 	# Ensure a newline before sysline block
 # 	colorize $sysline

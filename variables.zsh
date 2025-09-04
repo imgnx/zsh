@@ -21,18 +21,24 @@ export PLACEHOLDER="cnf [<config-dir> (<file> ) - open in emacs ] - open in zsh"
 # Emacs Configuration
 # ==============================
 
-export DOOMDIR="${XDG_CONFIG_HOME}/doom"
-export EMACSDIR="${XDG_CONFIG_HOME}/emacs"
-export EMACS="${XDG_CONFIG_HOME}/emacs"
-export EMACS_DUMP_FILE="${XDG_STATE_HOME}/emacs/auto-save-list/.emacs.dumper"
-export EMACS_DIR="${XDG_CONFIG_HOME}/emacs"
-export EMACS_CONFIG_DIR="${XDG_CONFIG_HOME}/emacs"
-export EMACS_LISP_DIR="${XDG_DATA_HOME}/emacs/site-lisp"
-export EMACS_CACHE_DIR="${XDG_CACHE_HOME}/emacs"
-export EMACS_SAVEDIR="${XDG_STATE_HOME}/emacs"
-export EMACS_BACKUP_DIR="${XDG_STATE_HOME}/emacs/backup"
-export EMACS_TRASH_DIR="${XDG_STATE_HOME}/emacs/trash"
-export EMACS_SAVEDIR="${XDG_STATE_HOME}/emacs/saves"
+export DOOMDIR="${DOOMDIR:-${XDG_CONFIG_HOME}/doom}"
+# Doom core location (traditionally ~/.emacs.d). If you keep Emacs/Doom under XDG,
+# this points there; otherwise default to ~/.emacs.d.
+export EMACSDIR="${EMACSDIR:-${XDG_CONFIG_HOME}/emacs}"
+# Doom cache/local dir; default to live alongside your XDG Emacs dir
+export DOOMLOCALDIR="${DOOMLOCALDIR:-${XDG_CONFIG_HOME}/emacs/.local}"
+
+# Optional convenience paths (not used by vanilla Emacs)
+export EMACS="${EMACS:-${XDG_CONFIG_HOME}/emacs}"
+export EMACS_DUMP_FILE="${EMACS_DUMP_FILE:-${XDG_STATE_HOME}/emacs/auto-save-list/.emacs.dumper}"
+export EMACS_DIR="${EMACS_DIR:-${XDG_CONFIG_HOME}/emacs}"
+export EMACS_CONFIG_DIR="${EMACS_CONFIG_DIR:-${XDG_CONFIG_HOME}/emacs}"
+export EMACS_LISP_DIR="${EMACS_LISP_DIR:-${XDG_DATA_HOME}/emacs/site-lisp}"
+export EMACS_CACHE_DIR="${EMACS_CACHE_DIR:-${XDG_CACHE_HOME}/emacs}"
+export EMACS_SAVEDIR="${EMACS_SAVEDIR:-${XDG_STATE_HOME}/emacs}"
+export EMACS_BACKUP_DIR="${EMACS_BACKUP_DIR:-${XDG_STATE_HOME}/emacs/backup}"
+export EMACS_TRASH_DIR="${EMACS_TRASH_DIR:-${XDG_STATE_HOME}/emacs/trash}"
+export EMACS_SAVES_DIR="${EMACS_SAVES_DIR:-${XDG_STATE_HOME}/emacs/saves}"
 
 # ==============================
 #  XDG Base Directories
@@ -77,7 +83,9 @@ fi
 # ============================
 # Named Directories
 
-# Hashes are for executables...
+# Quick jump named directories
+hash -d dh=/Users/donaldmoore/src/dinglehopper
+hash -d stdln=/Users/donaldmoore/src/dinglehopper/stdln
 
 # hash -d bin=$BIN
 # hash -d labs=$LABS
@@ -114,11 +122,14 @@ export BIN="$HOME/bin"
 export BKGD="$SAMPLES/bkgd.mp3"
 export BK="$ICLOUD_DRIVE/_____BACKUPS"
 export CALCULATOR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"
-#  ! This causes problems every time... Yes! You
-#  ! have to use --path=. !!!
-export CARGO_HOME="$HOME/dotfiles/.cargo"
+export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 
-export CLOUDSDK_PYTHON="/Users/donaldmoore/.pyenv/versions/pitchfix/bin/python"
+# Prefer system Python for macOS tools (e.g., gcloud) if not overridden
+if [[ -z "${CLOUDSDK_PYTHON:-}" ]]; then
+  if [[ -x /usr/bin/python3 ]]; then
+    export CLOUDSDK_PYTHON="/usr/bin/python3"
+  fi
+fi
 export CONFIG="$XDG_CACHE_HOME"
 export CONTAINERS="$HOME/_____CONTAINERS"
 export COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
@@ -133,7 +144,7 @@ export LABS="$WORKBENCH/_____LABS"
 export LIB="$HOME/lib"
 export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
 export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig:$PKG_CONFIG_PATH"
-export RUSTUP_HOME="$HOME/dotfiles/.rustup"
+export RUSTUP_HOME="${RUSTUP_HOME:-$XDG_DATA_HOME/rustup}"
 export SAMPLES="$ICLOUD_DRIVE/_____MEDIA/_____SAMPLES"
 export SCREENCAST_MODE=-1 # 0=off, 1=on, -1=ask
 export SCRIPTS="$HOME/scripts"
@@ -177,3 +188,40 @@ export CALCULATOR="/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDo
 # =================
 export VOLTA_HOME="$XDG_CONFIG_HOME/volta"
 export VOLTA_CACHE="$XDG_CACHE_HOME/volta"
+
+# =================
+# Node/JS ecosystem (XDG)
+# =================
+export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
+export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
+export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$XDG_DATA_HOME/npm}"
+export PNPM_HOME="${PNPM_HOME:-$XDG_DATA_HOME/pnpm}"
+export PNPM_STORE_DIR="${PNPM_STORE_DIR:-$XDG_CACHE_HOME/pnpm}"
+export YARN_CACHE_FOLDER="${YARN_CACHE_FOLDER:-$XDG_CACHE_HOME/yarn}"
+export NODE_REPL_HISTORY="${NODE_REPL_HISTORY:-$XDG_STATE_HOME/node/repl_history}"
+
+# =================
+# Python (XDG)
+# =================
+export PIP_CONFIG_FILE="${PIP_CONFIG_FILE:-$XDG_CONFIG_HOME/pip/pip.conf}"
+export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-$XDG_CACHE_HOME/python}"
+
+# =================
+# Go (XDG)
+# =================
+export GOPATH="${GOPATH:-$XDG_DATA_HOME/go}"
+export GOCACHE="${GOCACHE:-$XDG_CACHE_HOME/go}"
+export GOMODCACHE="${GOMODCACHE:-$GOPATH/pkg/mod}"
+
+# =================
+# CLI tools (XDG)
+# =================
+export CLOUDSDK_CONFIG="${CLOUDSDK_CONFIG:-$XDG_CONFIG_HOME/gcloud}"
+export GH_CONFIG_DIR="${GH_CONFIG_DIR:-$XDG_CONFIG_HOME/gh}"
+export DOCKER_CONFIG="${DOCKER_CONFIG:-$XDG_CONFIG_HOME/docker}"
+export AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-$XDG_CONFIG_HOME/aws/config}"
+export AWS_SHARED_CREDENTIALS_FILE="${AWS_SHARED_CREDENTIALS_FILE:-$XDG_CONFIG_HOME/aws/credentials}"
+export RIPGREP_CONFIG_PATH="${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}"
+export LESSHISTFILE="${LESSHISTFILE:-$XDG_STATE_HOME/less/history}"
+export WGETRC="${WGETRC:-$XDG_CONFIG_HOME/wget/wgetrc}"
+export HSTS_FILE="${HSTS_FILE:-$XDG_CACHE_HOME/wget-hsts}"

@@ -32,6 +32,7 @@ alias c=copy
 alias pastecat="$v"
 alias pc="$v"
 alias p="$v"
+alias stdln="cd $HOME/src/dinglehopper/stdln/"
 alias v="$v"
 alias ls='eza -bGF --header --git --color=always --group-directories-first --icons'
 alias ll='eza -la --icons --group-directories-first'

@@ -1,6 +1,8 @@
-echo -en "\033[38;2;222;173;237m
+if [[ -o interactive ]]; then
+  echo -en "\033[38;2;222;173;237m
 イエムジーエヌエックス
 \033[0m"
+fi
 
 export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
 
@@ -82,22 +84,49 @@ if [[ -o interactive ]]; then
     # ? MARK: End of Preflight check
     
     export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
+
+    # Quality-of-life: allow typing a directory name to cd into it
+    setopt AUTO_CD
     
     # Load immediately:
     source_once "${ZDOTDIR}/functions.zsh"
     source_once "${ZDOTDIR}/variables.zsh"
     source_once "${ZDOTDIR}/aliases.zsh"
     source_once "${ZDOTDIR}/keybindings.zsh"
-    source_once "${ZDOTDIR}/paths.zsh"
+    # paths.zsh duplicates variables; avoid double-sourcing by default
+    # source_once "${ZDOTDIR}/paths.zsh"
+
+    # Ensure expected cache/state dirs exist (Emacs/Doom + Zsh + common XDG)
+    mkdir -p \
+      "${DOOMLOCALDIR:-$XDG_CONFIG_HOME/emacs/.local}" \
+      "${EMACS_CACHE_DIR:-$XDG_CACHE_HOME/emacs}" \
+      "${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}" \
+      "${XDG_STATE_HOME:-$HOME/.local/state}/zsh" \
+      "$XDG_CONFIG_HOME/npm" "$XDG_CACHE_HOME/npm" "${NPM_CONFIG_PREFIX:-$XDG_DATA_HOME/npm}" \
+      "$XDG_CACHE_HOME/yarn" "$PNPM_STORE_DIR" "$PNPM_HOME" \
+      "$GOPATH" "$GOCACHE" "$GOMODCACHE" \
+      "$XDG_CONFIG_HOME/aws" "$XDG_CONFIG_HOME/gcloud" "$XDG_CONFIG_HOME/gh" "$XDG_CONFIG_HOME/docker" \
+      "$XDG_CONFIG_HOME/ripgrep" \
+      "$(dirname "$LESSHISTFILE")" "$(dirname "$NODE_REPL_HISTORY")"
+
+    # Create a default ripgrep config if missing to avoid startup errors
+    if [[ ! -f "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}" ]]; then
+      : > "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}"
+    fi
     
     # compinit
     zmodload zsh/complist
     zstyle ':completion:*' completer _complete
-    zstyle ':completion:*' verbose yes
-    zstyle ':completion:*' debug yes
+    if [[ "${ZSH_COMPLETION_DEBUG:-0}" = "1" ]]; then
+        zstyle ':completion:*' verbose yes
+        zstyle ':completion:*' debug yes
+    else
+        zstyle ':completion:*' verbose yes
+        zstyle ':completion:*' debug no
+    fi
     autoload -Uz compinit
-    # `compinit` **before** the completion... who knows?... who cares?
-    compinit
+    # Use XDG cache for compdump; ignore insecure dirs
+    compinit -i -d "${ZSH_COMPDUMP:-$HOME/.zcompdump}"
     
     # Completions
     source_once "${ZDOTDIR}/completions.zsh"
@@ -117,6 +146,3 @@ if [[ -o interactive ]]; then
         export VSCODE_SUGGEST=1
     fi
 fi
-
-
-

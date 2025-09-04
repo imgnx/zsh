@@ -24,9 +24,9 @@ dh() {
 get_diff() {  
     curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
     diff="$((curr - IMGNXZINIT))"
-    if [[ diff -gt 1000 ]]; then
+    if [[ $diff -gt 1000 ]]; then
         diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
-        elif [[ diff -gt 300 ]]; then
+        elif [[ $diff -gt 300 ]]; then
         diff="%F{green}$(printf "%dms" "$diff")%f"
     else
         diff="%F{magenta}$(printf "%dms" "$diff")%f"
