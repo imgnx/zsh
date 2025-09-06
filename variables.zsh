@@ -106,8 +106,11 @@ fi
 # Named Directories
 
 # Quick jump named directories
-hash -d dh=/Users/donaldmoore/src/dinglehopper
-hash -d stdln=/Users/donaldmoore/src/dinglehopper/stdln
+#
+export DH="/Users/donaldmoore/src/dinglehopper"
+hash -d dh=DH
+export STDLN="/Users/donaldmoore/src/dinglehopper/stdln"
+hash -d stdln=STDLN
 
 # hash -d bin=$BIN
 # hash -d labs=$LABS

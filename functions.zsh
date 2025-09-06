@@ -182,27 +182,53 @@ JSON
 		fi
 }
 
-
 back_up() {
-	set -e
 
-	# Ensure EXCLUDE_DIRS is set, or use a default value if not
-	EXCLUDE_DIRS="${EXCLUDE_DIRS:-(venv|.git|node_modules)}"
+  local LOG="/tmp/gsutil_output.log"
 
-	# Get all volumes
-	vols=(/Volumes/*)
+  EXCLUDE_DIRS="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
 
-	# Loop through each volume
-	for v in "${vols[@]}"; do
-		name=$(basename "$v")
-		echo "Syncing $v -> gs://imgfunnels.com/$name"
+  : > "$LOG"
 
-		# Run gsutil rsync with exclusions and verbose output
-		gsutil -m rsync -r -c -v -x "$EXCLUDE_DIRS" "$v" "gs://imgfunnels.com/$name"
+  local vols=("/Volumes/"*)
 
-		echo "Completed: $name"
-	done
+  echo -n "Would you like to perform a full backup (including Macintosh HD)? (y/n): "
+  read backup_choice
+
+  if [[ "$backup_choice" != "y" ]]; then
+    local temp_vols=()
+    for vol in "${vols[@]}"; do
+      local name="$(basename "$vol")"
+      if [[ "$name" != "Macintosh HD" ]]; then
+        temp_vols+=("$vol")
+      fi
+    done
+    vols=("${temp_vols[@]}")
+  fi
+
+  if tmux has-session -t backup_session 2>/dev/null; then
+    tmux kill-session -t backup_session
+  fi
+
+  tmux new-session -d -s backup_session -n backup 'clear; echo "Starting Backup..."'
+  tmux split-window -t backup_session:0 -v "clear; tail -f $LOG"
+  tmux select-pane -t backup_session:0.0
+  tmux attach -t backup_session &
+
+  for v in "${vols[@]}"; do
+    local name="$(basename "$v")"
+
+    local cmd="gsutil rsync -r -e -x '$EXCLUDE_DIRS' '$v' 'gs://imgfunnels.com/$name' 2>&1 | tee -a '$LOG'"
+    tmux send-keys -t backup_session:0.0 "echo 'Syncing $v -> gs://imgfunnels.com/$name'" C-m
+    tmux send-keys -t backup_session:0.0 "$cmd" C-m
+    tmux send-keys -t backup_session:0.0 "echo 'Completed: $name'" C-m
+  done
+
+  tmux send-keys -t backup_session:0.0 "echo 'All backups complete. Press any key to exit.'" C-m
+  tmux send-keys -t backup_session:0.0 "read -k" C-m
+  tmux send-keys -t backup_session:0.0 "tmux kill-session -t backup_session" C-m
 }
+
 
 dictionary() {
 	cd "$HOME/src/dinglehopper/assets/dictionary"
@@ -507,7 +533,6 @@ ptree() {
 }
 
 taku() {
-	#!/bin/bash
 
 	# Exit immediately if a command exits with a non-zero status
 	set -e
