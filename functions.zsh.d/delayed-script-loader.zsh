@@ -3,6 +3,32 @@
 
 # Delayed script loader hook and periodic bin folder scanner
 
+even_better_prompt() { 
+	local color branch gitinfo
+	color=$(ggs 2>/dev/null)
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		[[ -n $branch ]] && branch="/$branch"
+		local remote
+		remote=$(git remote 2>/dev/null | head -1)
+		local remote_part=""
+		[[ -n $remote ]] && remote_part=" $remote"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch}%f"
+	fi
+	PROMPT='
+'
+	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
+	PROMPT+='
+'
+	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
+	PROMPT+='
+'
+	PROMPT+=$''"${ZSH_NAME}"':%m => '
+
+	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+}
+
+
 # --- Periodic stats updater for prompt ---
 _imgnx_stats_last=0
 PERIOD_STATS=10 # seconds
@@ -144,6 +170,9 @@ else
     hooks
 fi
 
+if ! whence add2path >/dev/null 2>&1; then
+    add2path() { [[ -d $1 ]] && PATH="$1:$PATH"; }
+fi
 add2path "$HOME/dist"
 add2path "$HOME/.config/cargo/bin"
 

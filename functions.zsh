@@ -7,6 +7,33 @@
 # 	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
 # fi
 
+# pomodoro() {
+# 	sudo su
+# 	afplay '/Users/donaldmoore/src/dinglehopper/assets/musical/mastering/Bellmorph G#1.wav'
+# 	say "Sauce is ready\! Time to push\!";
+# 	shutdown -r +5 "Sauce is ready\! Time to push\!"
+# 	say "Clock is ticking. Shutdown is in 5 minutes."
+# }
+
+# orodomop() {
+# 	pid=$(ps aux | grep "shutdown" | awk '{print $2}')
+# 	echo "$pid"
+# 	[ -n "$pid" ] && sudo kill "$pid"
+# }
+
+# # Schedule pomodoro function to run every 30 minutes using a loop
+# pomodoro_scheduler() {
+# 	while true; do
+# 		sleep 1800  # 1800 seconds = 30 minutes
+# 		pomodoro
+# 	done
+# }
+
+# # Start the scheduler in the background
+# pomodoro_scheduler &
+
+
+			
 # --- wrapper helpers (must be defined before use) ----------------------------
 # Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
 __wrap_notice() {

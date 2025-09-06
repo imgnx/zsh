@@ -85,34 +85,55 @@ if [[ -o interactive ]]; then
     
     export ZDOTDIR="${ZDOTDIR:-$HOME/.config/zsh}"
 
+    # Ensure XDG variables are set before mkdir
+    export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+    export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+    export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+
     # Quality-of-life: allow typing a directory name to cd into it
     setopt AUTO_CD
     
-    # Load immediately:
+        # Load immediately:
     source_once "${ZDOTDIR}/functions.zsh"
+    echo "Sourced functions.zsh"
     source_once "${ZDOTDIR}/variables.zsh"
     source_once "${ZDOTDIR}/aliases.zsh"
     source_once "${ZDOTDIR}/keybindings.zsh"
     # paths.zsh duplicates variables; avoid double-sourcing by default
     # source_once "${ZDOTDIR}/paths.zsh"
 
-    # Ensure expected cache/state dirs exist (Emacs/Doom + Zsh + common XDG)
-    mkdir -p \
-      "${DOOMLOCALDIR:-$XDG_CONFIG_HOME/emacs/.local}" \
-      "${EMACS_CACHE_DIR:-$XDG_CACHE_HOME/emacs}" \
-      "${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}" \
-      "${XDG_STATE_HOME:-$HOME/.local/state}/zsh" \
-      "$XDG_CONFIG_HOME/npm" "$XDG_CACHE_HOME/npm" "${NPM_CONFIG_PREFIX:-$XDG_DATA_HOME/npm}" \
-      "$XDG_CACHE_HOME/yarn" "$PNPM_STORE_DIR" "$PNPM_HOME" \
-      "$GOPATH" "$GOCACHE" "$GOMODCACHE" \
-      "$XDG_CONFIG_HOME/aws" "$XDG_CONFIG_HOME/gcloud" "$XDG_CONFIG_HOME/gh" "$XDG_CONFIG_HOME/docker" \
-      "$XDG_CONFIG_HOME/ripgrep" \
-      "$(dirname "$LESSHISTFILE")" "$(dirname "$NODE_REPL_HISTORY")"
+    # # Normalize EMACS_* to proper XDG paths if unset or broken (e.g., '/emacs*')
+    # [[ -z ${EMACSDIR:-}         || -z ${EMACSDIR:#/emacs*}         ]] && export EMACSDIR="${XDG_CONFIG_HOME:-$HOME/.config}/emacs"
+    # [[ -z ${EMACS:-}            || -z ${EMACS:#/emacs*}            ]] && export EMACS="${EMACSDIR}"
+    # [[ -z ${EMACS_DIR:-}        || -z ${EMACS_DIR:#/emacs*}        ]] && export EMACS_DIR="${EMACSDIR}"
+    # [[ -z ${EMACS_CONFIG_DIR:-} || -z ${EMACS_CONFIG_DIR:#/emacs*} ]] && export EMACS_CONFIG_DIR="${EMACSDIR}"
+    # [[ -z ${EMACS_CACHE_DIR:-}  || -z ${EMACS_CACHE_DIR:#/emacs*}  ]] && export EMACS_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/emacs"
+    # [[ -z ${EMACS_SAVEDIR:-}    || -z ${EMACS_SAVEDIR:#/emacs*}    ]] && export EMACS_SAVEDIR="${XDG_STATE_HOME:-$HOME/.local/state}/emacs"
+    # [[ -z ${EMACS_BACKUP_DIR:-} || -z ${EMACS_BACKUP_DIR:#/emacs*} ]] && export EMACS_BACKUP_DIR="${EMACS_SAVEDIR}/backup"
+    # [[ -z ${EMACS_TRASH_DIR:-}  || -z ${EMACS_TRASH_DIR:#/emacs*}  ]] && export EMACS_TRASH_DIR="${EMACS_SAVEDIR}/trash"
+    # [[ -z ${EMACS_SAVES_DIR:-}  || -z ${EMACS_SAVES_DIR:#/emacs*}  ]] && export EMACS_SAVES_DIR="${EMACS_SAVEDIR}/saves"
+    # [[ -z ${EMACS_LISP_DIR:-}   || -z ${EMACS_LISP_DIR:#/emacs*}   ]] && export EMACS_LISP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/emacs/site-lisp"
+    # [[ -z ${EMACS_DUMP_FILE:-}  || -z ${EMACS_DUMP_FILE:#/emacs*}  ]] && export EMACS_DUMP_FILE="${XDG_STATE_HOME:-$HOME/.local/state}/emacs/auto-save-list/.emacs.dumper"
+    # [[ -z ${DOOMDIR:-}          ]] && export DOOMDIR="${XDG_CONFIG_HOME:-$HOME/.config}/doom"
+    # [[ -z ${DOOMLOCALDIR:-}     || -z ${DOOMLOCALDIR:#/emacs*}     ]] && export DOOMLOCALDIR="${XDG_CONFIG_HOME:-$HOME/.config}/emacs/.local"
 
-    # Create a default ripgrep config if missing to avoid startup errors
-    if [[ ! -f "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}" ]]; then
-      : > "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}"
-    fi
+    #     # Ensure expected cache/state dirs exist (Emacs/Doom + Zsh + common XDG)
+    #     mkdir -p \
+    #         "${DOOMLOCALDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/emacs/.local}" \
+    #         "${EMACS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/emacs}" \
+    #         "${ZSH_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh/cache}" \
+    #         "${XDG_STATE_HOME:-$HOME/.local/state}/zsh" \
+    #         "${XDG_CONFIG_HOME:-$HOME/.config}/npm" "${XDG_CACHE_HOME:-$HOME/.cache}/npm" "${NPM_CONFIG_PREFIX:-${XDG_DATA_HOME:-$HOME/.local/share}/npm}" \
+    #         "${XDG_CACHE_HOME:-$HOME/.cache}/yarn" "${PNPM_STORE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/pnpm}" "${PNPM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/pnpm}" \
+    #         "${GOPATH:-${XDG_DATA_HOME:-$HOME/.local/share}/go}" "${GOCACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/go}" "${GOMODCACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/go/mod}" \
+    #         "${XDG_CONFIG_HOME:-$HOME/.config}/aws" "${XDG_CONFIG_HOME:-$HOME/.config}/gcloud" "${XDG_CONFIG_HOME:-$HOME/.config}/gh" "${XDG_CONFIG_HOME:-$HOME/.config}/docker" \
+    #         "${XDG_CONFIG_HOME:-$HOME/.config}/ripgrep" \
+    #         "$(dirname "${LESSHISTFILE:-${XDG_STATE_HOME:-$HOME/.local/state}/less/history}")" "$(dirname "${NODE_REPL_HISTORY:-${XDG_STATE_HOME:-$HOME/.local/state}/node/repl_history}")"
+
+    # # Create a default ripgrep config if missing to avoid startup errors
+    # if [[ ! -f "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}" ]]; then
+    #   : > "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}"
+    # fi
     
     # compinit
     zmodload zsh/complist

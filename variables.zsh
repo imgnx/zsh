@@ -28,6 +28,15 @@ export EMACSDIR="${EMACSDIR:-${XDG_CONFIG_HOME}/emacs}"
 # Doom cache/local dir; default to live alongside your XDG Emacs dir
 export DOOMLOCALDIR="${DOOMLOCALDIR:-${XDG_CONFIG_HOME}/emacs/.local}"
 
+# ==============================
+#  XDG Base Directories
+# ==============================
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+
 # Optional convenience paths (not used by vanilla Emacs)
 export EMACS="${EMACS:-${XDG_CONFIG_HOME}/emacs}"
 export EMACS_DUMP_FILE="${EMACS_DUMP_FILE:-${XDG_STATE_HOME}/emacs/auto-save-list/.emacs.dumper}"
@@ -39,15 +48,6 @@ export EMACS_SAVEDIR="${EMACS_SAVEDIR:-${XDG_STATE_HOME}/emacs}"
 export EMACS_BACKUP_DIR="${EMACS_BACKUP_DIR:-${XDG_STATE_HOME}/emacs/backup}"
 export EMACS_TRASH_DIR="${EMACS_TRASH_DIR:-${XDG_STATE_HOME}/emacs/trash}"
 export EMACS_SAVES_DIR="${EMACS_SAVES_DIR:-${XDG_STATE_HOME}/emacs/saves}"
-
-# ==============================
-#  XDG Base Directories
-# ==============================
-
-export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 # ==============================
