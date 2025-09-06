@@ -182,6 +182,28 @@ JSON
 		fi
 }
 
+
+back_up() {
+	set -e
+
+	# Ensure EXCLUDE_DIRS is set, or use a default value if not
+	EXCLUDE_DIRS="${EXCLUDE_DIRS:-(venv|.git|node_modules)}"
+
+	# Get all volumes
+	vols=(/Volumes/*)
+
+	# Loop through each volume
+	for v in "${vols[@]}"; do
+		name=$(basename "$v")
+		echo "Syncing $v -> gs://imgfunnels.com/$name"
+
+		# Run gsutil rsync with exclusions and verbose output
+		gsutil -m rsync -r -c -v -x "$EXCLUDE_DIRS" "$v" "gs://imgfunnels.com/$name"
+
+		echo "Completed: $name"
+	done
+}
+
 dictionary() {
 	cd "$HOME/src/dinglehopper/assets/dictionary"
 }

@@ -1,16 +1,16 @@
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
-
+# Only define aliases here. No functions or script sourcing.
 alias frontend="cd $SRC/dinglehopper/src/frontend"
 alias fend="cd $SRC/dinglehopper/src/frontend"
 alias fe="cd $SRC/dinglehopper/src/frontend"
 alias backend="cd $SRC/dinglehopper/src/backend"
 alias bend="cd $SRC/dinglehopper/src/backend"
 alias be="cd $SRC/dinglehopper/src/backend"
-alias cli="cd $SRC/dinglehopper/src/cli"
-
-# Only define aliases here. No functions or script sourcing.
 alias bin="cd $BIN"
+alias bk="back_up"
+alias bkup="back_up"
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias cli="cd $SRC/dinglehopper/src/cli"
 alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
 alias jsh="jsh || cd $JSH"
 alias labs="cd $LABS"

@@ -50,6 +50,28 @@ export EMACS_TRASH_DIR="${EMACS_TRASH_DIR:-${XDG_STATE_HOME}/emacs/trash}"
 export EMACS_SAVES_DIR="${EMACS_SAVES_DIR:-${XDG_STATE_HOME}/emacs/saves}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
+# Normalize EMACS_* if unset or set to a broken '/emacs*' path
+_sanitize_emacs_var() {
+  local name="$1" default="$2" val
+  # Indirect get: ${(P)name} fetches value of variable named by $name
+  val="${(P)name}"
+  if [[ -z "${val:-}" || -z "${val:#/emacs*}" ]]; then
+    typeset -gx "$name"="$default"
+  fi
+}
+
+_sanitize_emacs_var EMACSDIR         "${XDG_CONFIG_HOME}/emacs"
+_sanitize_emacs_var EMACS            "${EMACSDIR}"
+_sanitize_emacs_var EMACS_DIR        "${EMACSDIR}"
+_sanitize_emacs_var EMACS_CONFIG_DIR "${EMACSDIR}"
+_sanitize_emacs_var EMACS_CACHE_DIR  "${XDG_CACHE_HOME}/emacs"
+_sanitize_emacs_var EMACS_SAVEDIR    "${XDG_STATE_HOME}/emacs"
+_sanitize_emacs_var EMACS_BACKUP_DIR "${XDG_STATE_HOME}/emacs/backup"
+_sanitize_emacs_var EMACS_TRASH_DIR  "${XDG_STATE_HOME}/emacs/trash"
+_sanitize_emacs_var EMACS_SAVES_DIR  "${XDG_STATE_HOME}/emacs/saves"
+_sanitize_emacs_var EMACS_LISP_DIR   "${XDG_DATA_HOME}/emacs/site-lisp"
+_sanitize_emacs_var EMACS_DUMP_FILE  "${XDG_STATE_HOME}/emacs/auto-save-list/.emacs.dumper"
+
 # ==============================
 #  Zsh Configuration
 # ==============================
