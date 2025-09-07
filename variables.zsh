@@ -250,3 +250,6 @@ export RIPGREP_CONFIG_PATH="${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripg
 export LESSHISTFILE="${LESSHISTFILE:-$XDG_STATE_HOME/less/history}"
 export WGETRC="${WGETRC:-$XDG_CONFIG_HOME/wget/wgetrc}"
 export HSTS_FILE="${HSTS_FILE:-$XDG_CACHE_HOME/wget-hsts}"
+
+
+export MallocStackLogging=1
