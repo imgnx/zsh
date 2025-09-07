@@ -813,15 +813,20 @@ copy() {
 #  echo $(pbpaste)
 # }
 
+alias ugit=/usr/local/bin/git
+__wrap_notice git
+
 git() {
-	if [[ "$1" == "sum" ]]; then
-		git log --oneline
-		read -r -p "Press any key to continue..."
-		git status --short
-		/usr/local/bin/git diff --minimal --color=always | less -R
-	else
-		/usr/local/bin/git "$@"
-	fi
+  if [[ "$1" == "sum" ]]; then
+    git log --oneline
+    read -r -p "Press any key to continue..."
+    git status --short
+    /usr/local/bin/git diff --minimal --color=always | less -R
+  elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" ]]; then
+    dash "$XDG_CONFIG_HOME/git/git-alias.sh" "$@"
+  else
+    /usr/local/bin/git "$@"
+  fi
 }
 
 # Get the path of the current script
