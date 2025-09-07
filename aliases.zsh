@@ -15,6 +15,7 @@ alias ....='cd ../../..'
 alias ...='cd ../..'
 alias ..='cd ..'
 alias 0bsd="license"
+alias acp="git add-commit-push"
 alias backend="cd $SRC/dinglehopper/src/backend"
 alias be="cd $SRC/dinglehopper/src/backend"
 alias bend="cd $SRC/dinglehopper/src/backend"

@@ -21,6 +21,35 @@
 # 	[ -n "$pid" ] && sudo kill "$pid"
 # }
 
+even_better_prompt() { 
+	local color branch gitinfo
+	color=$(ggs 2>/dev/null)
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		[[ -n $branch ]] && branch="/$branch"
+		local remote
+		remote=$(git remote -v 2>/dev/null | grep "origin" | head -1)
+    remoteName="$(awk '{print $1}' <<< "$remote")"
+    remoteUrl="$(awk '{print $2}' <<< "$remote")"
+
+		local remote_part=""
+		[[ -n $remote ]] && remote_part=" $remoteName"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch} %F{#deaded}($remoteUrl)%f"
+	fi
+	PROMPT='
+'
+	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
+	PROMPT+='
+'
+	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
+	PROMPT+='
+'
+	PROMPT+=$''"${ZSH_NAME}"':%m => '
+
+	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+}
+
+
 # # Schedule pomodoro function to run every 30 minutes using a loop
 # pomodoro_scheduler() {
 # 	while true; do
@@ -798,8 +827,8 @@ git() {
     read -r -p "Press any key to continue..."
     git status --short
     /usr/local/bin/git diff --minimal --color=always | less -R
-  elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" ]]; then
-    dash "$XDG_CONFIG_HOME/git/git-alias.sh" "$@"
+  elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" || "$1" == "acp"  ]]; then
+    dash "$XDG_CONFIG_HOME/git/aliases.sh" "$@"
   else
     /usr/local/bin/git "$@"
   fi

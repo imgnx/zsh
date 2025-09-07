@@ -3,31 +3,6 @@
 
 # Delayed script loader hook and periodic bin folder scanner
 
-even_better_prompt() { 
-	local color branch gitinfo
-	color=$(ggs 2>/dev/null)
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-		[[ -n $branch ]] && branch="/$branch"
-		local remote
-		remote=$(git remote 2>/dev/null | head -1)
-		local remote_part=""
-		[[ -n $remote ]] && remote_part=" $remote"
-		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch}%f"
-	fi
-	PROMPT='
-'
-	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
-	PROMPT+='
-'
-	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
-	PROMPT+='
-'
-	PROMPT+=$''"${ZSH_NAME}"':%m => '
-
-	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
-}
-
 
 # --- Periodic stats updater for prompt ---
 _imgnx_stats_last=0
@@ -154,20 +129,18 @@ hooks() {
 }
 
 
-if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
-    if typeset -f add-zsh-hook >/dev/null 2>&1; then
-        export PERIOD_SCAN_BINS=300
-        export PERIOD_ALIAS_FUNCS=600
-        add-zsh-hook periodic scan_new_config_bins
-        add-zsh-hook periodic imgnx_update_stats
-        add-zsh-hook precmd even_better_prompt
-        # add-zsh-hook chpwd pushd
-        # unfunction pushd
-        echo -e "Press [Enter] to load hooks"
-    fi
+if ! [[ "${precmd_functions[*]}" == *even_better_prompt* ]]; then
+  if typeset -f add-zsh-hook >/dev/null 2>&1; then
+    export PERIOD_SCAN_BINS=300
+    export PERIOD_ALIAS_FUNCS=600
+    add-zsh-hook periodic scan_new_config_bins
+    add-zsh-hook periodic imgnx_update_stats
+    add-zsh-hook precmd even_better_prompt
+    echo -e "Hooks loaded. Press [ENTER] to continue."
+  fi
 else
-    echo "Hooks already loaded."
-    hooks
+  echo "Hooks already loaded."
+  hooks
 fi
 
 if ! whence add2path >/dev/null 2>&1; then
