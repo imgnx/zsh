@@ -299,30 +299,6 @@ get_diff() {
 	echo "$diff"
 }
 
-even_better_prompt() { 
-	local color branch gitinfo
-	color=$(ggs 2>/dev/null)
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-		[[ -n $branch ]] && branch="/$branch"
-		local remote
-		remote=$(git remote 2>/dev/null | head -1)
-		local remote_part=""
-		[[ -n $remote ]] && remote_part=" $remote"
-		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch}%f"
-	fi
-	PROMPT='
-'
-	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
-	PROMPT+='
-'
-	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
-	PROMPT+='
-'
-	PROMPT+=$''"${ZSH_NAME}"':%m => '
-
-	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
-}
 
 better_prompt() {
 	local color branch gitinfo stats stat_parts stat

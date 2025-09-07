@@ -252,4 +252,6 @@ export WGETRC="${WGETRC:-$XDG_CONFIG_HOME/wget/wgetrc}"
 export HSTS_FILE="${HSTS_FILE:-$XDG_CACHE_HOME/wget-hsts}"
 
 
-export MallocStackLogging=1
+# export MallocStackLogging=1
+# Command to stop it:
+# sudo sysctl -w kern.malloc.stack_logging=0
