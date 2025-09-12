@@ -238,20 +238,20 @@ alias dict="dictionary"
 
 __wrap_notice gsutil
 gsutil() {
-	sudo command gsutil "$@"
+	command gsutil "$@"
 }
 
 __wrap_notice gcloud
 gcloud() {
-	sudo command gcloud "$@"
+	command gcloud "$@"
 }
 
 bucket() {
-	sudo command gsutil -m cp -r "$1" gs://imgfunnels.com/
+	command gsutil cp -r "$1" gs://imgfunnels.com/
 }
 
 pbucket() {
-    sudo command gsutil -m cp -r "$1" gs://re_imgnx
+    command gsutil cp -r "$1" gs://re_imgnx
 }
 
 # Ensure Emacs uses XDG init dir (Emacs 29+: --init-directory)

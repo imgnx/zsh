@@ -299,11 +299,9 @@ JSON
 
 back_up() {
 
-  local LOG="/tmp/gsutil_output.log"
-
   EXCLUDE_DIRS="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
 
-  : > "$LOG"
+  # No sudo prompts; run everything as the current user
 
   local vols=("/Volumes/"*)
 
@@ -321,28 +319,17 @@ back_up() {
     vols=("${temp_vols[@]}")
   fi
 
-  if tmux has-session -t backup_session 2>/dev/null; then
-    tmux kill-session -t backup_session
-  fi
-
-  tmux new-session -d -s backup_session -n backup
-  tmux split-window -t backup_session:0 -v "clear; tail -f $LOG"
-  tmux select-pane -t backup_session:0.0
-  sleep 1
+  # Run backups sequentially without tmux or extra buffers
 
   for v in "${vols[@]}"; do
     local name="$(basename "$v")"
 
-    tmux send-keys -t backup_session:0.0 "echo 'Syncing $v -> gs://imgfunnels.com/$name'" C-m
-    tmux send-keys -t backup_session:0.0 "gsutil rsync -r -e -x '$EXCLUDE_DIRS' '$v' 'gs://imgfunnels.com/$name' 2>&1 | tee -a '$LOG'" C-m
-    tmux send-keys -t backup_session:0.0 "echo 'Completed: $name'" C-m
+    echo "Syncing $v -> gs://imgfunnels.com/$name"
+    gsutil rsync -r -e -x "$EXCLUDE_DIRS" "$v" "gs://imgfunnels.com/$name"
+    echo "Completed: $name"
   done
 
-  tmux send-keys -t backup_session:0.0 "echo 'All backups complete. Press any key to exit.'" C-m
-  tmux send-keys -t backup_session:0.0 "read -k" C-m
-  tmux send-keys -t backup_session:0.0 "tmux kill-session -t backup_session" C-m
-
-  tmux attach -t backup_session &
+  echo 'All backups complete.'
 }
 
 
@@ -354,20 +341,20 @@ alias dict="dictionary"
 
 __wrap_notice gsutil
 gsutil() {
-	sudo command gsutil "$@"
+	command gsutil "$@"
 }
 
 __wrap_notice gcloud
 gcloud() {
-	sudo command gcloud "$@"
+	command gcloud "$@"
 }
 
 bucket() {
-	sudo command gsutil -m cp -r "$1" gs://imgfunnels.com/
+	command gsutil cp -r "$1" gs://imgfunnels.com/
 }
 
 pbucket() {
-    sudo command gsutil -m cp -r "$1" gs://re_imgnx
+    command gsutil cp -r "$1" gs://re_imgnx
 }
 
 # Ensure Emacs uses XDG init dir (Emacs 29+: --init-directory)
