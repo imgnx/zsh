@@ -137,7 +137,7 @@ if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
     add-zsh-hook precmd even_better_prompt
     # add-zsh-hook chpwd pushd
     # unfunction pushd
-    echo -e "Hooks loaded. Press [Enter] to continue."
+    echo -e "Press [Enter] to load hooks."
   fi
 else
   echo "Hooks already loaded."

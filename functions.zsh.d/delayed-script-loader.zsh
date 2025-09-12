@@ -136,7 +136,7 @@ if ! [[ "${precmd_functions[*]}" == *even_better_prompt* ]]; then
     add-zsh-hook periodic scan_new_config_bins
     add-zsh-hook periodic imgnx_update_stats
     add-zsh-hook precmd even_better_prompt
-    echo -e "Hooks loaded. Press [ENTER] to continue."
+    echo -e "Press [Enter] to load hooks."
   fi
 else
   echo "Hooks already loaded."

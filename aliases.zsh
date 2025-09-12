@@ -1,6 +1,3 @@
-
-
-
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
 # alias tr="tabula_rasa"
@@ -15,7 +12,7 @@ alias ....='cd ../../..'
 alias ...='cd ../..'
 alias ..='cd ..'
 alias 0bsd="license"
-alias acp="git add-commit-push"
+alias acp="git add-commit-push --no-verify"
 alias backend="cd $SRC/dinglehopper/src/backend"
 alias be="cd $SRC/dinglehopper/src/backend"
 alias bend="cd $SRC/dinglehopper/src/backend"
@@ -35,16 +32,17 @@ alias cnt="cd ~/src"
 alias copycat="copy"
 alias d="dirs -v"
 alias data="cd $XDG_DATA_HOME"
-alias df='df -ahicY'                                          # All filesystems, human readable, inodes, show type
+alias df='df -ahicY' # All filesystems, human readable, inodes, show type
 alias df='df -h'
 alias dw="$DOWNLOADS"
 alias dwn="$DOWNLOADS"
 alias e='emacs'
 alias edit='emacs'
-alias env='env | sort'                                        # Sorted environment variables
+alias env='env | sort' # Sorted environment variables
 alias fe="cd $SRC/dinglehopper/src/frontend"
 alias fend="cd $SRC/dinglehopper/src/frontend"
-alias free='vm_stat'                                          # Memory usage details on macOS
+alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
+alias free='vm_stat' # Memory usage details on macOS
 alias frontend="cd $SRC/dinglehopper/src/frontend"
 alias ga='git add'
 alias gb='git branch'
@@ -58,7 +56,7 @@ alias gp='git push'
 alias grep='rg'
 alias gs='git status'
 alias h='history'
-alias history='fc -l 1'                                       # Full history
+alias history='fc -l 1' # Full history
 alias i=$ICLOUD_DRIVE
 alias icloud=$ICLOUD_DRIVE
 alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
@@ -97,8 +95,9 @@ alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=al
 alias m='"$MEDIA"'
 alias mkdir='mkdir -p'
 alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
-alias mount='mount | column -t'                               # Formatted mount points
-alias netstat='netstat -tuln'                                 # Network connections with details
+alias mount='mount | column -t' # Formatted mount points
+alias mx="code -r $XDG_CONFIG_HOME/hammerspoon/init.lua"
+alias netstat='netstat -tuln' # Network connections with details
 alias p="$v"
 alias pastecat="$v"
 alias pc="$v"
@@ -109,7 +108,7 @@ alias re='reset'                   # alias for reset
 alias refresh='reset'              # alias for reset
 alias reset='reset && exec zsh -l' # reset terminal in interactive mode.
 alias rest="reset"
-alias restart='reset'              # alias for reset
+alias restart='reset' # alias for reset
 alias rl="readlink"
 alias rp=realpath
 alias rt="cd $XDG_RUNTIME_DIR"

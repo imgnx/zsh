@@ -1,7 +1,25 @@
 # !/bin/zsh
 # shellcheck disable=all
 
-# if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
+
+psql_export() {
+	pg_dump -U donaldmoore -h localhost -p 5432 -F p -v --no-owner --no-comments --no-public -f "$HOME/tmp/${1}_backup.sql" ${1}
+
+}
+
+rose() {
+	cd "$DH/stdln/_static_html/src/roses/one/"
+}
+
+logic() {
+	if [["$1" == "--help" || "$1" == "-h"]]; then
+	    ls "$HOME/Documentation/Logic/*"
+	else
+			open -a "Logic Pro X"
+	fi
+}
+
+#if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
 #	export POST_LOGIN_HOOK_RAN=1
 # 	add-zsh-hook precmd scan_new_config_bins
 # 	echo -e "\033[38;5;2m$ignoredPaths paths ignored.\033[0m"
@@ -20,6 +38,74 @@
 # 	echo "$pid"
 # 	[ -n "$pid" ] && sudo kill "$pid"
 # }
+
+
+reminder() {
+  # Check for the duration flag
+    local duration=0
+    local reminder=""
+    local time_in_seconds=""
+
+    # Parse the arguments
+    while getopts "d:" opt; do
+        case $opt in
+            d)
+                duration=$OPTARG  # If -d is passed, set the duration in minutes
+                ;;
+            *)
+                echo "Usage: schedule_reminder [-d duration_in_minutes] <reminder_message>"
+                return 1
+                ;;
+        esac
+    done
+    shift $((OPTIND - 1))  # Remove the options from the arguments list
+
+    # Get the reminder message (everything else)
+    reminder="$*"
+
+    # Convert duration to seconds if a duration flag is passed
+    if [[ $duration -gt 0 ]]; then
+        time_in_seconds=$((duration * 60))
+    else
+        # If no duration flag is passed, assume the second argument is in seconds
+        time_in_seconds=$1
+    fi
+
+    # Check if the reminder message is empty or no time is provided
+    if [[ -z $reminder || -z $time_in_seconds ]]; then
+        echo "Please provide both a reminder message and time in seconds (or use the -d flag for minutes)."
+        return 1
+    fi
+
+    # Schedule the reminder using 'at' (or 'osascript' for notifications)
+    echo "osascript -e 'display notification \"$reminder\" with title \"Reminder\"'" | at now + $time_in_seconds seconds
+
+    echo "Reminder set! The reminder will be triggered in $time_in_seconds seconds."
+}
+
+
+ucp() {
+	/bin/cp "$@";
+}
+cpn() {
+	cp "$@";
+}
+cp() {
+	echo "The \`cp\` command is configured to **not** overwrite files. Use \`ucp\` if you **do** want it to overwrite Enter."
+	echo -n "Press [ENTER] to continue."
+	read
+	/bin/cp -v -n "$@";
+}
+
+fnx_C6EE3E7B-5EB4-45F9-B13D-B451E169B079() {
+	if pgrep -x "Hammerspoon" > /dev/null; then
+		# If Hammerspoon is running, quit it
+		osascript -e 'quit app "Hammerspoon"'
+	else
+		# If Hammerspoon is not running, launch it
+		open -a Hammerspoon
+	fi
+}
 
 even_better_prompt() { 
 	local color branch gitinfo
@@ -239,23 +325,24 @@ back_up() {
     tmux kill-session -t backup_session
   fi
 
-  tmux new-session -d -s backup_session -n backup 'clear; echo "Starting Backup..."'
+  tmux new-session -d -s backup_session -n backup
   tmux split-window -t backup_session:0 -v "clear; tail -f $LOG"
   tmux select-pane -t backup_session:0.0
-  tmux attach -t backup_session &
+  sleep 1
 
   for v in "${vols[@]}"; do
     local name="$(basename "$v")"
 
-    local cmd="gsutil rsync -r -e -x '$EXCLUDE_DIRS' '$v' 'gs://imgfunnels.com/$name' 2>&1 | tee -a '$LOG'"
     tmux send-keys -t backup_session:0.0 "echo 'Syncing $v -> gs://imgfunnels.com/$name'" C-m
-    tmux send-keys -t backup_session:0.0 "$cmd" C-m
+    tmux send-keys -t backup_session:0.0 "gsutil rsync -r -e -x '$EXCLUDE_DIRS' '$v' 'gs://imgfunnels.com/$name' 2>&1 | tee -a '$LOG'" C-m
     tmux send-keys -t backup_session:0.0 "echo 'Completed: $name'" C-m
   done
 
   tmux send-keys -t backup_session:0.0 "echo 'All backups complete. Press any key to exit.'" C-m
   tmux send-keys -t backup_session:0.0 "read -k" C-m
   tmux send-keys -t backup_session:0.0 "tmux kill-session -t backup_session" C-m
+
+  tmux attach -t backup_session &
 }
 
 
@@ -421,12 +508,18 @@ ufind() {
 	/usr/bin/find "$@"
 }
 
+midi() {
+    cd "/Users/donaldmoore/src/dinglehopper/stdln/midi"
+	# todo: cargo build? python? node? How do you run it
+	#
+}
+
 __wrap_notice find
 find() {
 	tempfile=$(mktemp)
 	trap 'rm -f "$tempfile"' EXIT
 	if /usr/bin/find "$@" 2>/dev/null | tee "$tempfile"; then
-		say "Here's what I found."
+		# say "Here's what I found."
 		bat "$tempfile"
 	else
 		/usr/bin/find "$@"
@@ -486,9 +579,6 @@ tile() {
 	open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
 }
 
-doom() {
-	emacs "$@"
-}
 
 function tree() {
 	command tree -C "$@"
@@ -787,7 +877,7 @@ function cd() {
 		echo "💡 Use 'ucd' to access the actual Unix cd command if needed"
 		set -- "$HOME/dist"
 	fi
-	builtin pushd "$@"
+	builtin pushd "$@" > /dev/null
 	#  cd "$@" || return
 
 	if [[ "$PWD" == "$HOME/src" ]]; then
@@ -829,6 +919,11 @@ git() {
     /usr/local/bin/git diff --minimal --color=always | less -R
   elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" || "$1" == "acp"  ]]; then
     dash "$XDG_CONFIG_HOME/git/aliases.sh" "$@"
+  elif [[ "$1" == "list" ]]; then
+	  find /Volumes/ -type d -name ".git" | tee $HOME/tmp/git.list;
+	  say "Here's your list of git repositories";
+	  bat "$HOME/tmp/git.list"
+
   else
     /usr/local/bin/git "$@"
   fi

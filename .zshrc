@@ -103,3 +103,9 @@ fi
 
 
 autoload -Uz colors && colors
+
+# Added 2025-09-10 10:39:15 CDT by Codex CLI
+# --- Codex worklog helper: begin ---
+# Adds an `update` helper to quickly append to ~/todo/running-log.md
+update() { "$HOME/todo/add_update.sh" "$@"; }
+# --- Codex worklog helper: end ---

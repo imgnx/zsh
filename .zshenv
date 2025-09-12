@@ -1,7 +1,6 @@
 if [[ -o interactive ]]; then
-    echo -en "\033[38;2;222;173;237m
-イエムジーエヌエックス
-    \033[0m"
+    echo -e "\033[38;2;222;173;237m
+イエムジーエヌエックス\033[0m"
 fi
 
 export IMGNXZINIT=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
@@ -94,7 +93,7 @@ if [[ -o interactive ]]; then
     source_once "${ZDOTDIR}/aliases.zsh"
     source_once "${ZDOTDIR}/keybindings.zsh"
     # paths.zsh duplicates variables; avoid double-sourcing by default
-    # source_once "${ZDOTDIR}/paths.zsh"
+    source_once "${ZDOTDIR}/paths.zsh"
     
     # # Normalize EMACS_* to proper XDG paths if unset or broken (e.g., '/emacs*')
     # [[ -z ${EMACSDIR:-}         || -z ${EMACSDIR:#/emacs*}         ]] && export EMACSDIR="${XDG_CONFIG_HOME:-$HOME/.config}/emacs"
