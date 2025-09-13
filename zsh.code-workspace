@@ -2,31 +2,19 @@
   "folders": [
     {
       "name": "zsh",
-      "path": "/Users/donaldmoore/config/zsh",
+      "path": "/Users/donaldmoore/config/zsh"
     },
     {
       "name": "emacs",
-      "path": "/Users/donaldmoore/config/emacs",
+      "path": "/Users/donaldmoore/config/emacs"
     },
     {
       "name": "doom",
-      "path": "/Users/donaldmoore/config/doom",
-    },
-    {
-      "name": "cargo",
-      "path": "/Users/donaldmoore/dotfiles/.cargo",
-    },
-    {
-      "name": "rustup",
-      "path": "/Users/donaldmoore/dotfiles/.rustup",
-    },
-    {
-      "name": "hammerspoon",
-      "path": "/Users/donaldmoore/.config/hammerspoon",
+      "path": "/Users/donaldmoore/config/doom"
     },
     {
       "name": "dotfiles",
-      "path": "/Users/donaldmoore/dotfiles",
-    },
-  ],
+      "path": "/Users/donaldmoore/dotfiles"
+    }
+  ]
 }

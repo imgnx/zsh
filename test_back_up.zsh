@@ -5,7 +5,7 @@ set -e
 # Tests for the back_up function in functions.zsh
 # - Stubs gsutil to capture rsync calls instead of executing
 # - Patches the function at runtime to use a temporary Volumes dir
-# - Verifies filtering of "Macintosh HD" on non-full backups
+# - Verifies selection + isolation behavior and --full inclusion
 
 TESTDIR=$(mktemp -d)
 GSUTIL_LOG="$TESTDIR/gsutil.log"
@@ -39,29 +39,43 @@ reset_logs() {
   : > "$GSUTIL_LOG"
 }
 
-# Test 1: Non-full backup excludes "Macintosh HD"
+###############################
+# Test 1: Select USB1 (default list excludes system) and isolate
+###############################
 reset_logs
-print -r -- n | back_up
+# With --non-full default, only USB1 shows, so select 1 then answer 'y' to isolate
+print -r -- "1\ny" | back_up
 
-# Ensure USB1 is targeted
+# Ensure USB1 isolated path is targeted
 rg -q "imgfunnels.com/USB1" "$GSUTIL_LOG" || fail "Expected USB1 backup command in gsutil log"
 # Ensure Macintosh HD is not targeted
 if rg -q "imgfunnels.com/Macintosh HD" "$GSUTIL_LOG"; then
-  fail "Did not expect Macintosh HD in non-full backup"
+  fail "Did not expect Macintosh HD in non-full selection"
 fi
-
 # Ensure exclude pattern is present
 rg -q -- "node_modules" "$GSUTIL_LOG" || fail "Exclude pattern (node_modules) not found in rsync command"
+pass "Selected USB1 with isolation in non-full mode"
 
-pass "Non-full backup filters system volume and includes excludes"
-
-# Test 2: Full backup includes "Macintosh HD"
+###############################
+# Test 2: With --full, select Macintosh HD and isolate
+###############################
 reset_logs
-print -r -- y | back_up
+# In sorted order, "Macintosh HD" should be option 1; answer 'y' to isolate
+print -r -- "1\ny" | back_up --full
+rg -q "imgfunnels.com/Macintosh HD" "$GSUTIL_LOG" || fail "Expected Macintosh HD in full mode selection"
+pass "Full mode shows system volume; isolated path used"
 
-rg -q "imgfunnels.com/USB1" "$GSUTIL_LOG" || fail "Expected USB1 backup command in full backup"
-rg -q "imgfunnels.com/Macintosh HD" "$GSUTIL_LOG" || fail "Expected Macintosh HD in full backup"
-
-pass "Full backup includes system volume"
+###############################
+# Test 3: Non-isolated path upload (USB1 -> bucket root)
+###############################
+reset_logs
+print -r -- "1\nn" | back_up
+# For non-full, only USB1 is listed as 1; ensure destination is bucket root
+rg -q "gsutil rsync" "$GSUTIL_LOG" || fail "Expected an rsync invocation"
+rg -q "gs://imgfunnels.com" "$GSUTIL_LOG" || fail "Expected bucket root in destination"
+if rg -q "gs://imgfunnels.com/USB1" "$GSUTIL_LOG"; then
+  fail "Expected non-isolated destination without /USB1 suffix"
+fi
+pass "Non-isolated upload goes to bucket root"
 
 print -r -- "PASS: back_up tests completed successfully"

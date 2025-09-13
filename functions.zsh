@@ -1,6 +1,66 @@
 # !/bin/zsh
 # shellcheck disable=all
 
+# Keep this at the top!
+# Start of __wrap_notice
+__wrap_notice() {
+  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
+    local name="$1" path
+    path=$(command -v "$name" 2>/dev/null || true)
+    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
+  fi
+} # End of __wrap_notice
+# ! Keep this at the top!
+
+map() {
+    local dir="${1:-.}" item_var="${2:-file}" index_var="${3:-i}" index=0
+
+    if [[ ! -d "$dir" ]]; then
+        echo "Usage: map <directory> <item_variable> <index_variable>"
+        return 1
+    fi
+
+    for item in "$dir"/*; do
+        if [[ -e "$item" ]]; then
+            eval "$item_var=\"$item\""
+            eval "$index_var=$index"
+            echo "Processing $item (Index: $index)"
+            while true; do
+                read -e -p "Command: " user_command
+                if [[ -n "$user_command" ]]; then
+                    eval "$user_command \"$item\" $index"
+                else
+                    echo "No command entered, skipping..."
+                fi
+            done
+            ((index++))
+        fi
+    done
+}
+
+
+xngmi() {
+	rsync -avh --no-links "$1" "$2"
+}
+alias gmi="xngmi $@"
+alias gmni="xngmi $@"
+alias gemini="xngmi $@"
+alias img="xngmi $@"
+
+dusort() {
+    du -sh -- **/* **/.* | sort -hr | bat
+}
+
+__wrap_notice sort
+sort() {
+	if [[ $# -eq 0 ]]; then
+		pushd "$(pwd)" > /dev/null && dusort && popd > /dev/null # Executes dusort in the current directory, then returns
+    elif [[ -d $1 ]]; then
+		dusort "$1";
+	else
+		/usr/bin/sort "$@"
+	fi
+}
 
 psql_export() {
 	pg_dump -U donaldmoore -h localhost -p 5432 -F p -v --no-owner --no-comments --no-public -f "$HOME/tmp/${1}_backup.sql" ${1}
@@ -299,37 +359,78 @@ JSON
 
 back_up() {
 
-  EXCLUDE_DIRS="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
+	# Interactive backup with optional system volume and isolation
+	# Usage: back_up [--full]
 
-  # No sudo prompts; run everything as the current user
+	local include_system=false
+	if [[ "$1" == "--full" ]]; then
+		include_system=true
+	fi
 
-  local vols=("/Volumes/"*)
+	local EXCLUDE_DIRS_VAL="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
 
-  echo -n "Would you like to perform a full backup (including Macintosh HD)? (y/n): "
-  read backup_choice
+	# Discover volumes
+	local vols=("/Volumes/"*)
+	local targets=()
+	for vol in "${vols[@]}"; do
+		local name="$(basename "$vol")"
+		if [[ $include_system == false && "$name" == "Macintosh HD" ]]; then
+			continue
+		fi
+		[[ -d "$vol" ]] && targets+=("$vol")
+	done
 
-  if [[ "$backup_choice" != "y" ]]; then
-    local temp_vols=()
-    for vol in "${vols[@]}"; do
-      local name="$(basename "$vol")"
-      if [[ "$name" != "Macintosh HD" ]]; then
-        temp_vols+=("$vol")
-      fi
-    done
-    vols=("${temp_vols[@]}")
-  fi
+	if [[ ${#targets[@]} -eq 0 ]]; then
+		echo "No backupable volumes found under /Volumes."
+		return 1
+	fi
 
-  # Run backups sequentially without tmux or extra buffers
+	# Sort for stable menu order
+	local -a sorted
+	sorted=(${(on)targets})
 
-  for v in "${vols[@]}"; do
-    local name="$(basename "$v")"
+	# Selection: prefer fzf if available, else use select
+	local selection=""
+	if command -v fzf >/dev/null 2>&1; then
+		selection=$(printf '%s\n' "${sorted[@]}" | fzf --prompt='Select volume > ' --height=40% --reverse)
+		if [[ -z "$selection" ]]; then
+			echo "No selection made. Aborting."
+			return 1
+		fi
+	else
+		local PS3="Select a volume to back up: "
+		local opt
+		select opt in "${sorted[@]}"; do
+			if [[ -n "$opt" ]]; then
+				selection="$opt"
+				break
+			else
+				echo "Invalid selection. Try again."
+			fi
+		done
+	fi
 
-    echo "Syncing $v -> gs://imgfunnels.com/$name"
-    gsutil rsync -r -e -x "$EXCLUDE_DIRS" "$v" "gs://imgfunnels.com/$name"
-    echo "Completed: $name"
-  done
+	local name="$(basename "$selection")"
 
-  echo 'All backups complete.'
+	# Ask whether to isolate into its own folder in the bucket
+	local isolate_answer
+	printf "Isolate backup into gs://imgfunnels.com/%s/? (y/N): " "$name"
+	read -r isolate_answer
+	local dest="gs://imgfunnels.com"
+	if [[ "$isolate_answer" == "y" || "$isolate_answer" == "Y" ]]; then
+		dest="gs://imgfunnels.com/$name"
+	fi
+
+	echo "Syncing $selection -> $dest"
+	PYTHONUNBUFFERED=1 gsutil rsync -r -e -x "$EXCLUDE_DIRS_VAL" "$selection" "$dest" < /dev/null
+	local status=$?
+	if [[ $status -ne 0 ]]; then
+		echo "Error syncing $name (exit $status)"
+		return $status
+	fi
+	echo "Completed: $name"
+
+	echo 'All backups complete.'
 }
 
 
@@ -458,27 +559,37 @@ $gitinfo "
 
 __wrap_notice rm
 rm() {
-	local flags=()
-	local files=()
-	while [[ $# -gt 0 ]]; do
-		case "$1" in
-			-*) flags+=("$1");;
-			*) files+=("$1");;
-		esac
-		shift
-	done
-	for file in "${files[@]}"; do
-		local abs_path="$(realpath "$file" 2>/dev/null)"
-		if [[ -e "$file" ]]; then
-			local trash_path="$HOME/.Trash$abs_path"
-			mkdir -p "$(dirname "$trash_path")"
-			mv "$file" "$trash_path"
-		fi
-	done
-	# If only flags were passed, fallback to system rm
-	if [[ ${#files[@]} -eq 0 ]]; then
-		/bin/rm "${flags[@]}"
-	fi
+    local flags=()
+    local files=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -*) flags+=("$1");;  # Collect flags
+            *) files+=("$1");;   # Collect file paths
+        esac
+        shift
+    done
+
+    for file in "${files[@]}"; do
+        local abs_path="$(realpath "$file" 2>/dev/null)"
+
+        # Check if the file is in any user's .Trash directory
+        if [[ "$abs_path" =~ ^/Users/.*/\.Trash/ ]]; then
+            /bin/rm "${flags[@]}" "$file"  # Call /bin/rm directly if file is in any user's .Trash
+            return
+        fi
+
+        # Otherwise, move it to the user's .Trash
+        if [[ -e "$file" ]]; then
+            local trash_path="$HOME/.Trash$abs_path"
+            mkdir -p "$(dirname "$trash_path")"
+            mv "$file" "$trash_path"
+        fi
+    done
+
+    # If only flags were passed, fallback to system rm
+    if [[ ${#files[@]} -eq 0 ]]; then
+        /bin/rm "${flags[@]}"
+    fi
 }
 
 urm() {
@@ -505,9 +616,8 @@ __wrap_notice find
 find() {
 	tempfile=$(mktemp)
 	trap 'rm -f "$tempfile"' EXIT
-	if /usr/bin/find "$@" 2>/dev/null | tee "$tempfile"; then
-		# say "Here's what I found."
-		bat "$tempfile"
+	if /usr/bin/find "$@" > "$tempfile"; then
+      bat "$tempfile"
 	else
 		/usr/bin/find "$@"
 	fi
@@ -1487,16 +1597,5 @@ printf "    \b\b\b\b"
 # 	local sysline=""
 # 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
 
-# --- wrapper helpers ---------------------------------------------------------
-# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
-__wrap_notice() {
-  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
-    local name="$1" path
-    path=$(command -v "$name" 2>/dev/null || true)
-    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
-  fi
-}
 
-# 	# Ensure a newline before sysline block
-# 	colorize $sysline
 # }
