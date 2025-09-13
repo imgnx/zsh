@@ -26,9 +26,11 @@ map() {
             eval "$index_var=$index"
             echo "Processing $item (Index: $index)"
             while true; do
-                read -e -p "Command: " user_command
+                echo "Enter command to execute on $item (Ctrl+D to quit):"
+                read -e user_command
                 if [[ -n "$user_command" ]]; then
                     eval "$user_command \"$item\" $index"
+                    break
                 else
                     echo "No command entered, skipping..."
                 fi
