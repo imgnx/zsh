@@ -3,66 +3,36 @@
 
 # Keep this at the top!
 # Start of __wrap_notice
+# ! Keep this at the top!
 __wrap_notice() {
+# ! Keep this at the top!
   if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
     local name="$1" path
     path=$(command -v "$name" 2>/dev/null || true)
     [[ -n "$path" ]] && echo "[wrap] $name -> $path"
   fi
-} # End of __wrap_notice
-# ! Keep this at the top!
-
-map() {
-    local dir="${1:-.}" item_var="${2:-file}" index_var="${3:-i}" index=0
-
-    if [[ ! -d "$dir" ]]; then
-        echo "Usage: map <directory> <item_variable> <index_variable>"
-        return 1
-    fi
-
-    for item in "$dir"/*; do
-        if [[ -e "$item" ]]; then
-            eval "$item_var=\"$item\""
-            eval "$index_var=$index"
-            echo "Processing $item (Index: $index)"
-            while true; do
-                echo "Enter command to execute on $item (Ctrl+D to quit):"
-                read -e user_command
-                if [[ -n "$user_command" ]]; then
-                    eval "$user_command \"$item\" $index"
-                    break
-                else
-                    echo "No command entered, skipping..."
-                fi
-            done
-            ((index++))
-        fi
-    done
-}
-
+} # End of __wrap_notice ! Keep this at the top!
+# End of __wrap_notice ! Keep this at the top!
 
 xngmi() {
 	rsync -avh --no-links "$1" "$2"
 }
+
 alias gmi="xngmi $@"
 alias gmni="xngmi $@"
 alias gemini="xngmi $@"
 alias img="xngmi $@"
+alias gmni="xngmi $@"
+alias gemini="xngmi $@"
+alias img="xngmi $@"
 
-dusort() {
-    du -sh -- **/* **/.* | sort -hr | bat
+dusort () {
+  du -sh -- **/* **/.*
+  if [[ $? -ne 0 ]]; then
+    du -sh -- * .*
+  fi | sort -hr | uniq | bat || exit 1
 }
-
-__wrap_notice sort
-sort() {
-	if [[ $# -eq 0 ]]; then
-		pushd "$(pwd)" > /dev/null && dusort && popd > /dev/null # Executes dusort in the current directory, then returns
-    elif [[ -d $1 ]]; then
-		dusort "$1";
-	else
-		/usr/bin/sort "$@"
-	fi
-}
+alias dsort="dusort"
 
 psql_export() {
 	pg_dump -U donaldmoore -h localhost -p 5432 -F p -v --no-owner --no-comments --no-public -f "$HOME/tmp/${1}_backup.sql" ${1}
@@ -1601,3 +1571,46 @@ printf "    \b\b\b\b"
 
 
 # }
+
+pppp() {
+echo -e "\033[36m"
+cat<<EOF
+# Pick, Process, Push, Persist
+
+How a computer processes items in a loop.
+
+Breakdown:
+
+Pick (Load):
+Pick the data, value, or input for processing. In a loop, this is where you load the current item (e.g., a file name, or the current loop value).
+You pick the value or item to work on next.
+
+Process (Execute):
+Process the data or command. This is the execution phase where your loop or command actually does something—whether it's comparing values, running a command, or modifying something.
+You process the data or execute the logic.
+
+Push (Offload temporarily):
+Push the data out temporarily, like sending it to stdout, a buffer, or the screen. This is the point where you send the result somewhere briefly.
+You push the result to an output (such as printing to the terminal).
+
+Persist (Offload persistently):
+Persist the result if needed. This might involve saving the output to a file, database, or storing the final result somewhere permanent.
+You persist the data if necessary (e.g., write to a file, save a result).
+
+
+Why it Works:
+
+Pick: Like picking a fruit off a tree — you’re selecting the data to work with.
+
+Process: The actual processing or execution of commands, like squeezing or pressing to shape something.
+
+Push: Pushing the results somewhere temporary, like pushing a button.
+
+Persist: When you keep or store the result, like a keepsake or an important piece of data.
+
+Mnemonic:
+"Pick, Process, Push, Persist" is a nice, rhythmic phrase that can help you remember the cycle of how a loop or command executes at both the shell and assembly level.
+
+EOF
+echo -e "\033[0m"
+}
