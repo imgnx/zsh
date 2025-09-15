@@ -14,17 +14,88 @@ __wrap_notice() {
 } # End of __wrap_notice ! Keep this at the top!
 # End of __wrap_notice ! Keep this at the top!
 
-xngmi() {
-	rsync -avh --no-links "$1" "$2"
-}
 
-alias gmi="xngmi $@"
-alias gmni="xngmi $@"
-alias gemini="xngmi $@"
-alias img="xngmi $@"
-alias gmni="xngmi $@"
-alias gemini="xngmi $@"
-alias img="xngmi $@"
+
+gemini() {
+	 # Define the options with brief descriptions
+  options=("copy" "Copy files"
+           "move" "Move files (copy + delete source)"
+           "update" "Update files (only newer files)"
+           "reformat" "Reformat files (like renaming or restructuring)"
+           "help" "Display help about rsync and options"
+           "q" "Quit")
+
+  echo "Choose an action to perform:"
+
+  # Use select to display the options with descriptions
+  select choice in "${options[@]}"; do
+    case $choice in
+      "copy")
+        echo "You chose to copy files."
+        echo "Running rsync with copy options..."
+        echo "Command: rsync -avh --no-links \"$1\" \"$2\""
+        echo "Press [ENTER] to continue..."
+        read
+        rsync -avh --no-links "$1" "$2"
+        break
+        ;;
+      "move")
+        echo "You chose to move files."
+        echo "Running rsync with move options..."
+        echo "Command: rsync -avh --remove-source-files \"$1\" \"$2\""
+        echo "Press [ENTER] to continue..."
+        read
+        rsync -avh --remove-source-files "$1" "$2"
+        break
+        ;;
+      "update")
+        echo "You chose to update files."
+        echo "Running rsync with update options..."
+        echo "Command: rsync -avh --update --no-links \"$1\" \"$2\""
+        echo "Press [ENTER] to continue..."
+        read
+        rsync -avh --update --no-links "$1" "$2"
+        break
+        ;;
+      "reformat")
+        echo "You chose to reformat files."
+        echo "Running rsync with reformat options..."
+        echo "Command: rsync -avh --no-links --backup --suffix=.bak \"$1\" \"$2\""
+        echo "Press [ENTER] to continue..."
+        read
+        rsync -avh --no-links --backup --suffix=.bak "$1" "$2"
+        break
+        ;;
+      "help")
+        # Display help for rsync command
+        echo "Help: Rsync Command and Options"
+        echo
+        echo "rsync is a powerful tool for copying and synchronizing files."
+        echo
+        echo "Commonly used rsync options:"
+        echo "  -a, --archive        Archive mode (preserves symbolic links, permissions, timestamps, etc.)"
+        echo "  -v, --verbose        Verbose output"
+        echo "  -h, --human-readable Human-readable output (e.g., with units like K, M, G)"
+        echo "  --no-links           Skip symbolic links"
+        echo "  --remove-source-files Removes source files after they have been copied (useful for move)"
+        echo "  --update             Skip files that are newer on the destination"
+        echo "  --backup             Backup any overwritten files"
+        echo "  --suffix=.bak        Add a suffix (e.g., .bak) to backup files"
+        echo
+        echo "For more details on rsync, check the official documentation."
+        break
+        ;;
+      "q")
+        echo "Exiting..."
+        break
+        ;;
+      *)
+        echo "Invalid choice, please try again."
+        ;;
+    esac
+  done
+}
+alias gmi=gemini
 
 dusort () {
   du -sh -- **/* **/.*
@@ -327,82 +398,6 @@ JSON
 JSON
 	)" | jq -r '.choices[0].message.content // .error.message // "No content"'
 		fi
-}
-
-back_up() {
-
-	# Interactive backup with optional system volume and isolation
-	# Usage: back_up [--full]
-
-	local include_system=false
-	if [[ "$1" == "--full" ]]; then
-		include_system=true
-	fi
-
-	local EXCLUDE_DIRS_VAL="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
-
-	# Discover volumes
-	local vols=("/Volumes/"*)
-	local targets=()
-	for vol in "${vols[@]}"; do
-		local name="$(basename "$vol")"
-		if [[ $include_system == false && "$name" == "Macintosh HD" ]]; then
-			continue
-		fi
-		[[ -d "$vol" ]] && targets+=("$vol")
-	done
-
-	if [[ ${#targets[@]} -eq 0 ]]; then
-		echo "No backupable volumes found under /Volumes."
-		return 1
-	fi
-
-	# Sort for stable menu order
-	local -a sorted
-	sorted=(${(on)targets})
-
-	# Selection: prefer fzf if available, else use select
-	local selection=""
-	if command -v fzf >/dev/null 2>&1; then
-		selection=$(printf '%s\n' "${sorted[@]}" | fzf --prompt='Select volume > ' --height=40% --reverse)
-		if [[ -z "$selection" ]]; then
-			echo "No selection made. Aborting."
-			return 1
-		fi
-	else
-		local PS3="Select a volume to back up: "
-		local opt
-		select opt in "${sorted[@]}"; do
-			if [[ -n "$opt" ]]; then
-				selection="$opt"
-				break
-			else
-				echo "Invalid selection. Try again."
-			fi
-		done
-	fi
-
-	local name="$(basename "$selection")"
-
-	# Ask whether to isolate into its own folder in the bucket
-	local isolate_answer
-	printf "Isolate backup into gs://imgfunnels.com/%s/? (y/N): " "$name"
-	read -r isolate_answer
-	local dest="gs://imgfunnels.com"
-	if [[ "$isolate_answer" == "y" || "$isolate_answer" == "Y" ]]; then
-		dest="gs://imgfunnels.com/$name"
-	fi
-
-	echo "Syncing $selection -> $dest"
-	PYTHONUNBUFFERED=1 gsutil rsync -r -e -x "$EXCLUDE_DIRS_VAL" "$selection" "$dest" < /dev/null
-	local status=$?
-	if [[ $status -ne 0 ]]; then
-		echo "Error syncing $name (exit $status)"
-		return $status
-	fi
-	echo "Completed: $name"
-
-	echo 'All backups complete.'
 }
 
 
