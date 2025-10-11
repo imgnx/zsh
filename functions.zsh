@@ -1,6 +1,12 @@
 # !/bin/zsh
 # shellcheck disable=all
 
+fnsh() {
+	$EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
+}
+alias functions="fnsh"
+alias fn="fnsh"
+
 # Keep this at the top!
 # Start of __wrap_notice
 # ! Keep this at the top!
