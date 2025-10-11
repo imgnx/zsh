@@ -5,11 +5,16 @@
 #++ TEMPORARY ++++#
 #_________________#
 # Start TuxGuitar
-export MODEL=x86_64
-export OUTPUT_DIR=build_output
-export JAVA_HOME=$(/usr/libexec/java_home)
+# export MODEL=x86_64
+# export OUTPUT_DIR=build_output
+# export JAVA_HOME=$(/usr/libexec/java_home)
 # End TuxGuitar
 
+export SRC="$HOME/src"
+export DINGLEHOPPER="cd $DINGLEHOPPER"
+export dh="$DINGLEHOPPER"
+export srv="cd $DINGLEHOPPER/srv"
+export triage="cd $DINGLEHOPPER/triage"
 
 # ==============================
 # Placeholder
@@ -36,6 +41,7 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export SHELL_SESSIONS_DISABLE=1
 
 # Optional convenience paths (not used by vanilla Emacs)
 export EMACS="${EMACS:-${XDG_CONFIG_HOME}/emacs}"
@@ -52,12 +58,12 @@ export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
 # Normalize EMACS_* if unset or set to a broken '/emacs*' path
 _sanitize_emacs_var() {
-  local name="$1" default="$2" val
-  # Indirect get: ${(P)name} fetches value of variable named by $name
-  val="${(P)name}"
-  if [[ -z "${val:-}" || -z "${val:#/emacs*}" ]]; then
-    typeset -gx "$name"="$default"
-  fi
+    local name="$1" default="$2" val
+    # Indirect get: ${(P)name} fetches value of variable named by $name
+    val="${(P)name}"
+    if [[ -z "${val:-}" || -z "${val:#/emacs*}" ]]; then
+	typeset -gx "$name"="$default"
+    fi
 }
 
 _sanitize_emacs_var EMACSDIR         "${XDG_CONFIG_HOME}/emacs"
@@ -151,9 +157,9 @@ export CARGO_HOME="${CARGO_HOME:-$XDG_DATA_HOME/cargo}"
 
 # Prefer system Python for macOS tools (e.g., gcloud) if not overridden
 if [[ -z "${CLOUDSDK_PYTHON:-}" ]]; then
-  if [[ -x /usr/bin/python3 ]]; then
-    export CLOUDSDK_PYTHON="/usr/bin/python3"
-  fi
+    if [[ -x /usr/bin/python3 ]]; then
+	export CLOUDSDK_PYTHON="/usr/bin/python3"
+    fi
 fi
 export CONFIG="$XDG_CACHE_HOME"
 export CONTAINERS="$HOME/_____CONTAINERS"
@@ -219,7 +225,7 @@ export VOLTA_CACHE="$XDG_CACHE_HOME/volta"
 # =================
 export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME/npm/npmrc"
 export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
-export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$XDG_DATA_HOME/npm}"
+# export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$XDG_DATA_HOME/npm}"
 export PNPM_HOME="${PNPM_HOME:-$XDG_DATA_HOME/pnpm}"
 export PNPM_STORE_DIR="${PNPM_STORE_DIR:-$XDG_CACHE_HOME/pnpm}"
 export YARN_CACHE_FOLDER="${YARN_CACHE_FOLDER:-$XDG_CACHE_HOME/yarn}"

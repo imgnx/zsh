@@ -1,1 +1,0 @@
-/Users/donaldmoore/zsh-tracelog.txt

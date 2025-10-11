@@ -3,8 +3,18 @@
 # alias tr="tabula_rasa"
 # Normal mode - verbose, detailed output with all information
 # Only define aliases here. No functions or script sourcing.
-alias _re="_reset"
-alias _reset="command reset"
+
+alias rest="reset"
+alias rset="reset"
+alias rs="reset"
+alias r="reset"
+
+# alias src="cd $SRC"
+# alias dh="cd $DINGLEHOPPER"
+# alias triage="cd $DINGLEHOPPER/triage"
+# alias srv="cd $DINGLEHOPPER/srv"
+
+
 alias .......='cd ../../../../../..'
 alias ......='cd ../../../../..'
 alias .....='cd ../../../..'
@@ -30,9 +40,8 @@ alias clean-precmd="precmd_functions=()"
 alias cli="cd $SRC/dinglehopper/src/cli"
 alias cnt="cd ~/src"
 alias copycat="copy"
-alias d="dirs -v"
 alias data="cd $XDG_DATA_HOME"
-alias df='df -ahicY' # All filesystems, human readable, inodes, show type
+# Keep a single df alias
 alias df='df -h'
 alias dw="$DOWNLOADS"
 alias dwn="$DOWNLOADS"
@@ -53,7 +62,7 @@ alias git-branch="git branch -v"
 alias git-remote="git remote -v"
 alias gl='git pull'
 alias gp='git push'
-alias grep='rg'
+# alias grep='rg -p' # Promoted to function
 alias gs='git status'
 alias h='history'
 alias history='fc -l 1' # Full history
@@ -61,54 +70,49 @@ alias i=$ICLOUD_DRIVE
 alias icloud=$ICLOUD_DRIVE
 alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
 alias jsh="jsh || cd $JSH"
-alias l.="eza -a | grep -E '^\.'"
-alias l.="eza -a | grep -E '^\.'"
-alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
-alias l='eza -bGF --header --git --color=always --group-directories-first --icons'
-alias la='eza --long --all --group --group-directories-first'
-alias la='ls -la'
+unalias eza 2>/dev/null
+eza() { command eza --icons "$@"; }
+alias l="eza"
+alias l.="eza './.??*'" # l. (you might see a bullet point because of a common ligature)
+alias la='eza --long --all -bGF --header --git --color=always --group-directories-first --icons'
 alias labs="cd $LABS"
 alias ld='eza -1 --color=always --group-directories-first --icons'
-alias ld='eza -1 --color=always --group-directories-first --icons'
-alias lh="eza -a | grep -E '^\.'"
 alias lh="eza -a | grep -E '^\.|^total'"
 alias lib="cd $LIB"
 alias list-hooks="echo 'All hooks:'; echo 'precmd:' \"\${precmd_functions[@]}\"; echo 'preexec:' \"\${preexec_functions[@]}\"; echo 'periodic:' \"\${periodic_functions[@]}\""
 alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions[@]}\""
-alias ll='eza -la --icons --group-directories-first'
-alias ll='eza -la --icons --octal-permissions --group-directories-first'
-alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
-alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first --icons'
+# Keep the more detailed ll variant (octal-permissions)
+alias ll='eza -la --octal-permissions --group-directories-first'
+# Remove duplicate llm (icons are provided globally)
+alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
+unalias ls 2>/dev/null
 ls() {
     if [[ " $* " == *" -l "* || " $* " == *" l "* ]]; then
-        eza -bGF --header --git --color=always --group-directories-first --icons --long "$@"
+        eza -bGF --header --git --color=always --group-directories-first --long "$@"
     else
-        eza -bGF --header --git --color=always --group-directories-first --icons "$@"
+        eza -bGF --header --git --color=always --group-directories-first "$@"
     fi
 }
 alias lsd.="eza -d -a | grep -E '^\.'"
 alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"
 alias lsdh="eza -d | grep -E '^\.'"
-alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
-alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first --icons'
+# Remove duplicate lx (icons are provided globally)
+alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first'
 alias m='"$MEDIA"'
 alias mkdir='mkdir -p'
 alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
 alias mount='mount | column -t' # Formatted mount points
 alias mx="code -r $XDG_CONFIG_HOME/hammerspoon/init.lua"
 alias netstat='netstat -tuln' # Network connections with details
-alias p="$v"
-alias pastecat="$v"
-alias pc="$v"
+# alias p="$v"
+# alias pastecat="$v"
+# alias pc="$v"
 alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias p="python3"
+alias pins=". ./.venv/bin/activate"
 alias pi="ssh pi@zero2w.local"
 alias pip="python -m pip"
-alias re='reset'                   # alias for reset
-alias refresh='reset'              # alias for reset
-alias reset='reset && exec zsh -l' # reset terminal in interactive mode.
-alias rest="reset"
-alias restart='reset' # alias for reset
 alias rl="readlink"
 alias rp=realpath
 alias rt="cd $XDG_RUNTIME_DIR"
@@ -122,18 +126,16 @@ alias state="cd $XDG_STATE_HOME"
 alias stdln="cd $HOME/src/dinglehopper/stdln/"
 alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surge XT/Patches/Templates"
 alias surge="cd $SURGE"
+# Spicy system sampler
 alias sync_icloud="isync"
 alias t='cd ~/test'
 alias tabula="tabula_rasa"
 alias test="cd $TEST"
 alias tk=$TAKU
 alias tmp="cd $HOME/tmp"
-alias todo="todo.sh"
-alias top='top -o cpu -stats pid,command,cpu,mem,pstate,time' # Detailed process info
+alias todo="cd $HOME/Documents/ChalkBox/"
+# Keep the simpler top alias; adjust if you prefer detailed stats
 alias top='top -o cpu'
-alias ugit="/usr/local/bin/git"
-alias ufind="/usr/bin/find"
-alias ugrep="/usr/bin/grep"
 alias uls="/bin/ls"
 alias v="$v"
 alias wk="cd $SRC/__CODE_WORKSPACE__"

@@ -1,111 +1,127 @@
-# Early exit for tabula rasa mode
-if [[ -n "$TABULA_RASA" && "$TABULA_RASA" -eq 1 ]]; then
-    echo "Tabula Rasa mode is enabled. No configurations will be loaded."
-    return 0
+source $HOME/.config/zsh/variables.zsh
+source $XDG_CONFIG_HOME/zsh/functions.zsh
+source "$XDG_CONFIG_HOME/zsh/aliases.zsh"
+# . /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
+# . "$XDG_CONFIG_HOME/zsh/.zshenv"
+# . "$XDG_CONFIG_HOME/zsh/history.zsh"
+# source "$XDG_CONFIG_HOME/zsh/.zshrc"
+[[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
+
+# --- Homebrew environment ---
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+
+# --- Get public IP once per session ---
+# Create a temp file and fetch IP in the background
+tempfile="$(mktemp -t pubip.XXXXXX)"
+(curl -sS ifconfig.me >"$tempfile" &)
+
+# Function to read the IP on demand (cached)
+ip() {
+  [[ -s "$tempfile" ]] && cat "$tempfile" || echo "fetching..."
+}
+
+# Wait briefly for the IP fetch and then print it once at top
+echo -e "\n🌐 Public IP: $(ip) (cached)
+"
+
+# --- Prompt setup ---
+setopt PROMPT_SUBST
+
+# Colors
+tangerine="%F{#FF3300}"
+green="%F{#AABFAA}"
+indigo="%F{#5D00FF}"
+gray="%F{#EEEEEE}"
+green="%F{#AABFAA}"
+white="%F{#FFFFFF}"
+reset="%f%k%s"
+
+# Dynamic prompt
+setopt PROMPT_SUBST; 
+export PS1='%~ $(test -f "$tempfile" && cat "$tempfile" 2>/dev/null) [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) 
+%F{#00FF66}%K{#000000}%S%n%F{#000000}%K{#00FF66}@%M%k%s%f${reset}'
+
+# --- Optional cleanup trap on exit ---
+# (Uncomment if you want to remove tempfile when you close shell)
+TRAPEXIT() { rm -f "$tempfile"; }
+
+
+
+
+
+export SRC="/Users/donaldmoore/src"
+export DINGLEHOPPER="$SRC/dinglehopper"
+export TRIAGE="$DINGLEHOPPER/triage"
+# export CRATES="/Users/donaldmoore/src/dinglehopper/triage"
+# alias grep="rg -p"
+
+export PATH="$PATH:$HOME/secret/top"
+
+
+
+
+if [ "$COLUMNS" -ge 86 ]; then
+    # lolcat -S 50 "$XDG_CONFIG_HOME/zsh/banner.txt"
+    lolcat -p 3 -F 0.05 "$XDG_CONFIG_HOME/zsh/banner.txt" || cat "$XDG_CONFIG_HOME/zsh/banner.txt"
+else
+	# Set truecolor (RGB: 0-255,0-255,0-255). Adjust numbers to taste.
+	echo -en '\033[5m\033[1m\033[38;2;222;173;237m'
+	echo "[banner]"
+	echo -en "\033[0m"
 fi
 
-# History settings
-HISTFORMAT="%F{blue}%n@%m:%~%f %(!.#.$) %F{green}[%*]%f %F{yellow}%B%?%b%f %F{red}[%?]%f"
-HISTFILE="$XDG_STATE_HOME/zsh/zsh_history"
-HISTSIZE=5000
-SAVEHIST=5000
-HISTFILESIZE=5000
+[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env" # ghcup-env
 
-# History options for search and behavior
-setopt HIST_FIND_NO_DUPS    # Don't show duplicates in history search
-setopt HIST_IGNORE_ALL_DUPS # Remove older duplicate entries
-setopt HIST_IGNORE_SPACE    # Don't save commands that start with space
-setopt HIST_SAVE_NO_DUPS    # Don't write duplicates to history file
-setopt HIST_VERIFY          # Show command with history expansion before running
-setopt INC_APPEND_HISTORY   # Append to history file immediately
-setopt SHARE_HISTORY        # Share history between all sessions
-setopt EXTENDED_HISTORY     # Save timestamp and duration
+# Auto-activate per-project .venv if present
+autoload -U add-zsh-hook
+VENVAUTO_FILE="$HOME/.zsh_venv_auto"
 
-# Zinit setup
-# ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-# [ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
-# [ ! -d $ZINIT_HOME/.git ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
-# . "${ZINIT_HOME}/zinit.zsh"
+venv_autoactivate() {
+    [[ -n "$VIRTUAL_ENV" ]] && return
+    local actfile
+    actfile=$(find ./ -maxdepth 3 -type f -name "activate" 2>/dev/null | head -n1) || return
+    [[ -z "$actfile" ]] && return
 
-# Local IP address (cached)
-if [[ -z "$LOCAL_IP" ]]; then
-    LOCAL_IP=$(ipconfig getifaddr en2 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)
-fi
+    local dir=$(realpath "$(dirname "$actfile")")
+    local decision=$(grep "^$dir " "$VENVAUTO_FILE" 2>/dev/null | awk '{print $2}')
 
-# Cache directory setup
-CACHE_DIR="$HOME/tmp"
-[[ ! -d "$CACHE_DIR" ]] && mkdir -p "$CACHE_DIR"
-SYSLINE_CACHE="$CACHE_DIR/sysline_cache"
-[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
+    case "$decision" in
+        always) source "$actfile"; return ;;
+        never)  return ;;
+    esac
 
-# Create .gitignore if missing
-if [[ ! -f "$HOME/.config/.gitignore" ]]; then
-	cat <<'EOF' >"$HOME/.config/.gitignore"
-# Emacs (Doom, Spacemacs, etc)
-emacs/.git/
-emacs/.gitmodules
-emacs/.cache/
-emacs/.local/
-emacs/straight/
-emacs/.emacs.d/
+    echo "Found virtualenv in: $dir"
+    echo "Activate? (y)es / (n)o / (a)lways / (N)ever"
+    read -k 1 reply
+    echo
 
-# VS Code
-Code/User/globalStorage/
-Code/User/workspaceStorage/
+    case "$reply" in
+        y|Y) source "$actfile" ;;
+        a|A) echo "$dir always" >>"$VENVAUTO_FILE"; source "$actfile" ;;
+        n)   ;;  
+        N)   echo "$dir never" >>"$VENVAUTO_FILE" ;;
+    esac
+}
 
-# Other junk
-**/*.pyc
-__pycache__/
-*.log
-tmp/
-EOF
-fi
+venvreset() {
+    if [[ "$1" == "edit" ]]; then
+        ${EDITOR:-nano} "$VENVAUTO_FILE"
+    else
+        rm -f "$VENVAUTO_FILE"
+        echo "Cleared all venv auto-activation decisions."
+    fi
+}
 
-# | Glyph | Unicode | Name                 | Meaning                               |
-# | ----- | ------- | -------------------- | ------------------------------------- |
-# | `│`   | U+2502  | Vertical Line       | Used for vertical separation          |
-# | `─`   | U+2500  | Horizontal Line     | Used for horizontal separation        |
-# | `┌`   | U+250C  | | Top Left Corner    | Used for top-left corner of boxes     |
-# | `┐`   | U+2510  | Top Right Corner     | Used for top-right corner of boxes    |
-# | `└`   | U+2514  | Bottom Left Corner   | Used for bottom-left corner of boxes   |
-# | `┘`   | U+2518  | Bottom Right Corner  | Used for bottom-right corner of boxes  |
-# | `┬`   | U+252C  | Top T-Intersection   |                                       |
-# | `┴`   | U+2534  | Bottom T-Intersection|                                       |
-# | `├`   | U+251C  | Left T-Intersection  | Used for left-side transitions         |
-# | `┤`   | U+251E  | Right T-Intersection | Used for right-side transitions        |
-# | `┼`   | U+253C  | Cross T-Intersection | Used for intersections in boxes        |
-# | `┏`   | U+250F  | Top Left Box Corner  | Used for top-left corner of boxes     |
-# | `┓`   | U+2513  | Top Right Box Corner | Used for top-right corner of boxes    |
-# | `┗`   | U+2517  | Bottom Left Box Corner | Used for bottom-left corner of boxes |
-# | `┛`   | U+251B  | Bottom Right Box Corner| Used for bottom-right corner of boxes|
-# | `┝`   | U+252D  | Left Box T-Intersection| Used for left-side transitions      |
-# | `┥`   | U+2525  | Right Box T-Intersection| Used for right-side transitions     |
-# | `┯`   | U+2530  | Top Box T-Intersection | Used for top-side transitions       |
-# | `┷`   | U+2537  | Bottom Box T-Intersection| Used for bottom-side transitions   |
-# | `┸`   | U+2538  | Bottom Box T-Intersection | Used for bottom-side transitions   |
-# | `┰`   | U+E2520  | Top Box T-Intersection | Used for top-side transitions       |
-# | ``   | U+E0B0  | Right Separator      | Used to separate prompt segments      |
-# | ``   | U+E0B1  | Thin Right Separator |                                       |
-# | ``   | U+E0B2  | Left Separator       | For left-side transitions             |
-# | ``   | U+E0B3  | Thin Left Separator  |                                       |
-# | ``   | U+E0A0  | Branch               | Indicates Git branch                  |
-# | `≈`   | U+E0BA  | Left-facing Chevron  |
-# | ``   | U+E0B8  | Right-facing Chevron |
-# | ``   | U+E0BA  | Left-facing Chevron  |                                       |
-# | ``   | U+E0BC  | Right-facing Chevron |                                       |
-# | ``   | U+E0BD  | Left-facing Chevron |                                       |
-# | ``   | U+E0BE  | Right-facing Chevron |                                       |
-# | `` | U+E0BF  | Left-facing Chevron |                                       |
-# | ` ` | U+E0C0  | Right-facing Chevron |                                       |
+add-zsh-hook chpwd venv_autoactivate
+export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"
+export XDG_DATA_HOME="$HOME/.local/share"
+#export YARN_DATA_FOLDER="${YARN_DATA_FOLDER:-$XDG_CACHE_HOME/yarn}"
+export YARN_CACHE_FOLDER="${YARN_CACHE_HOME:-$XDG_CACHE_HOME}/yarn"
+export PATH="$XDG_DATA_HOME/yarn/global/bin:$PATH"
+export HISTFILE="$HOME/.local/state/zsh/history"
+export LESSHISTFILE="$HOME/.config/less/history"
+export PYTHONHISTFILE="$HOME/.config/python/history"
+export RIPGREP_CONFIG_PATH="$HOME/.config/ripgrep/ripgreprc"
+export PRETTIERD_DEFAULT_CONFIG="$HOME/.config/prettier/config"
 
-# IFS=$' \t\n'
-
-
-
-autoload -Uz colors && colors
-
-# Added 2025-09-10 10:39:15 CDT by Codex CLI
-# --- Codex worklog helper: begin ---
-# Adds an `update` helper to quickly append to ~/todo/running-log.md
-update() { "$HOME/todo/add_update.sh" "$@"; }
-# --- Codex worklog helper: end ---
