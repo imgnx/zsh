@@ -21,8 +21,7 @@ ip() {
 }
 
 # Wait briefly for the IP fetch and then print it once at top
-echo -e "\n🌐 Public IP: $(ip) (cached)
-"
+echo -e "\n🌐 Public IP: $(ip)"
 
 # --- Prompt setup ---
 setopt PROMPT_SUBST
@@ -38,7 +37,7 @@ reset="%f%k%s"
 
 # Dynamic prompt
 setopt PROMPT_SUBST; 
-export PS1='%~ $(test -f "$tempfile" && cat "$tempfile" 2>/dev/null) [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) 
+export PS1='%~ $("$tempfile" && cat "$tempfile" 2>/dev/null) [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) 
 %F{#00FF66}%K{#000000}%S%n%F{#000000}%K{#00FF66}@%M%k%s%f${reset}'
 
 # --- Optional cleanup trap on exit ---

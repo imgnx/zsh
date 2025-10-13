@@ -33,7 +33,7 @@ function generate_ansi_colors() {
 BEGIN {
     # Initialize colors and cache
     cache_file = "/tmp/colorize_cache.txt";
-    if (system("test -f " cache_file) == 0) {
+ #   if (system("test -f " cache_file) == 0) {
         system("rm -f " cache_file);
     }
     generate_ansi_colors();

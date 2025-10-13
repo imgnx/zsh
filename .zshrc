@@ -12,18 +12,25 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 
 
 # --- Get public IP once per session ---
-# Create a temp file and fetch IP in the background
 tempfile="$(mktemp -t pubip.XXXXXX)"
-(curl -sS ifconfig.me >"$tempfile" &)
 
-# Function to read the IP on demand (cached)
-ip() {
-  [[ -s "$tempfile" ]] && cat "$tempfile" || echo "fetching..."
+fetch_public_ip() {
+  {
+    curl -fsS --max-time 5 ifconfig.me >| "$tempfile" || printf '' >| "$tempfile"
+  } &!
 }
 
-# Wait briefly for the IP fetch and then print it once at top
-echo -e "\n🌐 Public IP: $(ip) (cached)
-"
+ip() {
+  [[ -s "$tempfile" ]] || fetch_public_ip
+  if [[ -s "$tempfile" ]]; then
+    cat "$tempfile"
+  else
+    echo "fetching..."
+  fi
+}
+
+fetch_public_ip
+echo -e "\n🌐 Public IP: $(ip)"
 
 # --- Prompt setup ---
 setopt PROMPT_SUBST
@@ -39,7 +46,8 @@ reset="%f%k%s"
 
 # Dynamic prompt
 setopt PROMPT_SUBST; 
-export PS1='%~ $(test -f "$tempfile" && cat "$tempfile" 2>/dev/null) [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) 
+
+export PS1='[pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) %~ $(cat "$tempfile" 2>/dev/null) 
 %F{#00FF66}%K{#000000}%S%n%F{#000000}%K{#00FF66}@%M%k%s%f${reset}'
 
 # --- Optional cleanup trap on exit ---
@@ -125,3 +133,7 @@ export PYTHONHISTFILE="$HOME/.config/python/history"
 export RIPGREP_CONFIG_PATH="$HOME/.config/ripgrep/ripgreprc"
 export PRETTIERD_DEFAULT_CONFIG="$HOME/.config/prettier/config"
 
+
+if [ -e "${ZDOTDIR}/.iterm2_shell_integration.zsh" ]; then
+  source "${ZDOTDIR}/.iterm2_shell_integration.zsh"
+fi

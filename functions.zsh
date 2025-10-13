@@ -1046,6 +1046,7 @@ $gitinfo "
 
  __wrap_notice rm
  rm() {
+
      local flags=()
      local files=()
      while [[ $# -gt 0 ]]; do
@@ -1454,53 +1455,6 @@ EOF
      echo "Project setup complete! Run 'npm start' to start the app."
  }
 
-function cd() {
-     # Preserve builtin behaviour: at most one argument
-     if (( $# > 1 )); then
-	 printf 'cd: too many arguments\n' >&2
-	 return 1
-     fi
-
-     # Honour special cases handled by the builtin before attempting path logic
-     if [[ "$1" == "-" ]]; then
-	 builtin cd - || return
-	 return 0
-     fi
-
-     local dest="${1:-$HOME}"
-     local target_path="$dest"
-
-     # Resolve paths for accurate comparison
-     if [[ -z "$dest" || "$dest" == "." ]]; then
-	 target_path="$PWD"
-     elif [[ "$dest" == "~"* ]]; then
-	 target_path="${dest/#\~/$HOME}"
-     elif [[ "$dest" != /* ]]; then
-	 target_path="$PWD/$dest"
-     fi
-
-     # Normalize the path by resolving any . or .. components
-     target_path=$(realpath "$target_path" 2>/dev/null || echo "$target_path")
-
-     # Check if trying to cd to $HOME/bin specifically
-     if [[ "$target_path" == "$HOME/bin" ]]; then
-	 echo "⚠️  Redirected from $HOME/bin to $HOME/dist to avoid The Corruption"
-	 echo "💡 Use 'ucd' to access the actual Unix cd command if needed"
-	 dest="$HOME/dist"
-     fi
-
-     builtin cd -- "$dest" || return
-
-     if [[ "$PWD" == "$HOME/src" ]]; then
-	 when () {
-	     ufind ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file
-	     do
-		 echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
-	     done
-	 }
-	 when | head -n 20
-     fi
- }
 
  dir() {
      hash "$@"
@@ -2005,7 +1959,7 @@ _\/\\\_______\/\\\__/\\/\\\\\\\__________________\/\\\_______\/\\\_\//\\\____/\\
 		_\////////////_____\///__________\///____________\////////////__________\///____\///_______\///______________\///__
 EOF
      /usr/bin/whoami "$@" | sed 's/^/👤 /'
- }
+  }
 
  # clean-hooks() {
  # 	echo "Current hooks:"
