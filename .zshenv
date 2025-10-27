@@ -1,3 +1,12 @@
+# If this zsh session is non‑interactive, exit quietly.
+[[ -o interactive ]] || return
+
+# Anything after this point runs only for interactive shells.
+# echo "Expectations are pre‑meditated resentments"
+echo "TABULA_RASA MODE: $TABULA_RASA_MODE"
+# … your other prompt customizations …
+
+
 # Homebrew
 
 alias cl="clear"

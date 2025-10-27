@@ -166,7 +166,7 @@ export CONTAINERS="$HOME/_____CONTAINERS"
 export COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
 export DOOMDIR="$XDG_CONFIG_HOME/doom"
 export DOWNLOADS="$HOME/Downloads"
-export EDITOR="$HOME/bin/code-wait"
+export EDITOR="emacs"
 export ESLINT_USE_FLAT_CONFIG=false
 export EXA_COLORS="ln=1;35"
 export ICLOUD_DRIVE="$HOME/Library/Mobile Documents/com~apple~CloudDocs"

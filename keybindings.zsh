@@ -1,8 +1,25 @@
 # --- Keybindings ---
 
 # print -P -n "[%F{green}keybindings%f]"
+# ~/.zsh/keybindings.zsh
+# ----------------------------------------------------------
+# Custom keybindings and clipboard helpers
+# ----------------------------------------------------------
 
-bindkey -e
+# Copy the last command’s output to clipboard
+copy_last_output() {
+  local cmd out
+  cmd="$(fc -ln -1)" || return
+  out="$({ eval "$cmd"; } 2>/dev/null)"
+  print -rn -- "$out" | pbcopy
+  zle -M "Copied output of: $cmd"
+}
+
+zle -N copy_last_output
+
+# Key bindings (Ctrl-R to copy last command output)
+bindkey '^[R' copy_last_output
+bindkey '^R' copy_last_text
 bindkey "^A" beginning-of-line
 bindkey "^E" end-of-line
 bindkey "^B" backward-char
@@ -45,3 +62,5 @@ bindkey '^R' history-incremental-search-backward # Ctrl+R for reverse search
 bindkey '^S' history-incremental-search-forward  # Ctrl+S for forward search
 bindkey '^P' history-search-backward             # Ctrl+P for previous matching
 bindkey '^N' history-search-forward              # Ctrl+N for next matching
+
+bindkey -e

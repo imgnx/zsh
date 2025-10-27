@@ -1,11 +1,73 @@
 # !/bin/zsh
 # shellcheck disable=all
 
+fn.sh() {
+    emacs "$HOME/.config/zsh/fn.sh"
+}
+
+# codex() {
+#     sudo tee /opt/homebrew/bin/codex "$@" ./codex && "$(cat ./codex | tail -n 10 | grep "codex resume" > ./codex-resume)" && chmod +x ./codex-resume
+# }
+
+wakewin() {
+  ssh min.local 'powershell.exe Stop-Process -Name explorer -Force; Start-Process explorer'
+}
+
+function daw() {
+    cd "$TRIAGE/digital-audio-workspace/"
+}
+
 fnsh() {
 	$EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
 }
 alias functions="fnsh"
 alias fn="fnsh"
+
+forline() {
+  emulate -L zsh
+  local file="$1"
+  shift
+  local line
+  for line in "${(@f)$(<"$file")}"; do
+    "$@" "$line"
+  done
+}
+
+#eq() {
+#    cd "/Users/donaldmoore/Documents/Aequilibrium"
+#}
+
+_taku_venv() {
+    python -m venv --prompt "${PWD:t}" .venv
+    source .venv/bin/activate
+}
+
+
+navi() {
+    while true; do
+	tput bel
+	tput bel
+	sleep 5
+	tput bel
+	tput bel
+	sleep 10
+	tput bel
+	tput bel
+	sleep 20
+	tput bel
+	tput bel
+	sleep 40
+	tput bel
+	tput bel
+	sleep 80
+    done;
+    
+}
+
+# tri() {
+#     # "Fish" commands -- lightweight,f ast, and fun...
+#     cd $DINGLEHOPPER/triage/$1
+# }
 
 # Keep this at the top!
 # Start of __wrap_notice
@@ -50,30 +112,33 @@ reset() {
 
 __wrap_notice grep
 
-grep() {
-    if ! command -v rg >/dev/null 2>&1; then
-	print -u2 -- "rg wrapper: ripgrep (rg) not found; falling back to system grep."
-	command grep "$@"
-	return $?
-    fi
+#grep() {
+#    if ! command -v rg >/dev/null 2>&1; then
+#	print -u2 -- "rg wrapper: ripgrep (rg) not found; falling back to system grep."
+#	command grep "$@"
+#	return $?
+#    fi
+##
+###
 
-    local stderr_log status
-    stderr_log=$(mktemp -t rg-grep.XXXXXX) || return 1
+#    local stderr_log statu#s
+#    stderr_log=$(mktemp -t rg-grep.XXXXXX) || return 1#
 
-    if ! command rg -p "$@" 2> "$stderr_log"; then
-	status=$?
-	if [[ -s "$stderr_log" ]]; then
-	    print -u2 -- "rg wrapper: command failed (exit $status):"
-	    cat "$stderr_log" >&2
-	else
-	    print -u2 -- "rg wrapper: command failed (exit $status) running: rg -p $*"
-	fi
-	rm -f "$stderr_log"
-	return $status
-    fi
-
-    rm -f "$stderr_log"
-}
+#    if ! command rg -p "$@" 2> "$stderr_log"; then###
+#	status=$?
+#	if [[ -s "$stderr_log" ]]; then
+#	    print -u2 -- "rg wrapper: command failed (exit $status):"
+#	    cat "$stderr_log" >&2
+#	else
+#	    print -u2 -- "rg wrapper: command failed (exit $status) running: rg -p $*"
+	    
+#	fi
+#	rm -f "$stderr_#"
+#	return $status
+#    fi
+#
+#     rm -f "$stderr_log"
+# }
 
 alert() {
 	while true; do
@@ -1212,7 +1277,7 @@ $gitinfo "
      unsetopt noglob
  }
 
- taku() {
+ taku.init() {
 
      # Exit immediately if a command exits with a non-zero status
      set -e
@@ -1943,9 +2008,13 @@ EOF
  }
 
  when() {
-     find ${1:-.} -maxdepth 1 -exec stat -f "%B %N" {} + | sort -nr | while read ts file; do echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"; done
- }
-
+    find "${1:-.}" -maxdepth 1 -exec stat -f "%B %N" {} + \
+        | sort -nr \
+        | head -n 10 \
+        | while read ts file; do
+            echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
+        done
+}
  whoami() {
      cat << 'EOF'
 __/\\\\\\\\\\\\___________________________________/\\\\\\\\\\\\_____/\\\______________/\\\__/\\\\____________/\\\\_

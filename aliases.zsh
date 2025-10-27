@@ -1,6 +1,9 @@
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
 # alias tr="tabula_rasa"
+
+# alias taku='node taku.js' # /secret/top
+
 # Normal mode - verbose, detailed output with all information
 # Only define aliases here. No functions or script sourcing.
 
@@ -48,6 +51,7 @@ alias dwn="$DOWNLOADS"
 alias e='emacs'
 alias edit='emacs'
 alias env='env | sort' # Sorted environment variables
+alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
 alias fe='cd "$SRC/dinglehopper/src/frontend"'
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
 alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
