@@ -1,5 +1,31 @@
-# !/bin/zsh
+#!/bin/zsh
 # shellcheck disable=all
+
+format() {
+    if [[ -z "$1" ]]; then
+	echo "Usage: $0 <file>"
+    else
+	filename="$1";
+	extension="${filename:e}";
+	if [[ $extension == "php" ]]; then
+	    php-cs-fixer fix "$1";
+	elif [[ $extension == "js" || extension == "css" || extension == "html" ]]; then
+	    npx prettier -w "$1";
+	fi
+    fi
+}
+
+draft() {
+    cd "$DINGLEHOPPER/draft"
+}
+
+oncd() {
+    if [[ -f ./.automx ]]; then
+	./.automx
+    fi
+}
+
+
 
 fn.sh() {
     emacs "$HOME/.config/zsh/fn.sh"
@@ -153,18 +179,7 @@ srv() {
 
 
 dusort() {
-    if [[ -z "$1" ]]; then
-	echo "USAGE: \`dusort <path> | ./\`"
-	echo "Where <path> is any valid filepath... "
-	echo ""
-	echo "Use \`dusort dusort *\` to view (visible) resources."
-	echo ""
-	echo "Use \`dusort * .*\` to also search for hidden files and/or directories."
-
-	exit 1
-    fi
-
-    du -ah "$1" | sort -hr | bat --style=plain
+    du -ah ./ | sort -hr | head -n 15 | bat --style=plain
 }
 
 salsa() {
@@ -793,121 +808,6 @@ USAGE
  #   --stream           Stream tokens live (Ctrl-C to stop)
  #   -h|--help          Show help
 
-
- gpt() {
-     # --- sanity ---------------------------------------------------------------
-     command -v curl >/dev/null || { echo "gpt: curl not found"; return 127; }
-     command -v jq >/dev/null || { echo "gpt: jq not found"; return 127; }
-     [[ -n "$OPENAI_API_KEY" ]] || { echo "gpt: set \$OPENAI_API_KEY"; return 1; }
-
-     # --- defaults -------------------------------------------------------------
-     local model="${GPT_MODEL:-gpt-4o-mini}"
-     local system="${GPT_SYSTEM:-You are a concise CLI assistant.}"
-     local temperature="${GPT_TEMPERATURE:-0.3}"
-     local stream="false"
-
-     # --- parse args -----------------------------------------------------------
-     local argv=()
-     while [[ $# -gt 0 ]]; do
-	 case "$1" in
-	     -m) model="$2"; shift 2 ;;
-	     -s) system="$2"; shift 2 ;;
-	     -t) temperature="$2"; shift 2 ;;
-	     --stream) stream="true"; shift ;;
-	     -h|--help)
-		 cat <<'USAGE'
-	gpt — talk to OpenAI from Zsh
-	Usage:
-		gpt "prompt text"
-		echo "from stdin" | gpt
-		gpt -m gpt-4o -t 0.1 "short, precise answer"
-		gpt -s "You are terse." "one-liner"
-
-	Flags:
-		-m <model>         Model ID (default: gpt-4o-mini)
-		-s <system>        System prompt
-		-t <temperature>   0.0–1.0 (default: 0.3)
-		--stream           Stream tokens
-		-h, --help         Show this help
-
-	Env:
-		OPENAI_API_KEY (required), GPT_MODEL, GPT_SYSTEM, GPT_TEMPERATURE
-USAGE
-		 return 0
-		 ;;
-	     *) argv+=("$1"); shift ;;
-	 esac
-     done
-
-     # --- collect prompt (args or stdin) --------------------------------------
-     local prompt
-     if [[ ${#argv[@]} -gt 0 ]]; then
-	 prompt="${argv[*]}"
-     else
-	 # read stdin without trimming newlines
-	 prompt="$(cat)"
-     fi
-     if [[ -z "$prompt" ]]; then
-	 echo "gpt: empty prompt (pass text or pipe stdin). Try: gpt -h"
-	 return 2
-     fi
-
-     # --- build JSON payload safely -------------------------------------------
-     # escape newlines/quotes for JSON
-     local esc_system esc_prompt
-     esc_system=$(printf '%s' "$system" | jq -Rsa '.')[1,-2]
-     esc_prompt=$(printf '%s' "$prompt" | jq -Rsa '.')[1,-2]
-
-     # --- choose request style -------------------------------------------------
-     if [[ "$stream" == "true" ]]; then
-	 # Stream tokens as they arrive (Chat Completions SSE)
-	 # Press Ctrl-C to stop; leaves what you’ve printed.
-	 curl -sS --no-buffer https://api.openai.com/v1/chat/completions \
-	      -H "Authorization: Bearer $OPENAI_API_KEY" \
-	      -H "Content-Type: application/json" \
-	      -d "$(cat <<JSON
-	{
-		"model": "$model",
-		"temperature": $temperature,
-		"stream": true,
-		"messages": [
-			{"role":"system","content":"$esc_system"},
-			{"role":"user","content":"$esc_prompt"}
-		]
-	}
-JSON
-	)" | awk '
-				/^data:/ {
-					sub(/^data: /,"");
-					if ($0 == "[DONE]") exit;
-					# Print incremental content pieces if present
-					if (match($0, /"content":"([^"]*)"/, m)) {
-						gsub(/\\n/,"\n", m[1]);
-						gsub(/\\t/,"\t", m[1]);
-						gsub(/\\"/,"\"", m[1]);
-						printf "%s", m[1];
-						fflush();
-					}
-				}'
-	 echo
-     else
-	 # One-shot request; pretty-print the assistant text
-	 curl -sS https://api.openai.com/v1/chat/completions \
-	      -H "Authorization: Bearer $OPENAI_API_KEY" \
-	      -H "Content-Type: application/json" \
-	      -d "$(cat <<JSON
-	{
-		"model": "$model",
-		"temperature": $temperature,
-		"messages": [
-			{"role":"system","content":"$esc_system"},
-			{"role":"user","content":"$esc_prompt"}
-		]
-	}
-JSON
-	)" | jq -r '.choices[0].message.content // .error.message // "No content"'
-     fi
- }
 
  back_up() {
 
@@ -1556,7 +1456,9 @@ EOF
 	 bat "$HOME/tmp/git.list"
 
      else
+	 echo "Running /usr/bin/git \"$@\""
 	 /usr/bin/git "$@"
+	 
      fi
  }
 

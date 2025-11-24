@@ -160,3 +160,10 @@ _retro_indexes() { compadd 1 2 3 4 5 6 7 8 9 10 }
 
 source /Users/donaldmoore/src/dinglehopper/triage/tri/tri
 
+export UTILS=/Users/donaldmoore/src/dinglehopper/utils
+alias utils="cd $UTILS"
+export ART=/Users/donaldmoore/Art
+alias art="cd $ART"
+export PATH="$PATH:/Users/donaldmoore/src/dinglehopper/utils/bin"
+export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/Current"
+source "$HOME/.config/zsh/hooks.zsh"

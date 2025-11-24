@@ -1,0 +1,16 @@
+#!/bin/zsh
+# shellcheck disable=all
+
+# chpwd hook: execute ./.automx in the current directory if present.
+chpwd_automx() {
+    emulate -L zsh
+
+    local automx="./.automx"
+    [[ -f "$automx" ]] || return 0
+
+    if [[ -x "$automx" ]]; then
+        "$automx"
+    else
+        zsh "$automx"
+    fi
+}

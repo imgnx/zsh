@@ -94,6 +94,7 @@ if [[ -o interactive ]]; then
     source_once "${ZDOTDIR}/keybindings.zsh"
     # paths.zsh duplicates variables; avoid double-sourcing by default
     source_once "${ZDOTDIR}/paths.zsh"
+    source_once "${ZDOTDIR}/hooks.zsh"
     
     # # Normalize EMACS_* to proper XDG paths if unset or broken (e.g., '/emacs*')
     # [[ -z ${EMACSDIR:-}         || -z ${EMACSDIR:#/emacs*}         ]] && export EMACSDIR="${XDG_CONFIG_HOME:-$HOME/.config}/emacs"
