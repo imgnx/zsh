@@ -165,5 +165,6 @@ alias utils="cd $UTILS"
 export ART=/Users/donaldmoore/Art
 alias art="cd $ART"
 export PATH="$PATH:/Users/donaldmoore/src/dinglehopper/utils/bin"
-export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/Current"
-source "$HOME/.config/zsh/hooks.zsh"
+export PATH="$PATH:$(realpath /Library/Frameworks/Python.framework/Versions/Current)/bin"
+. "/Users/donaldmoore/.config/zsh/hooks.zsh"
+plugins=(... dirs)

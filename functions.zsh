@@ -1,6 +1,14 @@
 #!/bin/zsh
 # shellcheck disable=all
 
+__wrap_notice nginx
+nginx() {
+    cd "/opt/homebrew/etc/nginx"
+    echo "The configuration is in here. If you really want to start the server, use the following:"
+    echo -e "\033[38;2;145;152;164m/opt/homebrew/bin/nginx\033[0m"
+}
+
+
 format() {
     if [[ -z "$1" ]]; then
 	echo "Usage: $0 <file>"
