@@ -146,3 +146,5 @@ alias wk='cd "$SRC/__CODE_WORKSPACE__"'
 alias x="sexy"
 alias xdg-open="open"
 alias xdg='cd "$XDG_CONFIG_HOME"'
+
+alias wallpapers="cd $HOME/Pictures/Wallpapers"

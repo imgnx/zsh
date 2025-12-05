@@ -1,6 +1,66 @@
 #!/bin/zsh
 # shellcheck disable=all
 
+texas() {
+    emacs && tmux
+}
+
+js() {
+    open "https://developer.mozilla.org/en-US/docs/Web/API/Performance"
+}
+
+timer() {
+    # More info... https://developer.mozilla.org/en-US/docs/Web/API/Performance
+    tmpfile="/tmp/my_temp_file_$$_$(date +%s%N)"
+    args1="$@";
+    date1="$(date +%s)";
+    date2="$(node -e "console.log(performance.now())")" 
+
+    args2=node<<'ULT'
+let args=\""$@"\".split(\" \");
+console.log(args);
+ULT
+
+    echo "$date1" > "$tmpfile"
+    echo "Arguments: $args";
+    echo "Date: $date";
+    sleep "$sleepTime" && alert & exit
+}
+nocoreaudio() {
+    sudo killall coreaudiod
+}
+
+# Start  AI
+#__wrap_notice codex
+#codex() {
+#    codex_hb="$(/opt/homebrew/bin/codex \"$@\")";
+#    codex_local="$(/Users/donaldmoore/bin/codex \"$@\")";
+    # Comment the following line out to return to managed codex.
+    # codex_hb && return 0
+#    return codex_local;
+#}
+
+resume() {
+    uuid="$(cat ./codex)"
+    codex resume "$uuid"
+}
+# End of Codex AI
+
+kiwi-strawberry() {
+    name="$1"
+    security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null | pbcopy || return 1;
+}
+
+alias ks="kiwi-strawberry $@"
+
+al() {
+    emacs /Users/donaldmoore/.config/zsh/aliases.zsh;
+}
+
+a() {
+    ls -la;
+}
+
 __wrap_notice nginx
 nginx() {
     cd "/opt/homebrew/etc/nginx"
@@ -27,10 +87,11 @@ draft() {
     cd "$DINGLEHOPPER/draft"
 }
 
-oncd() {
+oncd(){
     if [[ -f ./.automx ]]; then
 	./.automx
     fi
+    tree -L 2;
 }
 
 
@@ -618,7 +679,23 @@ USAGE
 
 
  xngmi() {
-     rsync -avh --no-links "$1" "$2"
+     local src="$1" dest="$2"
+     if [[ -z "$src" || -z "$dest" ]]; then
+         printf 'usage: xngmi <source> <dest>\n' >&2
+         return 1
+     fi
+
+     if command -v rsync >/dev/null 2>&1; then
+         if rsync -avh --no-links "$src" "$dest"; then
+             return 0
+         fi
+         local rsync_status=$?
+         printf 'rsync failed (exit %d); falling back to cp -R...\n' "$rsync_status" >&2
+     else
+         printf 'rsync not found; using cp -R...\n' >&2
+     fi
+
+     cp -a "$src" "$dest"
  }
 
  alias gmi="xngmi $@"
@@ -905,9 +982,32 @@ USAGE
      command gsutil "$@"
  }
 
- __wrap_notice gcloud
- gcloud() {
-     command gcloud "$@"
+__wrap_notice gcloud
+
+gcloud() {
+    if [[ $1 == "sync" ]]; then
+        shift
+        local bucket="$1" src="${2:-$PWD}"
+        if [[ -z "$bucket" ]]; then
+            echo "Usage: gcloud sync <bucket> [dir]" >&2
+            return 1
+        fi
+
+        if [[ "$bucket" != gs://* ]]; then
+            bucket="gs://$bucket"
+        fi
+        bucket="${bucket%/}"
+
+        local abs_src
+        abs_src=$(cd "$src" && pwd) || return 1
+        local dest="${bucket}/${abs_src#/}"
+
+        echo "Syncing $abs_src -> $dest"
+        command gsutil -m rsync -d -r "$abs_src" "$dest"
+        return $?
+    fi
+
+    command gcloud "$@"
  }
 
  bucket() {

@@ -1,3 +1,5 @@
+# Add deno completions to search path
+if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions:"* ]]; then export FPATH="/Users/donaldmoore/.config/zsh/completions:$FPATH"; fi
 # If this zsh session is non‑interactive, exit quietly.
 [[ -o interactive ]] || return
 
@@ -19,27 +21,11 @@ source "$XDG_CONFIG_HOME/zsh/aliases.zsh"
 # --- Homebrew environment ---
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
-
 # --- Get public IP once per session ---
-tempfile="$(mktemp -t pubip.XXXXXX)"
+tmpIpFile="$(mktemp)";
 
-fetch_public_ip() {
-  {
-    curl -fsS --max-time 5 ifconfig.me >| "$tempfile" || printf '' >| "$tempfile"
-  } &!
-}
-
-ip() {
-  [[ -s "$tempfile" ]] || fetch_public_ip
-  if [[ -s "$tempfile" ]]; then
-    cat "$tempfile"
-  else
-    echo "fetching..."
-  fi
-}
-
-fetch_public_ip
-echo -e "\n🌐 Public IP: $(ip)"
+[[ -z "${tmpIpFile}"
+curl -fsS --max-time 5 ifconfig.me > "${tmpIpFile}"
 
 # --- Prompt setup ---
 setopt PROMPT_SUBST
@@ -54,16 +40,18 @@ white="%F{#FFFFFF}"
 reset="%f%k%s"
 
 # Dynamic prompt
-setopt PROMPT_SUBST; 
+setopt PROMPT_SUBST;
+
+ip="$(cat $tmpIpFile)"
 
 export PS1='[pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.%F{#00D7AF}[jobs:%j]%f.) %~ $(cat "$tempfile" 2>/dev/null)
-%F{#00FF66}%K{#000000} %n%F{#000000}%K{#00FF66}@%M${reset} '
+%F{#00FF66}%K{#000000}%n%F{#000000}%K{#00FF66}@%M   [$ip] %S${reset} '
 
 #                               
 
 # --- Optional cleanup trap on exit ---
 # (Uncomment if you want to remove tempfile when you close shell)
-TRAPEXIT() { rm -f "$tempfile"; }
+TRAPEXIT() { rm -f "$tmpIpFile"; }
 
 
 
@@ -168,3 +156,4 @@ export PATH="$PATH:/Users/donaldmoore/src/dinglehopper/utils/bin"
 export PATH="$PATH:$(realpath /Library/Frameworks/Python.framework/Versions/Current)/bin"
 . "/Users/donaldmoore/.config/zsh/hooks.zsh"
 plugins=(... dirs)
+. "/Users/donaldmoore/.deno/env"BB
