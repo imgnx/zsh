@@ -3,7 +3,7 @@
 
 # Anything after this point runs only for interactive shells.
 # echo "Expectations are pre‑meditated resentments"
-echo "TABULA_RASA MODE: $TABULA_RASA_MODE"
+echo -e "TABULA_RASA MODE: ${TABULA_RASA_MODE:-\033[38;2;255;32;0mfalse}${reset}"
 # … your other prompt customizations …
 
 
@@ -53,8 +53,9 @@ dusort() {
   du -ah | sort -hr | bat --style=plain
 }
 
-echo "exec \`nimscan\` to scan the Mac Pro."
-nimscan() {
+print -P "\033[0m\033[38;2;255;225;0m%B Tip: exec \`nmap\` to scan the network.${reset}\033[0m"
+__wrap_notice nmap
+nmap() {
     nmap -vvv -Pn nim.local & 
     nmap -vvv -Pn bus.local
 }

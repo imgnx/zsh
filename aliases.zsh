@@ -1,9 +1,16 @@
+alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
+
+alias -s gp5=abc
+alias -s ptb=abc
+
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
 # alias tr="tabula_rasa"
 
 # alias taku='node taku.js' # /secret/top
 
+
+alias -s taku=cat
 # Normal mode - verbose, detailed output with all information
 # Only define aliases here. No functions or script sourcing.
 
@@ -39,6 +46,8 @@ alias cache='cd "$XDG_CACHE_HOME"'
 alias cash="$money"
 alias cc="copy"
 alias cdspc='codespace'
+alias ce="emacs \"$(which $1)\"" # command edit
+alias cedit="emacs \"$(which $1)\"" # command edit
 alias clean-precmd="precmd_functions=()"
 alias cli='cd "$SRC/dinglehopper/src/cli"'
 alias cnt='cd "$HOME/src"'
@@ -48,11 +57,10 @@ alias data='cd "$XDG_DATA_HOME"'
 alias df='df -h'
 alias dw="$DOWNLOADS"
 alias dwn="$DOWNLOADS"
-alias e='emacs'
-alias edit='emacs'
 alias env='env | sort' # Sorted environment variables
 alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
-alias fe='cd "$SRC/dinglehopper/src/frontend"'
+alias fe='emacs' # file edit
+alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
 alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
 alias free='vm_stat' # Memory usage details on macOS
@@ -70,6 +78,7 @@ alias gp='git push'
 alias gs='git status'
 alias h='history'
 alias history='fc -l 1' # Full history
+alias homebrew="brew"
 alias i=$ICLOUD_DRIVE
 alias icloud=$ICLOUD_DRIVE
 alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
