@@ -164,15 +164,7 @@ export PATH="$PATH:$HOME/secret/top"
 
 
 
-if [ "$COLUMNS" -ge 35 ]; then
-    # lolcat -S 50 "$XDG_CONFIG_HOME/zsh/banner.txt"
-
-    # Without having to load it from functions.zsh
-    
-    zsh $XDG_CONFIG_HOME/zsh/banner.sh
-    # lolcat -p 3 -F 0.05 "$XDG_CONFIG_HOME/zsh/banner.txt" || cat "$XDG_CONFIG_HOME/zsh/banner.txt"
-else
-	# Set truecolor (RGB: 0-255,0-255,0-255). Adjust numbers to taste.
+if [ ! "$COLUMNS" -ge 35 ]; then
 	echo -en '\033[5m\033[1m\033[38;2;222;173;237m'
 	echo "[banner]"
 	echo -en "\033[0m"
@@ -222,7 +214,7 @@ venvreset() {
 
 
 
-bannerDebouncer() {
+debounceBanner() {
     local stampfile="/tmp/taku.banner.last_ts"
     local timestamp last_ts=0
 
@@ -240,25 +232,10 @@ bannerDebouncer() {
 	banner;
     fi
     # Update last-seen timestamp
-    printf '%s\n' "$timestamp" > "$stampfile"
-
-
+    printf '%s\n' "$timestamp" > "$stampfile
 }
 
-__wrap_notice banner
-banner() {
-    L1="\033[0m\033[38;2;255;255;000m"
-    L2="\033[0m\033[38;2;000;209;255m"
-    L3="\033[0m\033[38;2;000;255;000m"
-    L4="\033[0m\033[38;2;255;000;255m"
-    echo -e "$L1   █████ \033[0m █████████████ ██████▌██░  "
-    echo -e "$L2   ▀▀███ \033[0m   ███ ██▘█░█████ ███░██░  "
-    echo -e "$L3   ▀▀███ \033[0m  ███ █████░██ ███ ██░██░  "
-    echo -e "$L4   ▀▀███ \033[0m ███ ███░ █░██ ▝███ ████░  \033[0m"
-}
-    
-
-add-zsh-hook precmd bannerDebouncer
+add-zsh-hook precmd debounceBanner
 
 add-zsh-hook chpwd venv_autoactivate
 export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"

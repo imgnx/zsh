@@ -1,6 +1,23 @@
 #!/bin/zsh
 # shellcheck disable=all
 
+##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
+
+bd() {
+    cd "$(dirs -p | sed -n "${1:-1}p")"
+}
+
+man() {
+    man "$@" | bat --style plain
+}
+
+dwimnwis() {
+    echo "$@"
+}
+# dwimnwis() {
+#     fzf
+# }
+
 create() {
     
     set -e
@@ -546,19 +563,6 @@ navi() {
 #     cd $DINGLEHOPPER/triage/$1
 # }
 
-# Keep this at the top!
-# Start of __wrap_notice
-# ! Keep this at the top!
-__wrap_notice() {
-    # ! Keep this at the top!
-    if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
-	local name="$1" path
-	path=$(command -v "$name" 2>/dev/null || true)
-	[[ -n "$path" ]] && echo "[wrap] $name -> $path"
-    fi
-} # End of __wrap_notice ! Keep this at the top!
-# End of __wrap_notice ! Keep this at the top!
-
 exitall() {
     while (( SHLVL > 1 )); do
 	echo "Exiting nested shell (PID=$$)…"
@@ -788,6 +792,7 @@ USAGE
     }
 
     _cmd_use() {
+	
 	local name=$1
 	local in_path=1; command -v -- "$name" >/dev/null 2>&1 && in_path=0
 	local version=""
@@ -886,9 +891,11 @@ USAGE
 # --- wrapper on "undefined": zsh hook for missing commands -------------------
 # If a command is not found, suggest brew install lines (formula vs cask)
 command_not_found_handler() {
+    
     emulate -L zsh
     local cmd="$1"; shift
     print -r -- "🫥 undefined: \"$cmd\""
+    dwimnwis "$cmd"
     # Reuse can's logic to check PATH + brew and print suggestions
     can use "$cmd"
     # Return non-zero to keep shell semantics ("command not found")
@@ -1994,10 +2001,9 @@ add2path() {
 
 
 tabula_rasa() {
-    if [[ -z "$TABULA_RASA" ]]; then
+    if [[ "$TABULA_RASA" != 1 ]]; then
 	export TABULA_RASA=1
 	echo "Tabula Rasa mode is enabled. No configurations will be loaded."
-	# Prompt the user to see if they want to continue and reload in Tabula Rasa mode.
 	echo "Do you want to continue and reload in Tabula Rasa mode? (y/N)"
 	read -r response
 	if [[ "$response" == [Yy] ]]; then
@@ -2005,7 +2011,7 @@ tabula_rasa() {
 	fi
     else
 	export TABULA_RASA=0
-	# echo "Tabula Rasa mode is disabled. Configurations will be loaded."
+	echo "Tabula Rasa mode is disabled. Configurations will be loaded."
     fi
 }
 i_manifest_gods_not_exiles		() {
@@ -2564,3 +2570,24 @@ Mnemonic:
 EOF
     echo -e "\033[0m"
 }
+
+unalias ls >/dev/null 2>&1
+__wrap_notice ls
+ls() {
+    if [[ "  " == *" -l "* || "  " == *" l "* ]]; then
+        eza -bGF --header --git --color=always --group-directories-first --long ""
+    else
+        eza -bGF --header --git --color=always --group-directories-first ""
+    fi
+}
+
+unalias eza >/dev/null 2>&1
+__wrap_notice eza
+eza() {
+    command eza --icons "$@";
+}
+
+if [[ -s error.log ]]; then
+  echo -e "\033[38;2;255;25;0mNotice: You can still use `fn.sh` as long as `alias.zsh` is still intact."
+  cat error.log
+fi

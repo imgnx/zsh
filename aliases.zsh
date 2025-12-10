@@ -62,7 +62,9 @@ alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
 alias fe='emacs' # file edit
 alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
+alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
 alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
+
 alias free='vm_stat' # Memory usage details on macOS
 alias frontend='cd "$SRC/dinglehopper/src/frontend"'
 alias ga='git add'
@@ -98,14 +100,6 @@ alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions
 alias ll='eza -la --octal-permissions --group-directories-first'
 # Remove duplicate llm (icons are provided globally)
 alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
-unalias ls 2>/dev/null
-ls() {
-    if [[ " $* " == *" -l "* || " $* " == *" l "* ]]; then
-        eza -bGF --header --git --color=always --group-directories-first --long "$@"
-    else
-        eza -bGF --header --git --color=always --group-directories-first "$@"
-    fi
-}
 alias lsd.="eza -d -a | grep -E '^\.'"
 alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"
