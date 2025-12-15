@@ -2,262 +2,66 @@
 # shellcheck disable=all
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
+echo "" >"$HOME/Desktop/zsh_debug.log"
 
-replace_line() {
-	echo "Argument Vector: Index 1: $argv[1]"
-	start=$1
-	end=$2
-	value=$3
-	target=$4
-	tmp=$(mktemp)
-	argBuilder="$start,$endc\\"
-	argBuilder+="$value"
-	sed "$argBuilder" "$target" >"$tmp" && mv "$tmp" "$target"
-}
-export lin="replace_line"
-
-trip() {
-	if [[ ! -d $XDG_CACHE_DIR ]]; then
-		mkdir -p "$HOME/.cache/triptrax"
-		export XDG_CACHE_DIR="$HOME/.cache"
-	fi
-}
-alias trax="trip"
-
-__wrap_notice man
-man() {
-	local command="$1"
-	echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
-	/usr/bin/man "$command" | col -b | tee "$HOME/Desktop/${command}.info"
-	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy
-in your ~/Desktop/folder.
-
-If you would like to turn this feature off, simple rename it to something else. It's either on or it's off.
-
-\033[48;2;69;17;255mopen ~/Desktop/${command} \033[0m"
+root() {
+	git rev-parse --show-toplevel
 }
 
-blueprints() {
-	local cmd="${1:-}"
-	case "$cmd" in
-	"ls")
-		/bin/ls "$BLUEPRINTS/*"
-		;;
-	"cat")
-		[[ -n "${2:-}" ]] || return 2
-		command cat -- "$BLUEPRINTS/$2"
-		;;
-	"new")
-		[[ -n "${2:-}" ]] || return 2
-		command mkdir -p -- "$BLUEPRINTS"
-		: >|"$BLUEPRINTS/$2"
-		${EDITOR:-vi} "$BLUEPRINTS/$2"
-		;;
-	*)
-		if [[ -f "$BLUEPRINTS/$cmd" ]]; then
-			command cat -- "$BLUEPRINTS/$cmd"
-		else
-			print -u2 "Usage: bp [ls]|cat <name>|new <name>|<name>"
-			return 2
-		fi
-		;;
-	esac
+dusort() {
+	du -ah | sort -hr | bat --style=plain
 }
 
-_bp() {
-	local -a names
-	names=("$BLUEPRINTS"/*)
-	_arguments \
-		'1:blueprint:->bpnames' \
-		'2:arg:_guard ".*" ""'
-	case $state in
-	bpnames) compadd -a names ;;
-	esac
+clean() {
+	find $HOME/src -type d -name "*.venv*" -o -name "*.build*" -o -name "*node_modules*" -o -name "*target*" -o -name "*build*" -o -name "*dist*" -exec rm -rf "{}" \;
+	find $HOME/lib -type d -name "*.venv*" -o -name "*.build*" -o -name "*node_modules*" -o -name "*target*" -o -exec rm -rf "{}" \;
 }
-compdef _bp bp
 
-bp_expand() {
-	local -a names
-	names=("$BLUEPRINTS"/*)
-	[[ ${#names[@]} -gt 0 ]] || {
-		zle -M "no blueprints in $BLUEPRINTS"
-		return 0
-	}
-	local name=""
-	if [[ -n "${1:-}" ]]; then
-		name="$1"
+noiphone() {
+	local pref="com.apple.audio.SystemSettings"
+	if sudo defaults read $pref SuppressDeviceDisconnectAlerts 2>/dev/null | grep -q 1; then
+		sudo defaults delete $pref SuppressDeviceDisconnectAlerts
+		echo "🔊 Restoring audio disconnection notifications..."
 	else
-		if command -v fzf >/dev/null 2>&1; then
-			zle -I
-			name="$(printf '%s\n' "${names[@]}" | fzf --prompt='bp> ' --height=40% --reverse)"
-			zle reset-prompt
-		else
-			zle -M "install fzf for picker (or pass a name: bp_expand <name>)"
-			return 0
-		fi
+		sudo defaults write $pref SuppressDeviceDisconnectAlerts -bool true
+		echo "🔇 Disabling audio disconnection notifications..."
 	fi
+	sudo killall coreaudiod
+}
 
-	[[ -n "$name" && -f "$BLUEPRINTS/$name" ]] || return 0
+iPhoneMicNotifMurderer() {
+	echo "🔪 Killing Audio Disconnection popups..."
+	echo "This is a polling method, by the way."
+	echo "Press [Enter] to continue"
+	while true; do
+		# Look for the process that spawns the popup (usually NotificationCenter or coreaudiod helper)
+		pkill -f "Audio Disconnected" 2>/dev/null
+		sleep 1
+	done
+}
 
-	local content prefix rest
-	content="$(<"$BLUEPRINTS/$name")"
+murder() {
+	echo "🔪 Killing $1"
+	echo "This function uses a polling method, by the way."
+	echo "Press [Enter] to continue."
+	read
+	while true; do
+		pkill -f "$1" 2>/dev/null
+		sleep 1
+	done
+}
+alias redrum="murder"
 
-	if [[ "$content" == *"{{CURSOR}}"* ]]; then
-		prefix="${content%%\{\{CURSOR\}\}*}"
-		rest="${content#*\{\{CURSOR\}\}}"
-		content="${prefix}${rest}"
-		local before="$LBUFFER" after="$RBUFFER"
-		BUFFER="${before}${content}${after}"
-		CURSOR=$((${#before} + ${#prefix}))
+TRAPDEBUG() {
+	# You READ the variable here.
+	if [[ -z "$ZSH_DEBUG" ]]; then
+		return
+	elif [[ "$ZSH_DEBUG" == "true" || "$ZSH_DEBUG" == "1" ]]; then
+		echo "The next command is: $ZSH_DEBUG_CMD" >>"$HOME/Desktop/zsh_debug.log"
+		return
 	else
-		LBUFFER+="$content"
+		return
 	fi
-}
-
-zle -N bp_expand
-
-bp_expand_from_buffer() {
-	local b="$BUFFER"
-	if [[ "$b" == bp\ * ]]; then
-		local name="${b#bp }"
-		name="${name%% *}"
-		if [[ -n "$name" && -f "$BLUEPRINTS/$name" ]]; then
-			BUFFER=""
-			CURSOR=0
-			bp_expand "$name"
-			return 0
-		fi
-	fi
-	zle expand-or-complete
-}
-zle -N bp_expand_from_buffer
-
-bindkey '^X^B' bp_expand
-bindkey '^I' bp_expand_from_buffer
-
-step1() {
-	local manifesto="$(basename $(realpath ./))" # Use descriptive names for your projects.
-	local target="$DH/bin/create-${manifesto}-wkbn"
-	mv ./setup.sh "$target" && echo "Moved setup.sh to \"\$DH/bin\". You can now use it like \`create-${manifesto}-wkbn"
-	ln -s "\$target" ./setup.sh
-	echo "Done! \`setup.sh\` has been symlinked in the current directory."
-}
-
-setup() {
-	touch ./setup.sh
-	cat <<\\EOF >setup.sh
-"$@"
-\EOF
-	chmod +x ./setup.sh
-	./setup.sh
-}
-
-bd() {
-	cd "$(dirs -p | sed -n "${1:-1}p")"
-}
-
-# man() {
-#     man "$@" | bat --style plain
-# }
-
-dwimnwis() {
-	echo "$@"
-}
-
-# dwimnwis() {
-#     fzf
-# }
-
-##
-#    █████  █████████████ ██████▌██░
-#    ▀▀███    ███ ██▘█░█████ ███░██░
-#    ▀▀███   ███ █████░██ ███ ██░██░
-#    ▀▀███  ███ ███░ █░██ ▝███ ████░
-#
-#  GitTaku.com - Create hook
-#  Learn more about testing: https://browsersync.io
-##
-create() {
-	set -e
-	APP_NAME="${1:-my-electron-app}"
-	mkdir -p "$APP_NAME"
-	pushd "$APP_NAME"
-	mkdir -p src
-	mkdir -p frontend
-	mkdir -p frontend/public
-	npm init -y
-	npm install --save-dev electron browser-sync >/dev/null 2>&1
-	npm install --save react react-dom tailwindcss @tailwindcss/cli
-	touch public/index.html # target for browser-sync
-
-	cat >main.js <<'EOF'
-const { app, BrowserWindow } = require('electron')
-
-function createWindow () {
-  const win = new BrowserWindow({
-    width: 1920,
-    height: 1080,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: true
-    }
-  })
-
-  win.loadFile('index.html')
-}
-
-app.whenReady().then(() => {
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
-EOF
-
-	cat >index.html <<'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Electron App</title>
-  <style>
-    body {
-        background-color: "#007BFF";
-    }
-  </style>
-</head>
-<body>
-  <h1>Taku!</h1>
-  <p>If you can read this, it worked.</p>
-</body>
-</html>
-EOF
-
-	# add "start": "electron ."
-	node - <<'EOF'
-const fs = require('fs')
-const pkgPath = 'package.json'
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-pkg.scripts = pkg.scripts || {}
-pkg.scripts.start = 'electron .'
-pkg.scripts.dev = 'browser-sync'
-fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
-EOF
-
-	echo -e "\033[38;2;0;209;255mDone!\033[0m Happy hacking!"
-	echo "Run:"
-	echo "  cd $APP_NAME"
-	echo "  npm start"
-
-}
-
-release() {
-
 }
 
 collect-secrets() {
@@ -2926,3 +2730,77 @@ if [[ -s error.log ]]; then
 	echo -e "\033[38;2;255;25;0mNotice: You can still use $(fn.sh) as long as $(alias.zsh) is still intact."
 	cat error.log
 fi
+
+_retro_indexes() {
+	compadd 1 2 3 4 5 6 7 8 9 10
+}
+compdef _retro_indexes retro
+# Auto-activate per-project .venv if present
+autoload -U add-zsh-hook
+VENVAUTO_FILE="$HOME/.zsh_venv_auto"
+
+venv_autoactivate() {
+	[[ -n "$VIRTUAL_ENV" ]] && return
+	local actfile
+	actfile=$(find ./ -maxdepth 3 -type f -name "activate" 2>/dev/null | head -n1) || return
+	[[ -z "$actfile" ]] && return
+
+	local dir=$(realpath "$(dirname "$actfile")")
+	local decision=$(grep "^$dir " "$VENVAUTO_FILE" 2>/dev/null | awk '{print $2}')
+
+	case "$decision" in
+	always)
+		source "$actfile"
+		return
+		;;
+	never) return ;;
+	esac
+
+	echo "Found virtualenv in: $dir"
+	echo "Activate? (y)es / (n)o / (a)lways / (N)ever"
+	read -k 1 reply
+	echo
+
+	case "$reply" in
+	y | Y) source "$actfile" ;;
+	a | A)
+		echo "$dir always" >>"$VENVAUTO_FILE"
+		source "$actfile"
+		;;
+	n) ;;
+	N) echo "$dir never" >>"$VENVAUTO_FILE" ;;
+	esac
+}
+
+venvreset() {
+	if [[ "$1" == "edit" ]]; then
+		${EDITOR:-nano} "$VENVAUTO_FILE"
+	else
+		rm$() -f "$VENVAUTO_FILE"
+		echo "Cleared all venv auto-activation decisions."
+	fi
+}
+
+add-zsh-hook chpwd venv_autoactivate
+
+debounceBanner() {
+	local stampfile="/tmp/taku.banner.last_ts"
+	local timestamp last_ts=0
+
+	timestamp=$(date +%s)
+
+	# If we have a previous stamp, read it
+	if [[ -f "$stampfile" ]]; then
+		read -r last_ts <"$stampfile"
+	fi
+
+	echo "Δ = $((timestamp - last_ts))"
+
+	# Only show banner if more than5 600 seconds (10 min) passed
+	if ((timestamp - last_ts > 600)); then
+		banner.sh
+	fi
+	# Update last-seen timestamp
+	printf '%s\n' "$timestamp" >"$stampfile"
+}
+add-zsh-hook precmd debounceBanner

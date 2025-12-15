@@ -8,7 +8,6 @@ echo "" >"$HOME/Desktop/zsh_debug.log"
 setopt DEBUG_BEFORE_CMD
 
 if [[ ! -o interactive ]]; then
-	echo "----------------------------------------" # 💤
 	# Non-interactive zsh session; exiting .zshenv...
 	return
 fi
@@ -21,23 +20,45 @@ compinit
 # fi
 
 # Feature flags
-export TABULA_RASA="${TABULA_RASA:-}"
+# export TABULA_RASA="${TABULA_RASA}" # Can't do that with this one and it has to be first. It's the "blank slate" feature flag.
+export HARD_RESET="${HARD_RESET:-}"
 export ZSH_DEBUG="${ZSH_DEBUG:-}"
-export FEATURE_FLAGS=("TABULA_RASA" "ZSH_DEBUG")
+export DEBUG_LEVEL="${DEBUG_LEVEL:-}"
+export FEATURE_FLAGS=("TABULA_RASA" "HARD_RESET" "ZSH_DEBUG")
+
+if [[ "$DEBUG_LEVEL" > 0 ]]; then
+	echo "ZSH DEBUG_LEVEL: $DEBUG_LEVEL"
+fi
+
 for flag in $FEATURE_FLAGS; do
-	if [[ ! -z "$(eval echo \$$flag)" ]]; then
-		echo -en "\033[48;2;20;255;0m ${flag} \033[0m"
+	if [[ -n ${flag//[^a-zA-Z0-9_]/} ]]; then
+		val=$(eval echo \$$flag) # sanitize flag to ensure it's a valid variable name and retrieve its value
 	else
-		echo -en "\033[48;2;255;0;0m ${flag} \033[0m"
+		val="" # fallback if flag is not a valid variable name
 	fi
+	if [[ $val == true || ($val =~ '^[0-9]+$' && $val -gt 0) ]]; then
+
+		echo -en "\033[48;2;20;255;0m ${flag} \033[0m"
+		case $flag in
+		TABULA_RASA)
+			if [[ "$TABULA_RASA" == true || (($TABULA_RASA -gt 1)) ]]; then
+				return
+			fi
+			;;
+		HARD_RESET)
+			export -U
+			;;
+		DEBUG_LEVEL)
+			if [[ "$DEBUG_LEVEL" > 0 ]]; then
+				echo "ZSH DEBUG_LEVEL: $DEBUG_LEVEL"
+			fi
+			;;
+		esac
+	else
+	    echo -en "\033[48;2;255;0;0m ${flag} \033[0m"
+	fi
+
 	echo -n " "
-	case $flag in
-	TABULA_RASA)
-		echo "----------------------------------------" # 💤
-		echo "Clearing environment variables..."
-		export -U
-		;;
-	esac
 done
 echo "\n"
 
@@ -57,68 +78,8 @@ alias la="ls -la"
 alias ci="code-insiders"
 alias gcp="gcloud storage cp --no-clobber"
 alias grsync="gcloud storage rsync --no-clobber"
-alias ai="cd $HOME/src/dinglehopper/codex && ls -la; say \"Please select a snippet from the list of prompts or type c-o-d-e-x and hit enter to begin interactively.\""
-
-# trash() {
-#   [ -d ~/.Trash ] || mkdir -p ~/.Trash
-#   case "$1" in
-#     -r|-rf|-f) shift ;;
-#   esac
-#   mv -f "$@" ~/.Trash/
-# }
-
-# __wrap_notice rm
-# alias rm='trash'
-
-root() {
-	git rev-parse --show-toplevel
-}
-
-dusort() {
-	du -ah | sort -hr | bat --style=plain
-}
-
+alias ai="cd $HOME/src/dinglehopper/agents/codex.d && ls -la; say \"Please select an action to perform from the list of prompts or say \`divide by seven\` and hit enter to begin interactively.\""
 print -P "\033[0m\033[38;2;255;225;0m%B Tip: exec \`nmap\` to scan the network.${reset}\033[0m"
-
-clean() {
-	find $HOME/src -type d -name "*.venv*" -o -name "*.build*" -o -name "*node_modules*" -o -name "*target*" -o -name "*build*" -o -name "*dist*" -exec rm -rf "{}" \;
-	find $HOME/lib -type d -name "*.venv*" -o -name "*.build*" -o -name "*node_modules*" -o -name "*target*" -o -exec rm -rf "{}" \;
-}
-
-noiphone() {
-	local pref="com.apple.audio.SystemSettings"
-	if sudo defaults read $pref SuppressDeviceDisconnectAlerts 2>/dev/null | grep -q 1; then
-		sudo defaults delete $pref SuppressDeviceDisconnectAlerts
-		echo "🔊 Restoring audio disconnection notifications..."
-	else
-		sudo defaults write $pref SuppressDeviceDisconnectAlerts -bool true
-		echo "🔇 Disabling audio disconnection notifications..."
-	fi
-	sudo killall coreaudiod
-}
-
-iPhoneMicNotifMurderer() {
-	echo "🔪 Killing Audio Disconnection popups..."
-	echo "This is a polling method, by the way."
-	echo "Press [Enter] to continue"
-	while true; do
-		# Look for the process that spawns the popup (usually NotificationCenter or coreaudiod helper)
-		pkill -f "Audio Disconnected" 2>/dev/null
-		sleep 1
-	done
-}
-
-murder() {
-	echo "🔪 Killing $1"
-	echo "This function uses a polling method, by the way."
-	echo "Press [Enter] to continue."
-	read
-	while true; do
-		pkill -f "$1" 2>/dev/null
-		sleep 1
-	done
-}
-alias redrum="murder"
 
 export NVM_DIR="$HOME/.config/nvm"
 
