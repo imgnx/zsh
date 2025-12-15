@@ -104,11 +104,9 @@ export ZSH_PLUGINS_DIR="${ZSH_PLUGINS_DIR:-$ZSH/plugins}"
 # the empiricist view of learning and development,
 # contrasting with nativism, which suggests that some
 # knowledge is innate.
-# Tabula Rasa will
-export TABULA_RASA="${TABULA_RASA:--1}" # 0=off, 1=on, -1=ask
-if [[ "$TABULA_RASA" == "1" ]]; then
-    return
-fi
+# Uncomment the following line to test it:
+# export TABULA_RASA="${TABULA_RASA:-1}" # 0=off, 1=on
+
 
 # print -P -n "[%F{green}variables%f]"
 # ============================

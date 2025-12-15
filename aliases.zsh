@@ -3,6 +3,8 @@ alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspac
 alias _M='cd "$HOME/_M";
 alias _G='cd "$DINGLEHOPPER/_GLOBAL";
 
+alias -s json="cat $@"
+alias -s taku="open $@"
 alias -s md="info $@"
 alias -s gp5=abc
 alias -s ptb=abc

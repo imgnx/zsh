@@ -3,146 +3,157 @@
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
-trax(){
-    if [[ ! -d $XDG_CACHE_DIR ]]; then                                                                                                                 \
-
-        mkdir -p "$HOME/.cache/triptrax"
-        export XDG_CACHE_DIR="$HOME/.cache"
-
-    fi
-
+replace_line() {
+	echo "Argument Vector: Index 1: $argv[1]"
+	start=$1
+	end=$2
+	value=$3
+	target=$4
+	tmp=$(mktemp)
+	argBuilder="$start,$endc\\"
+	argBuilder+="$value"
+	sed "$argBuilder" "$target" >"$tmp" && mv "$tmp" "$target"
 }
+export lin="replace_line"
 
-
+trip() {
+	if [[ ! -d $XDG_CACHE_DIR ]]; then
+		mkdir -p "$HOME/.cache/triptrax"
+		export XDG_CACHE_DIR="$HOME/.cache"
+	fi
+}
+alias trax="trip"
 
 __wrap_notice man
 man() {
-    local command="$1";
-    echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m";
-    /usr/bin/man "$command" | col -b  | tee "$HOME/Desktop/${command}.info";
-    echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy
+	local command="$1"
+	echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
+	/usr/bin/man "$command" | col -b | tee "$HOME/Desktop/${command}.info"
+	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy
 in your ~/Desktop/folder.
 
 If you would like to turn this feature off, simple rename it to something else. It's either on or it's off.
 
-\033[48;2;69;17;255mopen ~/Desktop/${command} \033[0m";
+\033[48;2;69;17;255mopen ~/Desktop/${command} \033[0m"
 }
 
-blueprints () {
-  local cmd="${1:-}"
-case "$cmd" in
-    ""|"ls")
-      command ls -1 "$BLUEPRINTS"/*.bp(N:t:r)
-      ;;
-    "cat")
-      [[ -n "${2:-}" ]] || return 2
-      command cat -- "$BLUEPRINTS/$2.bp"
-      ;;
-    "new")
-      [[ -n "${2:-}" ]] || return 2
-      command mkdir -p -- "$BLUEPRINTS"
-      : >| "$BLUEPRINTS/$2.bp"
-      ${EDITOR:-vi} "$BLUEPRINTS/$2.bp"
-      ;;
-    *)
-      if [[ -f "$BLUEPRINTS/$cmd.bp" ]]; then
-        command cat -- "$BLUEPRINTS/$cmd.bp"
-      else
-        print -u2 "Usage: bp [ls]|cat <name>|new <name>|<name>"
-        return 2
-      fi
-      ;;
-  esac
+blueprints() {
+	local cmd="${1:-}"
+	case "$cmd" in
+	"ls")
+		/bin/ls "$BLUEPRINTS/*"
+		;;
+	"cat")
+		[[ -n "${2:-}" ]] || return 2
+		command cat -- "$BLUEPRINTS/$2"
+		;;
+	"new")
+		[[ -n "${2:-}" ]] || return 2
+		command mkdir -p -- "$BLUEPRINTS"
+		: >|"$BLUEPRINTS/$2"
+		${EDITOR:-vi} "$BLUEPRINTS/$2"
+		;;
+	*)
+		if [[ -f "$BLUEPRINTS/$cmd" ]]; then
+			command cat -- "$BLUEPRINTS/$cmd"
+		else
+			print -u2 "Usage: bp [ls]|cat <name>|new <name>|<name>"
+			return 2
+		fi
+		;;
+	esac
 }
 
-_bp () {
-  local -a names
-  names=("$BLUEPRINTS"/*.bp(N:t:r))
-  _arguments \
-    '1:blueprint:->bpnames' \
-    '2:arg:_guard ".*" ""'
-  case $state in
-    bpnames) compadd -a names ;;
-  esac
+_bp() {
+	local -a names
+	names=("$BLUEPRINTS"/*)
+	_arguments \
+		'1:blueprint:->bpnames' \
+		'2:arg:_guard ".*" ""'
+	case $state in
+	bpnames) compadd -a names ;;
+	esac
 }
 compdef _bp bp
 
-bp_expand () {
-  local -a names
-  names=("$BLUEPRINTS"/*.bp(N:t:r))
-  [[ ${#names[@]} -gt 0 ]] || { zle -M "no blueprints in $BLUEPRINTS"; return 0; }
-  local name=""
-  if [[ -n "${1:-}" ]]; then
-    name="$1"
-  else
-    if command -v fzf >/dev/null 2>&1; then
-      zle -I
-      name="$(printf '%s\n' "${names[@]}" | fzf --prompt='bp> ' --height=40% --reverse)"
-      zle reset-prompt
-    else
-      zle -M "install fzf for picker (or pass a name: bp_expand <name>)"
-      return 0
-    fi
-  fi
+bp_expand() {
+	local -a names
+	names=("$BLUEPRINTS"/*)
+	[[ ${#names[@]} -gt 0 ]] || {
+		zle -M "no blueprints in $BLUEPRINTS"
+		return 0
+	}
+	local name=""
+	if [[ -n "${1:-}" ]]; then
+		name="$1"
+	else
+		if command -v fzf >/dev/null 2>&1; then
+			zle -I
+			name="$(printf '%s\n' "${names[@]}" | fzf --prompt='bp> ' --height=40% --reverse)"
+			zle reset-prompt
+		else
+			zle -M "install fzf for picker (or pass a name: bp_expand <name>)"
+			return 0
+		fi
+	fi
 
-  [[ -n "$name" && -f "$BLUEPRINTS/$name.bp" ]] || return 0
+	[[ -n "$name" && -f "$BLUEPRINTS/$name" ]] || return 0
 
-  local content prefix rest
-  content="$(<"$BLUEPRINTS/$name.bp")"
+	local content prefix rest
+	content="$(<"$BLUEPRINTS/$name")"
 
-  if [[ "$content" == *"{{CURSOR}}"* ]]; then
-    prefix="${content%%\{\{CURSOR\}\}*}"
-    rest="${content#*\{\{CURSOR\}\}}"
-    content="${prefix}${rest}"
-    local before="$LBUFFER" after="$RBUFFER"
-    BUFFER="${before}${content}${after}"
-    CURSOR=$(( ${#before} + ${#prefix} ))
-  else
-    LBUFFER+="$content"
-  fi
+	if [[ "$content" == *"{{CURSOR}}"* ]]; then
+		prefix="${content%%\{\{CURSOR\}\}*}"
+		rest="${content#*\{\{CURSOR\}\}}"
+		content="${prefix}${rest}"
+		local before="$LBUFFER" after="$RBUFFER"
+		BUFFER="${before}${content}${after}"
+		CURSOR=$((${#before} + ${#prefix}))
+	else
+		LBUFFER+="$content"
+	fi
 }
 
 zle -N bp_expand
 
-bp_expand_from_buffer () {
-  local b="$BUFFER"
-  if [[ "$b" == bp\ * ]]; then
-    local name="${b#bp }"
-    name="${name%% *}"
-    if [[ -n "$name" && -f "$BLUEPRINTS/$name.bp" ]]; then
-      BUFFER=""
-      CURSOR=0
-      bp_expand "$name"
-      return 0
-    fi
-  fi
-  zle expand-or-complete
+bp_expand_from_buffer() {
+	local b="$BUFFER"
+	if [[ "$b" == bp\ * ]]; then
+		local name="${b#bp }"
+		name="${name%% *}"
+		if [[ -n "$name" && -f "$BLUEPRINTS/$name" ]]; then
+			BUFFER=""
+			CURSOR=0
+			bp_expand "$name"
+			return 0
+		fi
+	fi
+	zle expand-or-complete
 }
 zle -N bp_expand_from_buffer
 
 bindkey '^X^B' bp_expand
 bindkey '^I' bp_expand_from_buffer
 
-
 step1() {
-    local manifesto="$(basename $(realpath ./))"; # Use descriptive names for your projects.
-    local target="$DH/bin/create-${manifesto}-wkbn";
-    mv ./setup.sh "$target" && echo "Moved setup.sh to \"\$DH/bin\". You can now use it like \`create-${manifesto}-wkbn";
-    ln -s "\$target" ./setup.sh;
-    echo "Done! \`setup.sh\` has been symlinked in the current directory."
+	local manifesto="$(basename $(realpath ./))" # Use descriptive names for your projects.
+	local target="$DH/bin/create-${manifesto}-wkbn"
+	mv ./setup.sh "$target" && echo "Moved setup.sh to \"\$DH/bin\". You can now use it like \`create-${manifesto}-wkbn"
+	ln -s "\$target" ./setup.sh
+	echo "Done! \`setup.sh\` has been symlinked in the current directory."
 }
 
 setup() {
-    touch ./setup.sh
-    cat<<\\EOF>setup.sh
+	touch ./setup.sh
+	cat <<\\EOF >setup.sh
 "$@"
 \EOF
-    chmod +x ./setup.sh
-    ./setup.sh
+	chmod +x ./setup.sh
+	./setup.sh
 }
 
 bd() {
-    cd "$(dirs -p | sed -n "${1:-1}p")"
+	cd "$(dirs -p | sed -n "${1:-1}p")"
 }
 
 # man() {
@@ -150,36 +161,36 @@ bd() {
 # }
 
 dwimnwis() {
-    echo "$@"
+	echo "$@"
 }
+
 # dwimnwis() {
 #     fzf
 # }
 
-
 ##
- #    █████  █████████████ ██████▌██░
- #    ▀▀███    ███ ██▘█░█████ ███░██░
- #    ▀▀███   ███ █████░██ ███ ██░██░
- #    ▀▀███  ███ ███░ █░██ ▝███ ████░
- #
- #  GitTaku.com - Create hook
- #  Learn more about testing: https://browsersync.io
+#    █████  █████████████ ██████▌██░
+#    ▀▀███    ███ ██▘█░█████ ███░██░
+#    ▀▀███   ███ █████░██ ███ ██░██░
+#    ▀▀███  ███ ███░ █░██ ▝███ ████░
+#
+#  GitTaku.com - Create hook
+#  Learn more about testing: https://browsersync.io
 ##
 create() {
-    set -e
-    APP_NAME="${1:-my-electron-app}"
-    mkdir -p "$APP_NAME"
-    pushd "$APP_NAME"
-    mkdir -p src
-    mkdir -p frontend
-    mkdir -p frontend/public
-    npm init -y
-    npm install --save-dev electron browser-sync >/dev/null 2>&1
-    npm install --save react react-dom tailwindcss @tailwindcss/cli
-    touch public/index.html # target for browser-sync
+	set -e
+	APP_NAME="${1:-my-electron-app}"
+	mkdir -p "$APP_NAME"
+	pushd "$APP_NAME"
+	mkdir -p src
+	mkdir -p frontend
+	mkdir -p frontend/public
+	npm init -y
+	npm install --save-dev electron browser-sync >/dev/null 2>&1
+	npm install --save react react-dom tailwindcss @tailwindcss/cli
+	touch public/index.html # target for browser-sync
 
-    cat > main.js << 'EOF'
+	cat >main.js <<'EOF'
 const { app, BrowserWindow } = require('electron')
 
 function createWindow () {
@@ -208,7 +219,7 @@ app.on('window-all-closed', () => {
 })
 EOF
 
-    cat > index.html << 'EOF'
+	cat >index.html <<'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -227,8 +238,8 @@ EOF
 </html>
 EOF
 
-    # add "start": "electron ."
-    node - << 'EOF'
+	# add "start": "electron ."
+	node - <<'EOF'
 const fs = require('fs')
 const pkgPath = 'package.json'
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
@@ -238,149 +249,152 @@ pkg.scripts.dev = 'browser-sync'
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
 EOF
 
-    echo -e "\033[38;2;0;209;255mDone!\033[0m Happy hacking!"
-    echo "Run:"
-    echo "  cd $APP_NAME"
-    echo "  npm start"
+	echo -e "\033[38;2;0;209;255mDone!\033[0m Happy hacking!"
+	echo "Run:"
+	echo "  cd $APP_NAME"
+	echo "  npm start"
 
 }
 
-release(){
+release() {
 
 }
 
 collect-secrets() {
-    local timestamp="$(date +%s)";
-    local maxRequestsPerMinute=200; # ggshield rate limit per https://docs.gitguardian.com/api-docs/usage-and-quotas
-    local numberOfFilesScanned=0;
-    local dir="$1";
+	local timestamp="$(date +%s)"
+	local maxRequestsPerMinute=200 # ggshield rate limit per https://docs.gitguardian.com/api-docs/usage-and-quotas
+	local numberOfFilesScanned=0
+	local dir="$1"
 
-    echo "Scanning directory: $dir"
+	echo "Scanning directory: $dir"
 
-    find . -type d | tee tmp.directories.list
-    find . -type f | tee tmp.files.list
+	find . -type d | tee tmp.directories.list
+	find . -type f | tee tmp.files.list
 
-    local iteration
+	local iteration
 
-    iteration() {
-        local file="$1"
-        
-        if (( numberOfFilesScanned % maxRequestsPerMinute == 0 )); then
-            secondsToWait=$((61 - ( $(date +%s) - timestamp ) )) # 61 just to be sure...
-            (( secondsToWait < 0 )) && secondsToWait=0
-            echo "Rate limit reached. Waiting $secondsToWait seconds..."
-            sleep $secondsToWait
-            timestamp="$(date +%s)";
-        fi
+	iteration() {
+		local file="$1"
 
-        echo "Scanning file: $file"
-        ggshield secret scan path "$(realpath "$file")" --json --show-secrets -v > ./tmp.secrets.json
+		if ((numberOfFilesScanned % maxRequestsPerMinute == 0)); then
+			secondsToWait=$((61 - ($(date +%s) - timestamp))) # 61 just to be sure...
+			((secondsToWait < 0)) && secondsToWait=0
+			echo "Rate limit reached. Waiting $secondsToWait seconds..."
+			sleep $secondsToWait
+			timestamp="$(date +%s)"
+		fi
 
-        jq -r '
+		echo "Scanning file: $file"
+		ggshield secret scan path "$(realpath "$file")" --json --show-secrets -v >./tmp.secrets.json
+
+		jq -r '
             .entities_with_incidents[]
             .incidents[]
             .occurrences[]
             .match
-            ' tmp.secrets.json | sed '/^$/d' | sort -u >> tmp.secrets.list
+            ' tmp.secrets.json | sed '/^$/d' | sort -u >>tmp.secrets.list
 
-        rm -f tmp.secrets.json
-    }
+		rm -f tmp.secrets.json
+	}
 
-    while IFS= read -r file; do
-        iteration "$file"
-        (( numberOfFilesScanned++ ))
-    done < tmp.files.list
+	while IFS= read -r file; do
+		iteration "$file"
+		((numberOfFilesScanned++))
+	done <tmp.files.list
 
-    cat tmp.secrets.list | sort -u > secrets.list
+	cat tmp.secrets.list | sort -u >secrets.list
 
-    rm -f tmp.*.list
-    
-    if [[ ! -s secrets.list ]]; then
-        echo -e "✅ \033[38;5;2m 󱙝 No secrets found! 󱙝\033[0m ✅"
-    else
-        echo -e "❌ \033[38;5;1m 󱚞 $(wc -l < secrets.list) secrets found 󱚞 \033[0m ❌"
-    fi
+	rm -f tmp.*.list
+
+	if [[ ! -s secrets.list ]]; then
+		echo -e "✅ \033[38;5;2m 󱙝 No secrets found! 󱙝\033[0m ✅"
+	else
+		echo -e "❌ \033[38;5;1m 󱚞 $(wc -l <secrets.list) secrets found 󱚞 \033[0m ❌"
+	fi
 }
 
 scan-secrets() {
-    `    local args_output
-    args_output=$(deno eval -- "$@" <<'EOF'
+	$(
+		local args_output
+		args_output=$(
+			deno eval -- "$@" <<'EOF'
 for (const arg of Deno.args) {
   console.log(arg)
 }
 EOF
-)
+		)
 
-    echo "$args_output"`
+		echo "$args_output"
+	)
 
-    local -a args
-    if [[ -n "$args_output" ]]; then
-        args=("${(f)args_output}")
-    else
-        args=()
-    fi
+	local -a args
+	if [[ -n "$args_output" ]]; then
+		IFS=$'\n' args=($args_output)
+	else
+		args=()
+	fi
 
-    # State
-    local destroyNonASCIIFiles=0;
+	# State
+	local destroyNonASCIIFiles=0
 
-    # helper: creates secrets.list
+	# helper: creates secrets.list
 
-    # Start
-    echo "Collecting secrets..."
-    if ($args[2] == "-v" || $args[2] == "--verbose"); then
-        echo "Arguments: $args"
-        collect-secrets "$(realpath ./)"
-    else
-        collect-secrets "$(realpath ./)" >/dev/null
-    fi
+	# Start
+	echo "Collecting secrets..."
+	if ($args[2] == "-v" || $args[2] == "--verbose"); then
+		echo "Arguments: $args"
+		collect-secrets "$(realpath ./)"
+	else
+		collect-secrets "$(realpath ./)" >/dev/null
+	fi
 
-    echo "Redacting..."
+	echo "Redacting..."
 
-    # helper: escape secret for sed replacement
-    local escape_sed
-    escape_sed() {
-        # escape &, |, and \ which matter in sed with | as delimiter
-        printf '%s\n' "$1" | sed 's/[&|\\]/\\&/g'
-    }
+	# helper: escape secret for sed replacement
+	local escape_sed
+	escape_sed() {
+		# escape &, |, and \ which matter in sed with | as delimiter
+		printf '%s\n' "$1" | sed 's/[&|\\]/\\&/g'
+	}
 
-    while IFS= read -r secret; do
-        [[ -z $secret ]] && continue
-        echo "Scrubbing: $secret"
-        local escaped
-        escaped=$(escape_sed "$secret")
+	while IFS= read -r secret; do
+		[[ -z $secret ]] && continue
+		echo "Scrubbing: $secret"
+		local escaped
+		escaped=$(escape_sed "$secret")
 
-        # search for files containing this secret
-        grep -Rl -- "$secret" . \
-            | grep -v -E '(^|/)(secrets\.json|secrets\.list)$' \
-            | while IFS= read -r file; do
-            # detect binary-ish vs text-ish
-            if ! LC_ALL=C grep -Iq . -- "$file"; then
-                # binary file path
-                if (( destroyNonASCIIFiles == 0 )); then
-                    echo "Binary file with secret detected: $file"
-                    read -q "resp?Delete ALL binary secret files? [y/N] "
-                    echo
-                    if [[ $resp == [Yy] ]]; then
-                        destroyNonASCIIFiles=1
-                    else
-                        destroyNonASCIIFiles=2
-                    fi
-                fi
+		# search for files containing this secret
+		grep -Rl -- "$secret" . |
+			grep -v -E '(^|/)(secrets\.json|secrets\.list)$' |
+			while IFS= read -r file; do
+				# detect binary-ish vs text-ish
+				if ! LC_ALL=C grep -Iq . -- "$file"; then
+					# binary file path
+					if ((destroyNonASCIIFiles == 0)); then
+						echo "Binary file with secret detected: $file"
+						read -q "resp?Delete ALL binary secret files? [y/N] "
+						echo
+						if [[ $resp == [Yy] ]]; then
+							destroyNonASCIIFiles=1
+						else
+							destroyNonASCIIFiles=2
+						fi
+					fi
 
-                if (( destroyNonASCIIFiles == 1 )); then
-                    echo "  Destroying binary file: $file"
-                    /bin/rm -f -- "$file"
-                else
-                    echo "  Skipping binary file: $file"
-                fi
-            else
-                echo "  Editing text file: $file"
-                sed -i '' "s|$escaped|<<REDACTED>>|g" "$file"
-            fi
-        done
-    done < secrets.list
-    echo -e "󱙝 \033[38;5;2mScan complete!\033[0m 󱚞 And be careful out there, Southern Outlaw..."
-    echo "Hint: execute \`collect-secrets\` and then check \`secrets.list\` for any remaining secrets."
+					if ((destroyNonASCIIFiles == 1)); then
+						echo "  Destroying binary file: $file"
+						/bin/rm -f -- "$file"
+					else
+						echo "  Skipping binary file: $file"
+					fi
+				else
+					echo "  Editing text file: $file"
+					sed -i '' "s|$escaped|<<REDACTED>>|g" "$file"
+				fi
+			done
+	done <secrets.list
+	echo -e "󱙝 \033[38;5;2mScan complete!\033[0m 󱚞 And be careful out there, Southern Outlaw..."
+	echo "Hint: execute \`collect-secrets\` and then check \`secrets.list\` for any remaining secrets."
 }
 
 alias redact="scan-secrets"
@@ -388,197 +402,195 @@ alias cover="scan-secrets"
 alias scan="scan-secrets"
 
 edit() {
-    if [[ -z "$1" ]]; then
-	echo "Usage: edit <file-or-command>"
-	return 1
-    fi
+	if [[ -z "$1" ]]; then
+		echo "Usage: edit <file-or-command>"
+		return 1
+	fi
 
-    local target
+	local target
 
-    # If it's a path, use it; otherwise resolve as a command.
-    if [[ -e "$1" ]]; then
-	target="$1"
-    else
-	target="$(command -v -- "$1")" || {
-	    echo "edit: not found: $1" >&2
-	    return 1
-	}
-    fi
+	# If it's a path, use it; otherwise resolve as a command.
+	if [[ -e "$1" ]]; then
+		target="$1"
+	else
+		target="$(command -v -- "$1")" || {
+			echo "edit: not found: $1" >&2
+			return 1
+		}
+	fi
 
-    # Directories → Dired
-    if [[ -d "$target" ]]; then
-	emacs "$target"
-	return
-    fi
+	# Directories → Dired
+	if [[ -d "$target" ]]; then
+		emacs "$target"
+		return
+	fi
 
-    # Text vs binary
-    if file "$target" | grep -qi 'text'; then
-	emacs "$target"
-    else
-	# Binary: make BOTH views
-	local base hexfile strfile
-	base="$(basename "$target")"
+	# Text vs binary
+	if file "$target" | grep -qi 'text'; then
+		emacs "$target"
+	else
+		# Binary: make BOTH views
+		local base hexfile strfile
+		base="$(basename "$target")"
 
-	strfile="$(mktemp -t "edit.${base}.str.XXXXXX")"   || return 1
-	hexfile="$(mktemp -t "edit.${base}.hex.XXXXXX")"   || return 1
-	
-	strings "$target" > "$strfile"
-	xxd "$target" > "$hexfile"
-	
-	# Open both in Emacs; you can split and flip between them.
-	emacs "$strfile" "$hexfile"
-    fi
+		strfile="$(mktemp -t "edit.${base}.str.XXXXXX")" || return 1
+		hexfile="$(mktemp -t "edit.${base}.hex.XXXXXX")" || return 1
+
+		strings "$target" >"$strfile"
+		xxd "$target" >"$hexfile"
+
+		# Open both in Emacs; you can split and flip between them.
+		emacs "$strfile" "$hexfile"
+	fi
 }
 
-
 abc() {
-    args=deno eval <<EOF
+	args=deno eval <<EOF
 let args="$@".split(" ");
 console.log(args)
 EOF
-    strings "$1"
+	strings "$1"
 }
 
 imgcloud() {
-    echo -e "\033[5mThis is now \"imgcloud\" - a wrapper on gcloud.\033[0m".
-    path="$(realpath $1)";
-    echo -e "Backing up $path to gs://imgfunnels.com$path...";
-    
-    gcloud  -r "$path" "gs://imgfunnels.com$path"
+	echo -e "\033[5mThis is now \"imgcloud\" - a wrapper on gcloud.\033[0m".
+	path="$(realpath $1)"
+	echo -e "Backing up $path to gs://imgfunnels.com$path..."
+
+	gcloud -r "$path" "gs://imgfunnels.com$path"
 }
 
 () {
-    tput bel
+	tput bel
 }
 
 list() {
-    # Define a new array called 'my_args'
-    argv=("$@")
-    
-    usage() {
-	echo -e "\033[38;2;255;20;0mUsage: \033[0m$0 \033[2m<arguments>\033[0m"
-	echo "n Results:
+	# Define a new array called 'my_args'
+	argv=("$@")
+
+	usage() {
+		echo -e "\033[38;2;255;20;0mUsage: \033[0m$0 \033[2m<arguments>\033[0m"
+		echo "n Results:
 FIRST_ARGUMENT
 SECOND_ARGUMENT
 THIRD_ARGUMENT
 FOURTH_ARGUMENT
-Up to 50...";
-    }
-    
-    if [[ -z "$argv" ]]; then
-	usage
-    fi
-    
-    # Print the elements of the array
-    echo "${#argv[@]} Results:"
-    v="0"
-    # Construct the variable name dynamically
-    nextArgv="argv${v}"
-    
-    # Access the value of the dynamically named variable using ${(P)}
-    for item in "${argv[@]}"; do
-	((v++))
-	export argv${v}="$item";
-	echo "argv${v}=$item";
-    done;
+Up to 50..."
+	}
 
-    echo "Press \033[38;2;255;205;0m[CTRL-c]\033[0m to quit and use your list as variables only."
-    echo "Enter a filename to create a file"
-    echo -ne "Filename:"
-    read -r filename
-    
-    touch "./$filename"
-    for item in "${argv[@]}"; do
-	echo "$item" >> $filename
-    done;
+	if [[ -z "$argv" ]]; then
+		usage
+	fi
+
+	# Print the elements of the array
+	echo "${#argv[@]} Results:"
+	v="0"
+	# Construct the variable name dynamically
+	nextArgv="argv${v}"
+
+	# Access the value of the dynamically named variable using ${(P)}
+	for item in "${argv[@]}"; do
+		((v++))
+		export argv${v}="$item"
+		echo "argv${v}=$item"
+	done
+
+	echo "Press \033[38;2;255;205;0m[CTRL-c]\033[0m to quit and use your list as variables only."
+	echo "Enter a filename to create a file"
+	echo -ne "Filename:"
+	read -r filename
+
+	touch "./$filename"
+	for item in "${argv[@]}"; do
+		echo "$item" >>$filename
+	done
 }
 
 # texas - emacs in tmux
 texas() {
-    x2list "$@" >/dev/null
-    local target="";
-    # Goal: Get user to call it when there's a .texas file in the current dir.
+	x2list "$@" >/dev/null
+	local target=""
+	# Goal: Get user to call it when there's a .texas file in the current dir.
 
-    # Case 1: no args, and ./.texas exists
-    if [[ $# -eq 0 && -f ./.texas ]]; then
-	target="$(realpath ./.texas)"
+	# Case 1: no args, and ./.texas exists
+	if [[ $# -eq 0 && -f ./.texas ]]; then
+		target="$(realpath ./.texas)"
 
-	# Case 2: arg is a *.texas file
-    elif [[ $# -gt 0 && -f "$1" && "$1" == *.texas ]]; then
-	target="$(realpath "$1")"
+		# Case 2: arg is a *.texas file
+	elif [[ $# -gt 0 && -f "$1" && "$1" == *.texas ]]; then
+		target="$(realpath "$1")"
 
-	# Case 3: arg is a directory — check for .texas inside it
-    elif [[ $# -gt 0 && -d "$1" ]]; then
-	if [[ -f "$1/.texas" ]]; then
-            target="$(realpath "$1/.texas")"
+		# Case 3: arg is a directory — check for .texas inside it
+	elif [[ $# -gt 0 && -d "$1" ]]; then
+		if [[ -f "$1/.texas" ]]; then
+			target="$(realpath "$1/.texas")"
+		fi
 	fi
-    fi
 
-    # If still no target → error
-    if [[ -z "$target" ]]; then
-	echo "Usage: $0 [directory|file.texas]" >&2
-	exit 1
-    fi
+	# If still no target → error
+	if [[ -z "$target" ]]; then
+		echo "Usage: $0 [directory|file.texas]" >&2
+		exit 1
+	fi
 
-    local root="$(dirname $target)";
-    pushd "$root"
-    
-    TEMP_LIST=$(mktemp texas.dir.$(date +%s).XXXXXX.list)
-    function cleanup {
-	rm -f "$TEMP_LIST"
-    }
+	local root="$(dirname $target)"
+	pushd "$root"
 
-    trap cleanup EXIT
-    echo "tempfile: $TEMP_LIST"
-    while IFS= read -r line; do
-	find "$line" -maxdepth 1 -mindepth 1 -type d | xargs -I{} realpath "{}" >> $TEMP_LIST;
-    done < "$target"
-    
-    echo "Multiplexing:";
-    cat $TEMP_LIST;
-    echo "Does this look right?"
-    echo "Press [Enter] to continue -or- [Ctrl+C] to quit."
-    read
-    while IFS= read -r line; do
-	echo "Opening \"$line\""
-	tmux new-session 'emacs $line' \; split-window -v -p 30
-    done < $TEMP_LIST
+	TEMP_LIST=$(mktemp texas.dir.$(date +%s).XXXXXX.list)
+	function cleanup {
+		rm -f "$TEMP_LIST"
+	}
+
+	trap cleanup EXIT
+	echo "tempfile: $TEMP_LIST"
+	while IFS= read -r line; do
+		find "$line" -maxdepth 1 -mindepth 1 -type d | xargs -I{} realpath "{}" >>$TEMP_LIST
+	done <"$target"
+
+	echo "Multiplexing:"
+	cat $TEMP_LIST
+	echo "Does this look right?"
+	echo "Press [Enter] to continue -or- [Ctrl+C] to quit."
+	read
+	while IFS= read -r line; do
+		echo "Opening \"$line\""
+		tmux new-session 'emacs $line' \; split-window -v -p 30
+	done <$TEMP_LIST
 }
 
 bhamjobs() {
-    srv && pushd bhamjobs.com && texas ./serve
+	srv && pushd bhamjobs.com && texas ./serve
 }
 
-
 js() {
-    open "https://developer.mozilla.org/en-US/docs/Web/API/Performance"
+	open "https://developer.mozilla.org/en-US/docs/Web/API/Performance"
 }
 
 timer() {
-    # More info... https://developer.mozilla.org/en-US/docs/Web/API/Performance
-    # tmpfile="/tmp/my_temp_file_$$_$(date +%s%N)"
-    # args1="$@";
-    # date1="$(date +%s)";
-    # date2="$(node -e "console.log(performance.now())")" 
+	# More info... https://developer.mozilla.org/en-US/docs/Web/API/Performance
+	# tmpfile="/tmp/my_temp_file_$$_$(date +%s%N)"
+	# args1="$@";
+	# date1="$(date +%s)";
+	# date2="$(node -e "console.log(performance.now())")"
 
-    # args2=node<<'ULT'
-    # let args=\""$@"\".split(\" \");
-    # console.log(args);
-    # ULT
+	# args2=node<<'ULT'
+	# let args=\""$@"\".split(\" \");
+	# console.log(args);
+	# ULT
 
-    # echo "$date1" > "$tmpfile"
-    # echo "Arguments: $args";
-    # echo "Date: $date";
-    # sleep "$sleepTime" && alert & exit
+	# echo "$date1" > "$tmpfile"
+	# echo "Arguments: $args";
+	# echo "Date: $date";
+	# sleep "$sleepTime" && alert & exit
 
-    sleep "$1" && alert &
-    sleep 1 && "$(timer $1)"
-    echo "The timer is designed to reset automatically if it is not explicitly shut off. It will sound again after $1."
-    echo "Would you like to stop the timer? (y/N)"
-    
-    TRAPEXIT() {
-	
-	deno eval <<EOF
+	sleep "$1" && alert &
+	sleep 1 && "$(timer $1)"
+	echo "The timer is designed to reset automatically if it is not explicitly shut off. It will sound again after $1."
+	echo "Would you like to stop the timer? (y/N)"
+
+	TRAPEXIT() {
+
+		deno eval <<EOF
 import  * as Imngx from "imgnx@labs"; // in ~/lib
 
 
@@ -589,11 +601,11 @@ Imgnx.fetch(\"http://imgnx.labs/notifications/withoutATty\", {
 })})
 	    
 EOF
-    } 
+	}
 }
 
 nocoreaudio() {
-    sudo killall coreaudiod
+	sudo killall coreaudiod
 }
 
 # Start  AI
@@ -607,92 +619,89 @@ nocoreaudio() {
 #}
 
 resume() {
-    uuid="$(cat ./codex)"
-    codex resume "$uuid"
+	uuid="$(cat ./codex)"
+	codex resume "$uuid"
 }
 # End of Codex AI
 
 keys() {
-    name="$1"
-    security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null | pbcopy || return 1;
+	name="$1"
+	security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null | pbcopy || return 1
 }
 alias pass="keys"
 alias k="keys"
 
 al() {
-    emacs /Users/donaldmoore/.config/zsh/aliases.zsh;
+	emacs /Users/donaldmoore/.config/zsh/aliases.zsh
 }
 
 a() {
-    ls -la;
+	ls -la
 }
 
 __wrap_notice nginx
 nginx() {
-    cd "/opt/homebrew/etc/nginx"
-    echo "The configuration is in here. If you really want to start the server, use the following:"
-    echo -e "\033[38;2;145;152;164m/opt/homebrew/bin/nginx\033[0m"
+	cd "/opt/homebrew/etc/nginx"
+	echo "The configuration is in here. If you really want to start the server, use the following:"
+	echo -e "\033[38;2;145;152;164m/opt/homebrew/bin/nginx\033[0m"
 }
 
-
 format() {
-    if [[ -z "$1" ]]; then
-	echo "Usage: $0 <file>"
-    else
-	filename="$1";
-	extension="${filename:e}";
-	if [[ $extension == "php" ]]; then
-	    php-cs-fixer fix "$1";
-	elif [[ $extension == "js" || extension == "css" || extension == "html" ]]; then
-	    npx prettier -w "$1";
+	if [[ -z "$1" ]]; then
+		echo "Usage: $0 <file>"
+	else
+		filename="$1"
+		extension="${filename:e}"
+		if [[ $extension == "php" ]]; then
+			php-cs-fixer fix "$1"
+		elif [[ $extension == "js" || extension == "css" || extension == "html" ]]; then
+			npx prettier -w "$1"
+		fi
 	fi
-    fi
 }
 
 draft() {
-    cd "$DINGLEHOPPER/draft"
+	cd "$DINGLEHOPPER/draft"
 }
 
 oncd() {
-    pushd "$(realpath ./)"
-    if [[ -f ./.automx ]]; then
-	./.automx
-    fi
-    tree -L 2;
+	pushd "$(realpath ./)"
+	if [[ -f ./.automx ]]; then
+		./.automx
+	fi
+	tree -L 2
 }
 
-
-
-fn.sh() {
-    emacs "$HOME/.config/zsh/fn.sh"
-}
+# fn.sh() {
+# 	emacs "$HOME/.config/zsh/fn.sh"
+# }
 
 # codex() {
 #     sudo tee /opt/homebrew/bin/codex "$@" ./codex && "$(cat ./codex | tail -n 10 | grep "codex resume" > ./codex-resume)" && chmod +x ./codex-resume
 # }
 
 wakewin() {
-    ssh min.local 'powershell.exe Stop-Process -Name explorer -Force; Start-Process explorer'
+	ssh min.local 'powershell.exe Stop-Process -Name explorer -Force; Start-Process explorer'
 }
 
 function daw() {
-    cd "$TRIAGE/digital-audio-workspace/"
+	cd "$TRIAGE/digital-audio-workspace/"
 }
 
 fnsh() {
-    $EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
+	$EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
 }
 alias functions="fnsh"
 alias fn="fnsh"
 
 forline() {
-    emulate -L zsh
-    local file="$1"
-    shift
-    local line
-    for line in "${(@f)$(<"$file")}"; do
-	"$@" "$line"
-    done
+	emulate -L zsh
+	local file="$1"
+	shift
+	local line
+	while IFS= read -r line; do
+		"$@" "$line"
+	done
 }
 
 #eq() {
@@ -700,30 +709,29 @@ forline() {
 #}
 
 _taku_venv() {
-    python -m venv --prompt "${PWD:t}" .venv
-    source .venv/bin/activate
+	python -m venv --prompt "${PWD:t}" .venv
+	source .venv/bin/activate
 }
 
-
 navi() {
-    while true; do
-	tput bel
-	tput bel
-	sleep 5
-	tput bel
-	tput bel
-	sleep 10
-	tput bel
-	tput bel
-	sleep 20
-	tput bel
-	tput bel
-	sleep 40
-	tput bel
-	tput bel
-	sleep 80
-    done;
-    
+	while true; do
+		tput bel
+		tput bel
+		sleep 5
+		tput bel
+		tput bel
+		sleep 10
+		tput bel
+		tput bel
+		sleep 20
+		tput bel
+		tput bel
+		sleep 40
+		tput bel
+		tput bel
+		sleep 80
+	done
+
 }
 
 # tri() {
@@ -732,27 +740,27 @@ navi() {
 # }
 
 exitall() {
-    while (( SHLVL > 1 )); do
-	echo "Exiting nested shell (PID=$$)…"
-	exit
-    done
-    echo "At root shell (PID=$$)"
+	while ((SHLVL > 1)); do
+		echo "Exiting nested shell (PID=$$)…"
+		exit
+	done
+	echo "At root shell (PID=$$)"
 }
 
 dh() {
-    cd "$DINGLEHOPPER"
+	cd "$DINGLEHOPPER"
 }
 srv() {
-    cd "$DINGLEHOPPER/srv"
+	cd "$DINGLEHOPPER/srv"
 }
 
 activate() {
-    . ./.venv/bin/activate
+	. ./.venv/bin/activate
 }
 
 __wrap_notice reset
 reset() {
-    /usr/bin/reset && exec zsh -l;
+	/usr/bin/reset && exec zsh -l
 }
 
 # yarn() {
@@ -761,11 +769,11 @@ reset() {
 
 __wrap_notice rg
 re() {
-      # prog="search"
-   
-    help() {
-    
-cat <<'EOF'
+	# prog="search"
+
+	help() {
+
+		cat <<'EOF'
 search: a path-first wrapper for ripgrep (rg)
 
 USAGE:
@@ -791,87 +799,86 @@ COMMON SHORTCUTS:
   Use rg --help for the full flag list.
 
 EOF
-    }
+	}
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  help
-  exit 0
-fi
+	if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+		help
+		exit 0
+	fi
 
-if [[ "${1:-}" == "" ]]; then
-  help
-  exit 2
-fi
+	if [[ "${1:-}" == "" ]]; then
+		help
+		exit 2
+	fi
 
-args=("$@")
-pass=()
-pre=()
-post=()
-seen_dd=0
+	args=("$@")
+	pass=()
+	pre=()
+	post=()
+	seen_dd=0
 
-for a in "${args[@]}"; do
-  if [[ "$seen_dd" == "0" && "$a" == "--" ]]; then
-    seen_dd=1
-    continue
-  fi
-  if [[ "$seen_dd" == "0" ]]; then
-    pre+=("$a")
-  else
-    post+=("$a")
-  fi
-done
+	for a in "${args[@]}"; do
+		if [[ "$seen_dd" == "0" && "$a" == "--" ]]; then
+			seen_dd=1
+			continue
+		fi
+		if [[ "$seen_dd" == "0" ]]; then
+			pre+=("$a")
+		else
+			post+=("$a")
+		fi
+	done
 
-first="${pre[0]:-}"
-second="${pre[1]:-}"
+	first="${pre[0]:-}"
+	second="${pre[1]:-}"
 
-path=""
-pattern=""
-rest=()
+	path=""
+	pattern=""
+	rest=()
 
-if [[ -n "$first" && ( -d "$first" || -f "$first" ) ]]; then
-  path="$first"
-  pattern="${second:-}"
-  if [[ "${#pre[@]}" -gt 2 ]]; then
-    rest=("${pre[@]:2}")
-  else
-    rest=()
-  fi
-else
-  pattern="$first"
-  if [[ -n "$second" && ( -d "$second" || -f "$second" ) ]]; then
-    path="$second"
-    if [[ "${#pre[@]}" -gt 2 ]]; then
-      rest=("${pre[@]:2}")
-    else
-      rest=()
-    fi
-  else
-    path="."
-    if [[ "${#pre[@]}" -gt 1 ]]; then
-      rest=("${pre[@]:1}")
-    else
-      rest=()
-    fi
-  fi
-fi
+	if [[ -n "$first" && (-d "$first" || -f "$first") ]]; then
+		path="$first"
+		pattern="${second:-}"
+		if [[ "${#pre[@]}" -gt 2 ]]; then
+			rest=("${pre[@]:2}")
+		else
+			rest=()
+		fi
+	else
+		pattern="$first"
+		if [[ -n "$second" && (-d "$second" || -f "$second") ]]; then
+			path="$second"
+			if [[ "${#pre[@]}" -gt 2 ]]; then
+				rest=("${pre[@]:2}")
+			else
+				rest=()
+			fi
+		else
+			path="."
+			if [[ "${#pre[@]}" -gt 1 ]]; then
+				rest=("${pre[@]:1}")
+			else
+				rest=()
+			fi
+		fi
+	fi
 
-if [[ -z "${pattern:-}" ]]; then
-  printf '%s\n' "error: missing <pattern>" >&2
-  printf '%s\n' "try:  search . <pattern>  OR  search <pattern> ." >&2
-  exit 2
-fi
+	if [[ -z "${pattern:-}" ]]; then
+		printf '%s\n' "error: missing <pattern>" >&2
+		printf '%s\n' "try:  search . <pattern>  OR  search <pattern> ." >&2
+		exit 2
+	fi
 
-if command -v rg >/dev/null 2>&1; then
-  exec rg "${rest[@]}" "${post[@]}" -- "${pattern}" "${path}"
-else
-  printf '%s\n' "error: rg not found in PATH" >&2
-  exit 127
-fi
+	if command -v rg >/dev/null 2>&1; then
+		exec rg "${rest[@]}" "${post[@]}" -- "${pattern}" "${path}"
+	else
+		printf '%s\n' "error: rg not found in PATH" >&2
+		exit 127
+	fi
 }
 
-
 # grep() {
-    # echo -e -n "\033[0mYou are using a wrapper on \033[38;2;91;0;255mRust:Ripgrep (\`rg\`)\033[0m. For the actual grep package, use \033[38;2;255;255;91m/usr/bin/grep\033[0m. $@";
+# echo -e -n "\033[0mYou are using a wrapper on \033[38;2;91;0;255mRust:Ripgrep (\`rg\`)\033[0m. For the actual grep package, use \033[38;2;255;255;91m/usr/bin/grep\033[0m. $@";
 #    rg -Hin -e="/$1/ig" "${2:}"
 # }
 
@@ -904,46 +911,45 @@ fi
 # }
 
 alert() {
-    while true; do
-	sleep 2;
-	tput bel;
-    done;
+	while true; do
+		sleep 2
+		tput bel
+	done
 }
 
 srv() {
-    cd "$SRC/dinglehopper/srv"
+	cd "$SRC/dinglehopper/srv"
 }
 
-
 dusort() {
-    du -ah ./ | sort -hr | head -n 15 | bat --style=plain
+	du -ah ./ | sort -hr | head -n 15 | bat --style=plain
 }
 
 salsa() {
-    echo "=== 🌶️ Salsa Sampler ==="
-    echo "User: $USER  Host: $(hostname)"
-    echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) ($(uname -m))"
-    echo "Shell: $SHELL"
-    echo "Uptime: $(uptime | sed -E 's/.*up ([^,]+), .*/\1/')"
-    echo "Dir: $(pwd)"
-    echo "Git: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo none) \
+	echo "=== 🌶️ Salsa Sampler ==="
+	echo "User: $USER  Host: $(hostname)"
+	echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) ($(uname -m))"
+	echo "Shell: $SHELL"
+	echo "Uptime: $(uptime | sed -E 's/.*up ([^,]+), .*/\1/')"
+	echo "Dir: $(pwd)"
+	echo "Git: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo none) \
 $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') changes"
-    echo "CPU: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo n/a)"
-    echo "Mem: $(vm_stat | awk '/Pages free/ {free=$3} /Pages active/ {active=$3} /Pages inactive/ {inactive=$3} /Pages speculative/ {spec=$3} END {gsub("\\.", "", free); gsub("\\.", "", active); gsub("\\.", "", inactive); gsub("\\.", "", spec); total=(free+active+inactive+spec)*4096/1024/1024/1024; printf("~%.1f GiB", total)}') (approx)"
-    echo "Disk: $(df -h / | awk 'NR==2 {print $5 " used of " $2}')"
-    echo "IP: $(ipconfig getifaddr en0 2>/dev/null || echo n/a)  \
+	echo "CPU: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo n/a)"
+	echo "Mem: $(vm_stat | awk '/Pages free/ {free=$3} /Pages active/ {active=$3} /Pages inactive/ {inactive=$3} /Pages speculative/ {spec=$3} END {gsub("\\.", "", free); gsub("\\.", "", active); gsub("\\.", "", inactive); gsub("\\.", "", spec); total=(free+active+inactive+spec)*4096/1024/1024/1024; printf("~%.1f GiB", total)}') (approx)"
+	echo "Disk: $(df -h / | awk 'NR==2 {print $5 " used of " $2}')"
+	echo "IP: $(ipconfig getifaddr en0 2>/dev/null || echo n/a)  \
 WAN: $(dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo n/a)"
-    echo "Top procs:"
-    (ps -A -o %cpu,%mem,comm | sort -nr | head -n 5 || true)
-    echo "Recent files:"
-    eza -lbGd --header --git --sort=modified --color=always --group-directories-first | head -n 10
-    echo "=== 🌶️ End Salsa ==="
+	echo "Top procs:"
+	(ps -A -o %cpu,%mem,comm | sort -nr | head -n 5 || true)
+	echo "Recent files:"
+	eza -lbGd --header --git --sort=modified --color=always --group-directories-first | head -n 10
+	echo "=== 🌶️ End Salsa ==="
 }
 
 triage() {
-    cd /Users/donaldmoore/src/dinglehopper/triage || return 1    
-    echo -e "\033[5mWelcome!\033[0m"
-    when | head -n 10
+	cd /Users/donaldmoore/src/dinglehopper/triage || return 1
+	echo -e "\033[5mWelcome!\033[0m"
+	when | head -n 10
 }
 typeset -fx static
 alias st=static
@@ -952,23 +958,23 @@ alias standalone=static
 
 __wrap_notice eza
 eza() {
-    /opt/homebrew/bin/eza --icons=always "$@"
+	/opt/homebrew/bin/eza --icons=always "$@"
 }
 
 # --- can: playful capability checks (files/dirs + commands/packages via Homebrew) ---
 can() {
-    emulate -L zsh
-    setopt PIPE_FAIL
+	emulate -L zsh
+	setopt PIPE_FAIL
 
-    local quiet=0 json=0 subcmd="" target=""
+	local quiet=0 json=0 subcmd="" target=""
 
-    # flags
-    while [[ "$1" == -* ]]; do
-	case "$1" in
-	    -q|--quiet) quiet=1 ;;
-	    -j|--json)  json=1  ;;
-	    -h|--help)
-		cat <<'USAGE'
+	# flags
+	while [[ "$1" == -* ]]; do
+		case "$1" in
+		-q | --quiet) quiet=1 ;;
+		-j | --json) json=1 ;;
+		-h | --help)
+			cat <<'USAGE'
 Usage:
   can <path>                  # list capabilities of a file/dir (playful)
   can haz|run|read|write <path>
@@ -983,254 +989,296 @@ Notes:
   • If <thing> is not a path, "can <thing>" falls back to "can use <thing>".
   • Exit 0 means "yes/can", exit 1 means "no/can't".
 USAGE
-		return 0;;
-	    *) break ;;
+			return 0
+			;;
+		*) break ;;
+		esac
+		shift
+	done
+
+	# optional subcommand
+	case "$1" in
+	haz | run | read | write | enter | use | pkg)
+		subcmd=$1
+		shift
+		;;
 	esac
-	shift
-    done
 
-    # optional subcommand
-    case "$1" in
-	haz|run|read|write|enter|use|pkg) subcmd=$1; shift ;;
-    esac
-
-    # target required
-    if [[ -z "$1" ]]; then
-	print -r -- "Usage: can [haz|run|read|write|enter|use|pkg] <path|name>  (try: can -h)"
-	return 1
-    fi
-    target=$1
-
-    # helpers
-    _bool() { [[ $1 -eq 0 ]] && echo true || echo false; }
-    _say()  { (( quiet )) || print -r -- "$@"; }
-
-    # --- file/dir mode --------------------------------------------------------
-    _file_list() {
-	local p=$1
-	local exists=1 readable=1 writable=1 runnable=1 is_dir=1 enterable=1 size="null" type="unknown"
-
-	[[ -e $p ]] && exists=0
-	[[ -r $p ]] && readable=0
-	[[ -w $p ]] && writable=0
-	[[ -x $p && -f $p ]] && runnable=0
-	if [[ -d $p ]]; then
-	    is_dir=0; [[ -x $p ]] && enterable=0; type="dir"
-	elif [[ -f $p ]]; then
-	    type="file"
-	    local s; s=$(stat -f %z "$p" 2>/dev/null || stat -c %s "$p" 2>/dev/null)
-	    [[ -n $s ]] && size=$s
-	elif [[ -L $p ]]; then
-	    type="symlink"
+	# target required
+	if [[ -z "$1" ]]; then
+		print -r -- "Usage: can [haz|run|read|write|enter|use|pkg] <path|name>  (try: can -h)"
+		return 1
 	fi
+	target=$1
 
-	if (( json )); then
-	    _say "{\"path\":\"$p\",\"type\":\"$type\",\"exists\":$(_bool $exists),\"readable\":$(_bool $readable),\"writable\":$(_bool $writable),\"runnable\":$(_bool $runnable),\"directory\":$(_bool $is_dir),\"enterable\":$(_bool $enterable),\"size\":$size}"
-	    return 0
-	fi
+	# helpers
+	_bool() { [[ $1 -eq 0 ]] && echo true || echo false; }
+	_say() { ((quiet)) || print -r -- "$@"; }
 
-	if [[ $exists -ne 0 ]]; then
-	    _say "❌ can't haz: \"$p\" does not exist"; return 1
-	fi
-	_say "✅ can haz: \"$p\" exists"
-	(( readable == 0 )) && _say "📖 can read"    || _say "🚫 can't read"
-	(( writable == 0 )) && _say "✏️  can write"  || _say "🔒 can't write"
-	[[ -f $p ]] && { (( runnable == 0 )) && _say "🎬 can run" || _say "🙅 can't run"; }
-	[[ -d $p ]] && { (( enterable == 0 )) && _say "🚪 can enter" || _say "🚷 can't enter"; }
-    }
+	# --- file/dir mode --------------------------------------------------------
+	_file_list() {
+		local p=$1
+		local exists=1 readable=1 writable=1 runnable=1 is_dir=1 enterable=1 size="null" type="unknown"
 
-    _file_pred() {
-	local mode=$1 p=$2 ok=1
-	case "$mode" in
-	    haz)   [[ -e $p ]]; ok=$? ;;
-	    run)   [[ -x $p && -f $p ]]; ok=$? ;;
-	    read)  [[ -r $p ]]; ok=$? ;;
-	    write) [[ -w $p ]]; ok=$? ;;
-	    enter) [[ -d $p && -x $p ]]; ok=$? ;;
-	esac
-	if (( json )); then
-	    _say "{\"path\":\"$p\",\"$mode\":$(_bool $ok)}"
-	elif (( ! quiet )); then
-	    _say $([[ $ok -eq 0 ]] && echo "true" || echo "false")
-	fi
-	return $ok
-    }
+		[[ -e $p ]] && exists=0
+		[[ -r $p ]] && readable=0
+		[[ -w $p ]] && writable=0
+		[[ -x $p && -f $p ]] && runnable=0
+		if [[ -d $p ]]; then
+			is_dir=0
+			[[ -x $p ]] && enterable=0
+			type="dir"
+		elif [[ -f $p ]]; then
+			type="file"
+			local s
+			s=$(stat -f %z "$p" 2>/dev/null || stat -c %s "$p" 2>/dev/null)
+			[[ -n $s ]] && size=$s
+		elif [[ -L $p ]]; then
+			type="symlink"
+		fi
 
-    # --- command/package mode (Homebrew) --------------------------------------
-    local have_brew=1
-    if command -v brew >/dev/null 2>&1; then have_brew=0; fi
+		if ((json)); then
+			_say "{\"path\":\"$p\",\"type\":\"$type\",\"exists\":$(_bool $exists),\"readable\":$(_bool $readable),\"writable\":$(_bool $writable),\"runnable\":$(_bool $runnable),\"directory\":$(_bool $is_dir),\"enterable\":$(_bool $enterable),\"size\":$size}"
+			return 0
+		fi
 
-    _brew_has() {
-	[[ $have_brew -ne 0 ]] && return 1
-	brew info --json=v2 --quiet --formula "$1" >/dev/null 2>&1 && { echo formula; return 0; }
-	brew info --json=v2 --quiet --cask "$1"    >/dev/null 2>&1 && { echo cask;    return 0; }
-	return 1
-    }
-    _brew_installed() {
-	[[ $have_brew -ne 0 ]] && return 1
-	brew list --formula --versions "$1" >/dev/null 2>&1 && return 0
-	brew list --cask --versions "$1"    >/dev/null 2>&1 && return 0
-	return 1
-    }
+		if [[ $exists -ne 0 ]]; then
+			_say "❌ can't haz: \"$p\" does not exist"
+			return 1
+		fi
+		_say "✅ can haz: \"$p\" exists"
+		((readable == 0)) && _say "📖 can read" || _say "🚫 can't read"
+		((writable == 0)) && _say "✏️  can write" || _say "🔒 can't write"
+		[[ -f $p ]] && { ((runnable == 0)) && _say "🎬 can run" || _say "🙅 can't run"; }
+		[[ -d $p ]] && { ((enterable == 0)) && _say "🚪 can enter" || _say "🚷 can't enter"; }
+	}
 
-    _cmd_use() {
-	
-	local name=$1
-	local in_path=1; command -v -- "$name" >/dev/null 2>&1 && in_path=0
-	local version=""
-	if [[ $in_path -eq 0 ]]; then
-	    version=$("$name" --version 2>/dev/null | head -n1)
-	    [[ -z "$version" ]] && version=$("$name" -V 2>/dev/null | head -n1)
-	    [[ -z "$version" ]] && version=$("$name" -v 2>/dev/null | head -n1)
-	fi
+	_file_pred() {
+		local mode=$1 p=$2 ok=1
+		case "$mode" in
+		haz)
+			[[ -e $p ]]
+			ok=$?
+			;;
+		run)
+			[[ -x $p && -f $p ]]
+			ok=$?
+			;;
+		read)
+			[[ -r $p ]]
+			ok=$?
+			;;
+		write)
+			[[ -w $p ]]
+			ok=$?
+			;;
+		enter)
+			[[ -d $p && -x $p ]]
+			ok=$?
+			;;
+		esac
+		if ((json)); then
+			_say "{\"path\":\"$p\",\"$mode\":$(_bool $ok)}"
+		elif ((!quiet)); then
+			_say $([[ $ok -eq 0 ]] && echo "true" || echo "false")
+		fi
+		return $ok
+	}
 
-	local kind="" brew_avail=1 brew_inst=1
-	kind=$(_brew_has "$name"); [[ $? -eq 0 ]] && brew_avail=0
-	_brew_installed "$name" && brew_inst=0
+	# --- command/package mode (Homebrew) --------------------------------------
+	local have_brew=1
+	if command -v brew >/dev/null 2>&1; then have_brew=0; fi
 
-	if (( json )); then
-	    local ver_json=$( [[ -n $version ]] && printf '%s' "$version" | sed 's/"/\\"/g;s/^/"/;s/$/"/' || echo "null" )
-	    _say "{\"name\":\"$name\",\"in_path\":$(_bool $in_path),\"version\":$ver_json,\"brew_available\":$(_bool $brew_avail),\"brew_kind\":\"${kind:-null}\",\"brew_installed\":$(_bool $brew_inst)}"
-	else
-	    if [[ $in_path -eq 0 ]]; then
-		_say "🧰 can use: \"$name\" is on PATH"
-		[[ -n "$version" ]] && _say "   ↳ $version"
-		(( have_brew == 0 )) && (( brew_inst == 0 )) && _say "🍺 Homebrew: installed"
-	    else
-		_say "❌ can't use: \"$name\" not found on PATH"
-		if (( have_brew == 0 )); then
-		    if (( brew_inst == 0 )); then
-			_say "🍺 Homebrew: installed (but not on PATH?)"
-			_say "   • try: echo 'eval \"$(brew shellenv)\"' >> ~/.zprofile && source ~/.zprofile"
-		    elif (( brew_avail == 0 )); then
-			if [[ "$kind" == "cask" ]]; then
-			    _say "🍺 Homebrew: available as a cask"
-			    _say "   • install: brew install --cask $name"
+	_brew_has() {
+		[[ $have_brew -ne 0 ]] && return 1
+		brew info --json=v2 --quiet --formula "$1" >/dev/null 2>&1 && {
+			echo formula
+			return 0
+		}
+		brew info --json=v2 --quiet --cask "$1" >/dev/null 2>&1 && {
+			echo cask
+			return 0
+		}
+		return 1
+	}
+	_brew_installed() {
+		[[ $have_brew -ne 0 ]] && return 1
+		brew list --formula --versions "$1" >/dev/null 2>&1 && return 0
+		brew list --cask --versions "$1" >/dev/null 2>&1 && return 0
+		return 1
+	}
+
+	_cmd_use() {
+
+		local name=$1
+		local in_path=1
+		command -v -- "$name" >/dev/null 2>&1 && in_path=0
+		local version=""
+		if [[ $in_path -eq 0 ]]; then
+			version=$("$name" --version 2>/dev/null | head -n1)
+			[[ -z "$version" ]] && version=$("$name" -V 2>/dev/null | head -n1)
+			[[ -z "$version" ]] && version=$("$name" -v 2>/dev/null | head -n1)
+		fi
+
+		local kind="" brew_avail=1 brew_inst=1
+		kind=$(_brew_has "$name")
+		[[ $? -eq 0 ]] && brew_avail=0
+		_brew_installed "$name" && brew_inst=0
+
+		if ((json)); then
+			local ver_json=$([[ -n $version ]] && printf '%s' "$version" | sed 's/"/\\"/g;s/^/"/;s/$/"/' || echo "null")
+			_say "{\"name\":\"$name\",\"in_path\":$(_bool $in_path),\"version\":$ver_json,\"brew_available\":$(_bool $brew_avail),\"brew_kind\":\"${kind:-null}\",\"brew_installed\":$(_bool $brew_inst)}"
+		else
+			if [[ $in_path -eq 0 ]]; then
+				_say "🧰 can use: \"$name\" is on PATH"
+				[[ -n "$version" ]] && _say "   ↳ $version"
+				((have_brew == 0)) && ((brew_inst == 0)) && _say "🍺 Homebrew: installed"
 			else
-			    _say "🍺 Homebrew: available"
-			    _say "   • install: brew install $name"
+				_say "❌ can't use: \"$name\" not found on PATH"
+				if ((have_brew == 0)); then
+					if ((brew_inst == 0)); then
+						_say "🍺 Homebrew: installed (but not on PATH?)"
+						_say "   • try: echo 'eval \"$(brew shellenv)\"' >> ~/.zprofile && source ~/.zprofile"
+					elif ((brew_avail == 0)); then
+						if [[ "$kind" == "cask" ]]; then
+							_say "🍺 Homebrew: available as a cask"
+							_say "   • install: brew install --cask $name"
+						else
+							_say "🍺 Homebrew: available"
+							_say "   • install: brew install $name"
+						fi
+					else
+						_say "🍺 Homebrew: not found"
+					fi
+				else
+					_say "🍺 Homebrew not installed (skip check)"
+				fi
 			fi
-		    else
-			_say "🍺 Homebrew: not found"
-		    fi
-		else
-		    _say "🍺 Homebrew not installed (skip check)"
 		fi
-	    fi
-	fi
-	return $in_path
-    }
+		return $in_path
+	}
 
-    _pkg() {
-	local name=$1 kind="" brew_avail=1 brew_inst=1
-	kind=$(_brew_has "$name"); [[ $? -eq 0 ]] && brew_avail=0
-	_brew_installed "$name" && brew_inst=0
-	if (( json )); then
-	    _say "{\"name\":\"$name\",\"brew_available\":$(_bool $brew_avail),\"brew_kind\":\"${kind:-null}\",\"brew_installed\":$(_bool $brew_inst)}"
+	_pkg() {
+		local name=$1 kind="" brew_avail=1 brew_inst=1
+		kind=$(_brew_has "$name")
+		[[ $? -eq 0 ]] && brew_avail=0
+		_brew_installed "$name" && brew_inst=0
+		if ((json)); then
+			_say "{\"name\":\"$name\",\"brew_available\":$(_bool $brew_avail),\"brew_kind\":\"${kind:-null}\",\"brew_installed\":$(_bool $brew_inst)}"
+		else
+			if ((have_brew != 0)); then
+				_say "🍺 Homebrew not installed"
+				return 1
+			fi
+			if ((brew_inst == 0)); then
+				_say "🍺 installed: $name"
+			elif ((brew_avail == 0)); then
+				if [[ "$kind" == "cask" ]]; then
+					_say "🍺 available (cask): $name"
+					_say "   • install: brew install --cask $name"
+				else
+					_say "🍺 available: $name"
+					_say "   • install: brew install $name"
+				fi
+			else
+				_say "🍺 not found: $name"
+			fi
+		fi
+		((brew_avail == 0)) && return 0 || return 1
+	}
+
+	# dispatch
+	if [[ -n "$subcmd" ]]; then
+		case "$subcmd" in
+		use)
+			_cmd_use "$target"
+			return $?
+			;;
+		pkg)
+			_pkg "$target"
+			return $?
+			;;
+		haz | run | read | write | enter)
+			if [[ -e "$target" || "$target" == */* ]]; then
+				_file_pred "$subcmd" "$target"
+				return $?
+			else
+				_cmd_use "$target"
+				return $?
+			fi
+			;;
+		esac
+	fi
+
+	# no subcmd: auto file vs command
+	if [[ -e "$target" || "$target" == */* ]]; then
+		_file_list "$target"
 	else
-	    if (( have_brew != 0 )); then
-		_say "🍺 Homebrew not installed"; return 1
-	    fi
-	    if (( brew_inst == 0 )); then
-		_say "🍺 installed: $name"
-	    elif (( brew_avail == 0 )); then
-		if [[ "$kind" == "cask" ]]; then
-		    _say "🍺 available (cask): $name"
-		    _say "   • install: brew install --cask $name"
-		else
-		    _say "🍺 available: $name"
-		    _say "   • install: brew install $name"
-		fi
-	    else
-		_say "🍺 not found: $name"
-	    fi
+		_cmd_use "$target"
 	fi
-	(( brew_avail == 0 )) && return 0 || return 1
-    }
-
-    # dispatch
-    if [[ -n "$subcmd" ]]; then
-	case "$subcmd" in
-	    use)  _cmd_use "$target"; return $? ;;
-	    pkg)  _pkg "$target"; return $? ;;
-	    haz|run|read|write|enter)
-		if [[ -e "$target" || "$target" == */* ]]; then
-		    _file_pred "$subcmd" "$target"; return $?
-		else
-		    _cmd_use "$target"; return $?
-		fi ;;
-	esac
-    fi
-
-    # no subcmd: auto file vs command
-    if [[ -e "$target" || "$target" == */* ]]; then
-	_file_list "$target"
-    else
-	_cmd_use "$target"
-    fi
 }
 
 # --- wrapper on "undefined": zsh hook for missing commands -------------------
 # If a command is not found, suggest brew install lines (formula vs cask)
 command_not_found_handler() {
-    
-    emulate -L zsh
-    local cmd="$1"; shift
-    print -r -- "🫥 undefined: \"$cmd\""
-    dwimnwis "$cmd"
-    # Reuse can's logic to check PATH + brew and print suggestions
-    can use "$cmd"
-    # Return non-zero to keep shell semantics ("command not found")
-    return 127
-}
 
+	emulate -L zsh
+	local cmd="$1"
+	shift
+	print -r -- "🫥 undefined: \"$cmd\""
+	dwimnwis "$cmd"
+	# Reuse can's logic to check PATH + brew and print suggestions
+	can use "$cmd"
+	# Return non-zero to keep shell semantics ("command not found")
+	return 127
+}
 
 # Gatekeeper toggle function for .zshrc
 gtkpr() {
-    if [[ -z "$GATEKEEPER_STATE" || "$GATEKEEPER_STATE" == "on" ]]; then
-	echo "Disabling Gatekeeper for this session..."
-	sudo spctl --master-disable
-	defaults write com.apple.LaunchServices LSQuarantine -bool false
-	export GATEKEEPER_STATE=off
-    else
-	echo "Re-enabling Gatekeeper..."
-	sudo spctl --master-enable
-	defaults write com.apple.LaunchServices LSQuarantine -bool true
-	export GATEKEEPER_STATE=on
-    fi
+	if [[ -z "$GATEKEEPER_STATE" || "$GATEKEEPER_STATE" == "on" ]]; then
+		echo "Disabling Gatekeeper for this session..."
+		sudo spctl --master-disable
+		defaults write com.apple.LaunchServices LSQuarantine -bool false
+		export GATEKEEPER_STATE=off
+	else
+		echo "Re-enabling Gatekeeper..."
+		sudo spctl --master-enable
+		defaults write com.apple.LaunchServices LSQuarantine -bool true
+		export GATEKEEPER_STATE=on
+	fi
 
-    # Show current state
-    echo "Gatekeeper is now: $GATEKEEPER_STATE"
+	# Show current state
+	echo "Gatekeeper is now: $GATEKEEPER_STATE"
 }
 
 alias gatekeeper="gtkpr"
 
 docs() {
-    emulate -L zsh
-    setopt pipefails
+	emulate -L zsh
+	setopt pipefails
 
-    # Binaries
-    local LS=/bin/ls
-    local SAY=/usr/bin/say
-    local QLMANAGE=/usr/bin/qlmanage
-    local OPEN=/usr/bin/open
-    local PANDOC=$(command -v pandoc || true)
-    local WKHTMLTOIMAGE=$(command -v wkhtmltoimage || true)
+	# Binaries
+	local LS=/bin/ls
+	local SAY=/usr/bin/say
+	local QLMANAGE=/usr/bin/qlmanage
+	local OPEN=/usr/bin/open
+	local PANDOC=$(command -v pandoc || true)
+	local WKHTMLTOIMAGE=$(command -v wkhtmltoimage || true)
 
-    # Flags
-    local interactive=0
-    local include_readme=1
-    local generate_previews=0
-    local start="."
+	# Flags
+	local interactive=0
+	local include_readme=1
+	local generate_previews=0
+	local start="."
 
-    # Parse args
-    while [[ $# -gt 0 ]]; do
-	case "$1" in
-	    -r|--read) interactive=1 ;;
-	    -p|--previews) generate_previews=1 ;;
-	    --exclude-readme) include_readme=0 ;;
-	    -h|--help)
-		cat <<'USAGE'
+	# Parse args
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-r | --read) interactive=1 ;;
+		-p | --previews) generate_previews=1 ;;
+		--exclude-readme) include_readme=0 ;;
+		-h | --help)
+			cat <<'USAGE'
 Usage: docs [options] [start_path]
 
 Options:
@@ -1244,129 +1292,131 @@ Examples:
   docs -r
   docs -p --exclude-readme ~/Projects/app
 USAGE
-		return 0
-		;;
-	    *) start="$1" ;;
-	esac
-	shift
-    done
+			return 0
+			;;
+		*) start="$1" ;;
+		esac
+		shift
+	done
 
-    # Collect files if interactive
-    typeset -a choices
-    choices=()
+	# Collect files if interactive
+	typeset -a choices
+	choices=()
 
-    # Helper: render PNG thumbnail for one Markdown file
-    _render_md_png() {
-	local md="$1"
-	local outdir="${md:h}/.previews"
-	local png="$outdir/${md:t}.png"
+	# Helper: render PNG thumbnail for one Markdown file
+	_render_md_png() {
+		local md="$1"
+		local outdir="${md:h}/.previews"
+		local png="$outdir/${md:t}.png"
 
-	mkdir -p "$outdir"
+		mkdir -p "$outdir"
 
-	# Skip if up-to-date
-	if [[ -e "$png" && "$png" -nt "$md" ]]; then
-	    echo "⏭️  Up-to-date: $png"
-	    return
-	fi
+		# Skip if up-to-date
+		if [[ -e "$png" && "$png" -nt "$md" ]]; then
+			echo "⏭️  Up-to-date: $png"
+			return
+		fi
 
-	# macOS Quick Look path
-	if [[ -x "$QLMANAGE" ]]; then
-	    local tmpdir; tmpdir=$(mktemp -d)
-	    if "$QLMANAGE" -t -s 512 -o "$tmpdir" -- "$md" >/dev/null 2>&1; then
-		local generated="$tmpdir/${md:t}.png"
-		[[ -e "$generated" ]] && mv -f "$generated" "$png"
-		rmdir "$tmpdir" 2>/dev/null || true
-		echo "🖼️  Generated: $png"
-		return
-	    fi
-	fi
+		# macOS Quick Look path
+		if [[ -x "$QLMANAGE" ]]; then
+			local tmpdir
+			tmpdir=$(mktemp -d)
+			if "$QLMANAGE" -t -s 512 -o "$tmpdir" -- "$md" >/dev/null 2>&1; then
+				local generated="$tmpdir/${md:t}.png"
+				[[ -e "$generated" ]] && mv -f "$generated" "$png"
+				rmdir "$tmpdir" 2>/dev/null || true
+				echo "🖼️  Generated: $png"
+				return
+			fi
+		fi
 
-	# Fallback Pandoc + wkhtmltoimage
-	if [[ -n "$PANDOC" && -n "$WKHTMLTOIMAGE" ]]; then
-	    local tmpdir; tmpdir=$(mktemp -d)
-	    local html="$tmpdir/out.html"
-	    "$PANDOC" -s "$md" -o "$html" &&
-		"$WKHTMLTOIMAGE" --enable-local-file-access "$html" "$png" >/dev/null 2>&1 &&
-		echo "🖼️  Generated: $png"
-	    rm -rf "$tmpdir"
-	    return
-	fi
+		# Fallback Pandoc + wkhtmltoimage
+		if [[ -n "$PANDOC" && -n "$WKHTMLTOIMAGE" ]]; then
+			local tmpdir
+			tmpdir=$(mktemp -d)
+			local html="$tmpdir/out.html"
+			"$PANDOC" -s "$md" -o "$html" &&
+				"$WKHTMLTOIMAGE" --enable-local-file-access "$html" "$png" >/dev/null 2>&1 &&
+				echo "🖼️  Generated: $png"
+			rm -rf "$tmpdir"
+			return
+		fi
 
-	echo "❌ No renderer available for $md"
-    }
-
-    # Prompt if previews requested
-    if (( generate_previews )); then
-	echo "⚠️  Preview generation can use a lot of disk space."
-	read -q "?Proceed? [y/N] "
-	echo
-	[[ $REPLY != [Yy] ]] && {
-	    echo "Cancelled."
-	    return 1
+		echo "❌ No renderer available for $md"
 	}
-    fi
 
-    # Main loop
-    find "$start" -type f -name "README.md" \
-	 -not -path "*/node_modules/*" \
-	 -not -path "*/.git/*" \
-	 -not -path "*/.venv/*" \
-	| while IFS= read -r readme; do
-	local dir; dir="${readme:h}"
-	echo "📂 Directory: $dir"
-	echo "   └── README.md (found)"
-
-	local had_any=0
-	for f in "$dir"/*.md; do
-            [[ -e "$f" ]] || continue
-            if (( ! include_readme )) && [[ "${f:t}" == "README.md" ]]; then
-		continue
-            fi
-            had_any=1
-            $LS -lhn -- "$f" | awk '{print "   ├── " $NF " (" $5 ")"}'
-            (( interactive )) && choices+=("$f")
-            (( generate_previews )) && _render_md_png "$f"
-	done
-
-	(( had_any == 0 )) && echo "   ├── (no other .md files)"
-	echo
-    done
-
-    # Interactive menu
-    if (( interactive )); then
-	if (( ${#choices} == 0 )); then
-	    echo "No Markdown files found to read."
-	    return 1
+	# Prompt if previews requested
+	if ((generate_previews)); then
+		echo "⚠️  Preview generation can use a lot of disk space."
+		read -q "?Proceed? [y/N] "
+		echo
+		[[ $REPLY != [Yy] ]] && {
+			echo "Cancelled."
+			return 1
+		}
 	fi
-	echo "Choose a file to read (or press Enter with no selection to quit):"
-	local PS3="Select #: "
-	select md in "${choices[@]}"; do
-	    [[ -z "$md" ]] && break
-	    echo "🔊 Reading: $md"
-	    "$SAY" -f "$md"
-	done
-    fi
+
+	# Main loop
+	find "$start" -type f -name "README.md" \
+		-not -path "*/node_modules/*" \
+		-not -path "*/.git/*" \
+		-not -path "*/.venv/*" |
+		while IFS= read -r readme; do
+			local dir
+			dir="${readme:h}"
+			echo "📂 Directory: $dir"
+			echo "   └── README.md (found)"
+
+			local had_any=0
+			for f in "$dir"/*.md; do
+				[[ -e "$f" ]] || continue
+				if ((!include_readme)) && [[ "${f:t}" == "README.md" ]]; then
+					continue
+				fi
+				had_any=1
+				$LS -lhn -- "$f" | awk '{print "   ├── " $NF " (" $5 ")"}'
+				((interactive)) && choices+=("$f")
+				((generate_previews)) && _render_md_png "$f"
+			done
+
+			((had_any == 0)) && echo "   ├── (no other .md files)"
+			echo
+		done
+
+	# Interactive menu
+	if ((interactive)); then
+		if ((${#choices} == 0)); then
+			echo "No Markdown files found to read."
+			return 1
+		fi
+		echo "Choose a file to read (or press Enter with no selection to quit):"
+		local PS3="Select #: "
+		select md in "${choices[@]}"; do
+			[[ -z "$md" ]] && break
+			echo "🔊 Reading: $md"
+			"$SAY" -f "$md"
+		done
+	fi
 }
 
-
 imgnx() {
-    local src="$1" dest="$2"
-    if [[ -z "$src" || -z "$dest" ]]; then
-        printf 'usage: xngmi <source> <dest>\n' >&2
-        return 1
-    fi
+	local src="$1" dest="$2"
+	if [[ -z "$src" || -z "$dest" ]]; then
+		printf 'usage: xngmi <source> <dest>\n' >&2
+		return 1
+	fi
 
-    if command -v rsync >/dev/null 2>&1; then
-        if rsync -avh --no-links "$src" "$dest"; then
-            return 0
-        fi
-        local rsync_status=$?
-        printf 'rsync failed (exit %d); falling back to cp -R...\n' "$rsync_status" >&2
-    else
-        printf 'rsync not found; using cp -R...\n' >&2
-    fi
+	if command -v rsync >/dev/null 2>&1; then
+		if rsync -avh --no-links "$src" "$dest"; then
+			return 0
+		fi
+		local rsync_status=$?
+		printf 'rsync failed (exit %d); falling back to cp -R...\n' "$rsync_status" >&2
+	else
+		printf 'rsync not found; using cp -R...\n' >&2
+	fi
 
-    cp -a "$src" "$dest"
+	cp -a "$src" "$dest"
 }
 
 # dusort () {
@@ -1378,20 +1428,20 @@ imgnx() {
 alias dsort="dusort"
 
 psql_export() {
-    pg_dump -U donaldmoore -h localhost -p 5432 -F p -v --no-owner --no-comments --no-public -f "$HOME/tmp/${1}_backup.sql" ${1}
+	pg_dump -U donaldmoore -h localhost -p 5432 -F p -v --no-owner --no-comments --no-public -f "$HOME/tmp/${1}_backup.sql" ${1}
 
 }
 
 rose() {
-    cd "$DH/stdln/_static_html/src/roses/one/"
+	cd "$DH/stdln/_static_html/src/roses/one/"
 }
 
 logic() {
-    if [["$1" == "--help" || "$1" == "-h"]]; then
-	ls "$HOME/Documentation/Logic/*"
-    else
-	open -a "Logic Pro X"
-    fi
+	if [["$1" == "--help" || "$1" == "-h"]]; then
+		ls "$HOME/Documentation/Logic/*"
+	else
+		open -a "Logic Pro X"
+	fi
 }
 
 #if [[ -z "$POST_LOGIN_HOOK_RAN" ]]; then
@@ -1414,102 +1464,99 @@ logic() {
 # 	[ -n "$pid" ] && sudo kill "$pid"
 # }
 
-
 reminder() {
-    # Check for the duration flag
-    local duration=0
-    local reminder=""
-    local time_in_seconds=""
+	# Check for the duration flag
+	local duration=0
+	local reminder=""
+	local time_in_seconds=""
 
-    # Parse the arguments
-    while getopts "d:" opt; do
-        case $opt in
-            d)
-                duration=$OPTARG  # If -d is passed, set the duration in minutes
-                ;;
-            *)
-                echo "Usage: schedule_reminder [-d duration_in_minutes] <reminder_message>"
-                return 1
-                ;;
-        esac
-    done
-    shift $((OPTIND - 1))  # Remove the options from the arguments list
+	# Parse the arguments
+	while getopts "d:" opt; do
+		case $opt in
+		d)
+			duration=$OPTARG # If -d is passed, set the duration in minutes
+			;;
+		*)
+			echo "Usage: schedule_reminder [-d duration_in_minutes] <reminder_message>"
+			return 1
+			;;
+		esac
+	done
+	shift $((OPTIND - 1)) # Remove the options from the arguments list
 
-    # Get the reminder message (everything else)
-    reminder="$*"
+	# Get the reminder message (everything else)
+	reminder="$*"
 
-    # Convert duration to seconds if a duration flag is passed
-    if [[ $duration -gt 0 ]]; then
-        time_in_seconds=$((duration * 60))
-    else
-        # If no duration flag is passed, assume the second argument is in seconds
-        time_in_seconds=$1
-    fi
+	# Convert duration to seconds if a duration flag is passed
+	if [[ $duration -gt 0 ]]; then
+		time_in_seconds=$((duration * 60))
+	else
+		# If no duration flag is passed, assume the second argument is in seconds
+		time_in_seconds=$1
+	fi
 
-    # Check if the reminder message is empty or no time is provided
-    if [[ -z $reminder || -z $time_in_seconds ]]; then
-        echo "Please provide both a reminder message and time in seconds (or use the -d flag for minutes)."
-        return 1
-    fi
+	# Check if the reminder message is empty or no time is provided
+	if [[ -z $reminder || -z $time_in_seconds ]]; then
+		echo "Please provide both a reminder message and time in seconds (or use the -d flag for minutes)."
+		return 1
+	fi
 
-    # Schedule the reminder using 'at' (or 'osascript' for notifications)
-    echo "osascript -e 'display notification \"$reminder\" with title \"Reminder\"'" | at now + $time_in_seconds seconds
+	# Schedule the reminder using 'at' (or 'osascript' for notifications)
+	echo "osascript -e 'display notification \"$reminder\" with title \"Reminder\"'" | at now + $time_in_seconds seconds
 
-    echo "Reminder set! The reminder will be triggered in $time_in_seconds seconds."
+	echo "Reminder set! The reminder will be triggered in $time_in_seconds seconds."
 }
-
 
 ucp() {
-    /bin/cp "$@";
+	/bin/cp "$@"
 }
 cpn() {
-    cp "$@";
+	cp "$@"
 }
 cp() {
-    echo "The \`cp\` command is configured to **not** overwrite files. Use \`ucp\` if you **do** want it to overwrite Enter."
-    echo -n "Press [ENTER] to continue."
-    read
-    /bin/cp -v -n "$@";
+	echo "The \`cp\` command is configured to **not** overwrite files. Use \`ucp\` if you **do** want it to overwrite Enter."
+	echo -n "Press [ENTER] to continue."
+	read
+	/bin/cp -v -n "$@"
 }
 
 fnx_C6EE3E7B-5EB4-45F9-B13D-B451E169B079() {
-    if pgrep -x "Hammerspoon" > /dev/null; then
-	# If Hammerspoon is running, quit it
-	osascript -e 'quit app "Hammerspoon"'
-    else
-	# If Hammerspoon is not running, launch it
-	open -a Hammerspoon
-    fi
+	if pgrep -x "Hammerspoon" >/dev/null; then
+		# If Hammerspoon is running, quit it
+		osascript -e 'quit app "Hammerspoon"'
+	else
+		# If Hammerspoon is not running, launch it
+		open -a Hammerspoon
+	fi
 }
 
 even_better_prompt() {
-    local color branch gitinfo
-    color=$(ggs 2>/dev/null)
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-	branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-	[[ -n $branch ]] && branch="/$branch"
-	local remote
-	remote=$(git remote -v 2>/dev/null | grep "origin" | head -1)
-	remoteName="$(awk '{print $1}' <<< "$remote")"
-	remoteUrl="$(awk '{print $2}' <<< "$remote")"
+	local color branch gitinfo
+	color=$(ggs 2>/dev/null)
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+		[[ -n $branch ]] && branch="/$branch"
+		local remote
+		remote=$(git remote -v 2>/dev/null | grep "origin" | head -1)
+		remoteName="$(awk '{print $1}' <<<"$remote")"
+		remoteUrl="$(awk '{print $2}' <<<"$remote")"
 
-	local remote_part=""
-	[[ -n $remote ]] && remote_part=" $remoteName"
-	gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch} %F{#deaded}($remoteUrl)%f"
-    fi
-    PROMPT='
+		local remote_part=""
+		[[ -n $remote ]] && remote_part=" $remoteName"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}${branch} %F{#deaded}($remoteUrl)%f"
+	fi
+	PROMPT='
 '
-    PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
-    PROMPT+='
+	PROMPT+='%F{green}%n@'"${LOCAL_IP:-%M}"':%~%f'
+	PROMPT+='
 '
-    [[ -n $gitinfo ]] && PROMPT+="$gitinfo "
-    PROMPT+='
+	[[ -n $gitinfo ]] && PROMPT+="$gitinfo "
+	PROMPT+='
 '
-    PROMPT+=$''"${ZSH_NAME}"':%m => '
+	PROMPT+=$''"${ZSH_NAME}"':%m => '
 
-    RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+	RPROMPT='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
 }
-
 
 # # Schedule pomodoro function to run every 30 minutes using a loop
 # pomodoro_scheduler() {
@@ -1521,7 +1568,6 @@ even_better_prompt() {
 
 # # Start the scheduler in the background
 # pomodoro_scheduler &
-
 
 # --- gpt: Chat with OpenAI from your terminal --------------------------------
 # deps: curl, jq
@@ -1544,129 +1590,128 @@ even_better_prompt() {
 #   --stream           Stream tokens live (Ctrl-C to stop)
 #   -h|--help          Show help
 
-
 back_up() {
 
-    # Interactive backup with optional system volume and isolation
-    # Usage: back_up [--full]
+	# Interactive backup with optional system volume and isolation
+	# Usage: back_up [--full]
 
-    local include_system=false
-    if [[ "$1" == "--full" ]]; then
-	include_system=true
-    fi
-
-    local EXCLUDE_DIRS_VAL="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
-
-    # Discover volumes
-    local vols=("/Volumes/"*)
-    local targets=()
-    for vol in "${vols[@]}"; do
-	local name="$(basename "$vol")"
-	if [[ $include_system == false && "$name" == "Macintosh HD" ]]; then
-	    continue
+	local include_system=false
+	if [[ "$1" == "--full" ]]; then
+		include_system=true
 	fi
-	[[ -d "$vol" ]] && targets+=("$vol")
-    done
 
-    if [[ ${#targets[@]} -eq 0 ]]; then
-	echo "No backupable volumes found under /Volumes."
-	return 1
-    fi
+	local EXCLUDE_DIRS_VAL="${EXCLUDE_DIRS:-(venv|\.git|node_modules)}"
 
-    # Sort for stable menu order
-    local -a sorted
-    sorted=(${(on)targets})
-
-    # Selection: prefer fzf if available, else use select
-    local selection=""
-    if command -v fzf >/dev/null 2>&1; then
-	selection=$(printf '%s\n' "${sorted[@]}" | fzf --prompt='Select volume > ' --height=40% --reverse)
-	if [[ -z "$selection" ]]; then
-	    echo "No selection made. Aborting."
-	    return 1
-	fi
-    else
-	local PS3="Select a volume to back up: "
-	local opt
-	select opt in "${sorted[@]}"; do
-	    if [[ -n "$opt" ]]; then
-		selection="$opt"
-		break
-	    else
-		echo "Invalid selection. Try again."
-	    fi
+	# Discover volumes
+	local vols=("/Volumes/"*)
+	local targets=()
+	for vol in "${vols[@]}"; do
+		local name="$(basename "$vol")"
+		if [[ $include_system == false && "$name" == "Macintosh HD" ]]; then
+			continue
+		fi
+		[[ -d "$vol" ]] && targets+=("$vol")
 	done
-    fi
 
-    local name="$(basename "$selection")"
+	if [[ ${#targets[@]} -eq 0 ]]; then
+		echo "No backupable volumes found under /Volumes."
+		return 1
+	fi
 
-    # Ask whether to isolate into its own folder in the bucket
-    local isolate_answer
-    printf "Isolate backup into gs://imgfunnels.com/%s/? (y/N): " "$name"
-    read -r isolate_answer
-    local dest="gs://imgfunnels.com"
-    if [[ "$isolate_answer" == "y" || "$isolate_answer" == "Y" ]]; then
-	dest="gs://imgfunnels.com/$name"
-    fi
+	# Sort for stable menu order
+	local -a sorted
+	local -a targets # Ensure targets is explicitly an array
+	sorted=($(printf '%s\n' "${targets[@]}" | sort))
 
-    echo "Syncing $selection -> $dest"
-    PYTHONUNBUFFERED=1 gsutil rsync -r -e -x "$EXCLUDE_DIRS_VAL" "$selection" "$dest" < /dev/null
-    local status=$?
-    if [[ $status -ne 0 ]]; then
-	echo "Error syncing $name (exit $status)"
-	return $status
-    fi
-    echo "Completed: $name"
+	# Selection: prefer fzf if available, else use select
+	local selection=""
+	if command -v fzf >/dev/null 2>&1; then
+		selection=$(printf '%s\n' "${sorted[@]}" | fzf --prompt='Select volume > ' --height=40% --reverse)
+		if [[ -z "$selection" ]]; then
+			echo "No selection made. Aborting."
+			return 1
+		fi
+	else
+		local PS3="Select a volume to back up: "
+		local opt
+		select opt in "${sorted[@]}"; do
+			if [[ -n "$opt" ]]; then
+				selection="$opt"
+				break
+			else
+				echo "Invalid selection. Try again."
+			fi
+		done
+	fi
 
-    echo 'All backups complete.'
+	local name="$(basename "$selection")"
+
+	# Ask whether to isolate into its own folder in the bucket
+	local isolate_answer
+	printf "Isolate backup into gs://imgfunnels.com/%s/? (y/N): " "$name"
+	read -r isolate_answer
+	local dest="gs://imgfunnels.com"
+	if [[ "$isolate_answer" == "y" || "$isolate_answer" == "Y" ]]; then
+		dest="gs://imgfunnels.com/$name"
+	fi
+
+	echo "Syncing $selection -> $dest"
+	PYTHONUNBUFFERED=1 gsutil rsync -r -e -x "$EXCLUDE_DIRS_VAL" "$selection" "$dest" </dev/null
+	local status=$?
+	if [[ $status -ne 0 ]]; then
+		echo "Error syncing $name (exit $status)"
+		return $status
+	fi
+	echo "Completed: $name"
+
+	echo 'All backups complete.'
 }
 
-
 dictionary() {
-    cd "$HOME/src/dinglehopper/assets/dictionary"
+	cd "$HOME/src/dinglehopper/assets/dictionary"
 }
 # Provide a simple alias; arguments are forwarded by the shell
 alias dict="dictionary"
 
 __wrap_notice gsutil
 gsutil() {
-    command gsutil "$@"
+	command gsutil "$@"
 }
 
 __wrap_notice gcloud
 
 gcloud() {
-    if [[ $1 == "sync" ]]; then
-        shift
-        local bucket="$1" src="${2:-$PWD}"
-        if [[ -z "$bucket" ]]; then
-            echo "Usage: gcloud sync <bucket> [dir]" >&2
-            return 1
-        fi
+	if [[ $1 == "sync" ]]; then
+		shift
+		local bucket="$1" src="${2:-$PWD}"
+		if [[ -z "$bucket" ]]; then
+			echo "Usage: gcloud sync <bucket> [dir]" >&2
+			return 1
+		fi
 
-        if [[ "$bucket" != gs://* ]]; then
-            bucket="gs://$bucket"
-        fi
-        bucket="${bucket%/}"
+		if [[ "$bucket" != gs://* ]]; then
+			bucket="gs://$bucket"
+		fi
+		bucket="${bucket%/}"
 
-        local abs_src
-        abs_src=$(cd "$src" && pwd) || return 1
-        local dest="${bucket}/${abs_src#/}"
+		local abs_src
+		abs_src=$(cd "$src" && pwd) || return 1
+		local dest="${bucket}/${abs_src#/}"
 
-        echo "Syncing $abs_src -> $dest"
-        command gsutil -m rsync -d -r "$abs_src" "$dest"
-        return $?
-    fi
+		echo "Syncing $abs_src -> $dest"
+		command gsutil -m rsync -d -r "$abs_src" "$dest"
+		return $?
+	fi
 
-    command gcloud "$@"
+	command gcloud "$@"
 }
 
 bucket() {
-    command gsutil cp -r "$1" gs://imgfunnels.com/
+	command gsutil cp -r "$1" gs://imgfunnels.com/
 }
 
 pbucket() {
-    command gsutil cp -r "$1" gs://re_imgnx
+	command gsutil cp -r "$1" gs://re_imgnx
 }
 
 # Ensure Emacs uses XDG init dir (Emacs 29+: --init-directory)
@@ -1681,162 +1726,162 @@ pbucket() {
 # }
 
 lock() {
-    sudo chflags -R uchg "$@"
+	sudo chflags -R uchg "$@"
 }
 
 unlock() {
-    sudo chflags -R nouchg "$@"
+	sudo chflags -R nouchg "$@"
 }
 
 tuner() {
-    open -a "Universal Tuner"
+	open -a "Universal Tuner"
 }
 
 visudo() {
-    /usr/sbin/visudo VISUAL="emacs"
+	/usr/sbin/visudo VISUAL="emacs"
 }
 
 dh() {
-    cd "$HOME/src/dinglehopper"
+	cd "$HOME/src/dinglehopper"
 }
 
 get_diff() {
-    curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
-    diff="$((curr - IMGNXZINIT))"
-    if [[ $diff -gt 1000 ]]; then
-	diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
-    elif [[ $diff -gt 300 ]]; then
-	diff="%F{green}$(printf "%dms" "$diff")%f"
-    else
-	diff="%F{magenta}$(printf "%dms" "$diff")%f"
-    fi
+	curr=$(($(date +%s) * 1000 + $(date +%N | cut -b1-3)))
+	diff="$((curr - IMGNXZINIT))"
+	if [[ $diff -gt 1000 ]]; then
+		diff="%F{yellow}$(printf "%d.%03d" "$((diff / 1000))" "$((diff % 1000))")%f"
+	elif [[ $diff -gt 300 ]]; then
+		diff="%F{green}$(printf "%dms" "$diff")%f"
+	else
+		diff="%F{magenta}$(printf "%dms" "$diff")%f"
+	fi
 
-    echo "$diff"
+	echo "$diff"
 }
 
-
 better_prompt() {
-    local color branch gitinfo stats stat_parts stat
-    color="$(ggs)"
-    stats="${IMGNX_STATS:-}"
+	local color branch gitinfo stats stat_parts stat
+	color="$(ggs)"
+	stats="${IMGNX_STATS:-}"
 
-    branch=""
-    gitinfo=""
+	branch=""
+	gitinfo=""
 
-    # Git info
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-	branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no git")
-	[[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
-	local remote="$(git remote 2>/dev/null)"
-	local remote_part=""
-	[[ -n "$remote" ]] && remote_part=" $remote"
-	gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
-    fi
-
-    # Compose PS1
-    PS1="
-"
-    [[ -n "$gitinfo" ]] && PS1+="
-$gitinfo "
-    card=0
-    if [[ -n "$stats" ]]; then
-	card=$((card+1))
-	# Split stats by tabs, colorize each part
-	# Split stats string by tab into array, handle empty or unset
-	if [[ -n "$stats" ]]; then
-	    stat_parts=(${(s:$'\t')stats})
-	else
-	    stat_parts=()
+	# Git info
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "no git")
+		[[ -n "$branch" && "$branch" != "no git" ]] && branch="/$branch"
+		local remote="$(git remote 2>/dev/null)"
+		local remote_part=""
+		[[ -n "$remote" ]] && remote_part=" $remote"
+		gitinfo="%F{$color}${remote_part}%F{#8aa6c0}$branch%f"
 	fi
-	for stat in $stat_parts; do
-	    case $card in
-		1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
-		2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
-		3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
-		*) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
-	    esac
-	    card=$((card+1)) # Increment card for each stat
-	done
-    fi
 
-    PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
+	# Compose PS1
+	PS1="
+"
+	[[ -n "$gitinfo" ]] && PS1+="
+$gitinfo "
+	card=0
+	if [[ -n "$stats" ]]; then
+		card=$((card + 1))
+		# Split stats by tabs, colorize each part
+		# Split stats string by tab into array, handle empty or unset
+		if [[ -n "$stats" ]]; then
+			# Todo: Replace spaces with tabs.
+			stat_parts="${stats}"
+		else
+			stat_parts=()
+		fi
+		for stat in $stat_parts; do
+			case $card in
+			1) PS1+=" %F{#FF007B}${stat}%f" ;; # CPU
+			2) PS1+=" %F{#007BFF}${stat}%f" ;; # RAM
+			3) PS1+=" %F{#7BFF00}${stat}%f" ;; # Zsh count
+			*) PS1+=" %F{#fca864}${stat}%f" ;; # Default color
+			esac
+			card=$((card + 1)) # Increment card for each stat
+		done
+	fi
 
-    PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
-    PS1+="
+	PS1+="CPU: $(top -l 1 | grep 'CPU usage' | awk '{print $3}' | tr -d '%'), PhysMem: $(top -l 1 | grep 'PhysMem' | awk '{print $2}')"
+
+	PS1+='%F{green}%n@'"${LOCAL_IP}"':%~%f'
+	PS1+="
 %B%F{#FF007B}$(basename $SHELL) %f%F{#FFFFFF}%m %F{#7BFF00}=>%b
 "
-    RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
+	RPS1='%F{#8aa6c0}cnf [%F{#928bbc}<config-dir> (%F{#8bb8b8}<file>%F{#928bbc})%F{#8aa6c0}]%f'
 }
 
 __wrap_notice rm
 rm() {
 
-    local flags=()
-    local files=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -*) flags+=("$1");;  # Collect flags
-            *) files+=("$1");;   # Collect file paths
-        esac
-        shift
-    done
+	local flags=()
+	local files=()
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-*) flags+=("$1") ;; # Collect flags
+		*) files+=("$1") ;;  # Collect file paths
+		esac
+		shift
+	done
 
-    for file in "${files[@]}"; do
-        local abs_path="$(realpath "$file" 2>/dev/null)"
+	for file in "${files[@]}"; do
+		local abs_path="$(realpath "$file" 2>/dev/null)"
 
-        # Check if the file is in any user's .Trash directory
-        if [[ "$abs_path" =~ ^/Users/.*/\.Trash/ ]]; then
-            /bin/rm "${flags[@]}" "$file"  # Call /bin/rm directly if file is in any user's .Trash
-            return
-        fi
+		# Check if the file is in any user's .Trash directory
+		if [[ "$abs_path" =~ ^/Users/.*/\.Trash/ ]]; then
+			/bin/rm "${flags[@]}" "$file" # Call /bin/rm directly if file is in any user's .Trash
+			return
+		fi
 
-        # Otherwise, move it to the user's .Trash
-        if [[ -e "$file" ]]; then
-            local trash_path="$HOME/.Trash$abs_path"
-            mkdir -p "$(dirname "$trash_path")"
-            mv "$file" "$trash_path"
-        fi
-    done
+		# Otherwise, move it to the user's .Trash
+		if [[ -e "$file" ]]; then
+			local trash_path="$HOME/.Trash$abs_path"
+			mkdir -p "$(dirname "$trash_path")"
+			mv "$file" "$trash_path"
+		fi
+	done
 
-    # If only flags were passed, fallback to system rm
-    if [[ ${#files[@]} -eq 0 ]]; then
-        /bin/rm "${flags[@]}"
-    fi
+	# If only flags were passed, fallback to system rm
+	if [[ ${#files[@]} -eq 0 ]]; then
+		/bin/rm "${flags[@]}"
+	fi
 }
 
 __wrap_notice rm
 real() {
-    case "$1" in
-        "rm")
-	    /bin/rm "$@";
-        ;;
+	case "$1" in
+	"rm")
+		/bin/rm "$@"
+		;;
 	"gcloud")
-	    /opt/homebrew/bin/gcloud "$@";
-	    ;;
+		/opt/homebrew/bin/gcloud "$@"
+		;;
 	"gsutil")
-	    /opt/homebrew/bin/gsutil "$@";
-	    ;;
-    *)
-        echo "Command not found. A list of commands is kept in \`$HOME/Desktop/real.req.list\`  Exiting."
-        ;;
-    esac
+		/opt/homebrew/bin/gsutil "$@"
+		;;
+	*)
+		echo "Command not found. A list of commands is kept in \`$HOME/Desktop/real.req.list\`  Exiting."
+		;;
+	esac
 }
 
 init() {
-    # Due to issues with corruption, this is the new ~/bin
-    . $HOME/src/init/main.sh
+	# Due to issues with corruption, this is the new ~/bin
+	. $HOME/src/init/main.sh
 }
 
 find() {
-    # Unix find
-    /usr/bin/find "$@"
+	# Unix find
+	/usr/bin/find "$@"
 }
 
-midi() {
-    cd "/Users/donaldmoore/src/dinglehopper/stdln/midi"
-    # todo: cargo build? python? node? How do you run it
-    #
-}
+# midi() {
+# 	cd "/Users/donaldmoore/src/dinglehopper/stdln/midi"
+# todo: cargo build? python? node? How do you run it
+#
+# }
 
 # __wrap_notice find
 # find() {
@@ -1850,141 +1895,140 @@ midi() {
 #}
 
 import() {
-    prompt=(
-	"Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
-	'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
-	"Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
-	'Is this what you meant to do? (y/N)'
-    )
+	prompt=(
+		"Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick."
+		'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.'
+		"Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n"
+		'Is this what you meant to do? (y/N)'
+	)
 
-    answer="$(safeguard "${prompt[@]}")"
+	answer="$(safeguard "${prompt[@]}")"
 
 }
 
 dinglehopper() {
-    cd $SRC/dinglehopper
+	cd $SRC/dinglehopper
 }
 
 hop() {
-    before="$PWD"
-    cd $(realpath)
-    after="$PWD"
-    echo "$before -> $after"
+	before="$PWD"
+	cd $(realpath)
+	after="$PWD"
+	echo "$before -> $after"
 }
 
 clean() {
-    # Define directories to clean
-    local dirs_to_clean=(
-	"node_modules" "target" ".yarn" ".next" "venv" "dist" "build" "coverage"
-	".pytest_cache" ".cache" ".parcel-cache" ".svelte-kit" ".turbo" ".expo"
-	".angular" ".vercel" ".nuxt" "__pycache__" ".mypy_cache" ".sass-cache"
-	".grunt" ".bower_components" ".jspm_packages" ".serverless" ".firebase"
-	".idea"
-    )
+	# Define directories to clean
+	local dirs_to_clean=(
+		"node_modules" "target" ".yarn" ".next" "venv" "dist" "build" "coverage"
+		".pytest_cache" ".cache" ".parcel-cache" ".svelte-kit" ".turbo" ".expo"
+		".angular" ".vercel" ".nuxt" "__pycache__" ".mypy_cache" ".sass-cache"
+		".grunt" ".bower_components" ".jspm_packages" ".serverless" ".firebase"
+		".idea"
+	)
 
-    # Define files to clean
-    local files_to_clean=(
-	".DS_Store" ".env" ".eslintcache"
-    )
+	# Define files to clean
+	local files_to_clean=(
+		".DS_Store" ".env" ".eslintcache"
+	)
 
-    # Remove directories
-    for dir in "${dirs_to_clean[@]}"; do
-	ufind . -maxdepth 3 -type d -name "$dir" -exec zsh -c "echo \"execute \033[14mrm -rf {}? | read\"" \; -exec rm -rf {} +
-    done
+	# Remove directories
+	for dir in "${dirs_to_clean[@]}"; do
+		ufind . -maxdepth 3 -type d -name "$dir" -exec zsh -c "echo \"execute \033[14mrm -rf {}? | read\"" \; -exec rm -rf {} +
+	done
 
-    # Remove files
-    for file in "${files_to_clean[@]}"; do
-	ufind . -maxdepth 3 -type f -name "$file" -exec zsh -c "echo \"execute \033[14mrm -f {}? | read\"" \; -exec rm -f {} +
-    done
+	# Remove files
+	for file in "${files_to_clean[@]}"; do
+		ufind . -maxdepth 3 -type f -name "$file" -exec zsh -c "echo \"execute \033[14mrm -f {}? | read\"" \; -exec rm -f {} +
+	done
 }
 
 tile() {
-    open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
+	open -a "/Users/donaldmoore/Applications/Tile.app/Contents/MacOS/ShortcutDroplet"
 }
 
-
 function tree() {
-    command tree -C "$@"
+	command tree -C "$@"
 }
 
 function fzf_file_menu() {
-    # A function for opening files in a menu with `fzf`
-    local file
-    file=$(ufind . -type f | fzf --preview 'cat {}' --preview-window=right:50%:wrap)
+	# A function for opening files in a menu with `fzf`
+	local file
+	file=$(ufind . -type f | fzf --preview 'cat {}' --preview-window=right:50%:wrap)
 
-    if [[ -n "$file" ]]; then
-	echo "Selected: $file"
-	# Add actions here, like opening or copying the file
-	selected_action=$(echo -e "Open\nCopy\nDelete" | fzf)
-	case "$selected_action" in
-	    Open) open "$file" ;;
-	    Copy) cp "$file" ~/Documents/ ;;
-	    Delete) rm "$file" ;;
-	esac
-    fi
+	if [[ -n "$file" ]]; then
+		echo "Selected: $file"
+		# Add actions here, like opening or copying the file
+		selected_action=$(echo -e "Open\nCopy\nDelete" | fzf)
+		case "$selected_action" in
+		Open) open "$file" ;;
+		Copy) cp "$file" ~/Documents/ ;;
+		Delete) rm "$file" ;;
+		esac
+	fi
 }
 
 peachtree() {
-    for dir in $(ufind . -type d); do
-	count=$(ufind "$dir" -maxdepth 1 -type f | wc -l)
-	echo "$dir ($count)"
-    done
+	for dir in $(ufind . -type d); do
+		count=$(ufind "$dir" -maxdepth 1 -type f | wc -l)
+		echo "$dir ($count)"
+	done
 }
 
 ptree() {
-    local dir="$1"
-    local indent="$2"
-    local count
+	local dir="$1"
+	local indent="$2"
+	local count
 
-    count=$(find "$dir" -maxdepth 1 -type f | wc -l)
-    echo "${indent}$(basename "$dir") ($count files)"
+	count=$(find "$dir" -maxdepth 1 -type f | wc -l)
+	echo "${indent}$(basename "$dir") ($count files)"
 
-    setopt noglob
+	setopt noglob
 
-    for subdir in "$dir"/*/; do
-	if [ -d "$subdir" ]; then
-	    print_tree "$subdir" "$indent  ├─"
-	fi
-    done
+	for subdir in "$dir"/*/; do
+		if [ -d "$subdir" ]; then
+			print_tree "$subdir" "$indent  ├─"
+		fi
+	done
 
-    unsetopt noglob
+	unsetopt noglob
 }
 
 taku.init() {
 
-    # Exit immediately if a command exits with a non-zero status
-    set -e
+	# Exit immediately if a command exits with a non-zero status
+	set -e
 
-    # Display the script's progress
-    echo "Starting setup..."
+	# Display the script's progress
+	echo "Starting setup..."
 
-    # 1. Create the project directory
-    echo "Creating project directory..."
-    mkdir -p taku-app
-    cd taku-app
+	# 1. Create the project directory
+	echo "Creating project directory..."
+	mkdir -p taku-app
+	cd taku-app
 
-    # 2. Initialize a new Node.js project
-    echo "Initializing Node.js project..."
-    npm init -y
+	# 2. Initialize a new Node.js project
+	echo "Initializing Node.js project..."
+	npm init -y
 
-    # 3. Install required dependencies
-    echo "Installing dependencies..."
+	# 3. Install required dependencies
+	echo "Installing dependencies..."
 
-    # Install Webpack and required plugins
-    npm install --save-dev webpack webpack-cli webpack-dev-server html-webpack-plugin style-loader css-loader
+	# Install Webpack and required plugins
+	npm install --save-dev webpack webpack-cli webpack-dev-server html-webpack-plugin style-loader css-loader
 
-    # Install React and ReactDOM
-    npm install react react-dom --save
+	# Install React and ReactDOM
+	npm install react react-dom --save
 
-    # Install Tailwind CSS for styling
-    npm install tailwindcss postcss autoprefixer --save-dev
-    npx tailwindcss init
+	# Install Tailwind CSS for styling
+	npm install tailwindcss postcss autoprefixer --save-dev
+	npx tailwindcss init
 
-    # 4. Create the basic project structure
-    echo "Creating basic project structure..."
+	# 4. Create the basic project structure
+	echo "Creating basic project structure..."
 
-    # Create the main HTML file
-    cat >index.html <<EOF
+	# Create the main HTML file
+	cat >index.html <<EOF
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1998,11 +2042,11 @@ taku.init() {
 </html>
 EOF
 
-    # Create the src directory
-    mkdir -p src/components
+	# Create the src directory
+	mkdir -p src/components
 
-    # Create the App.js file for React
-    cat >src/App.js <<EOF
+	# Create the App.js file for React
+	cat >src/App.js <<EOF
 import React from 'react';
 import './styles.css';
 import Component from './Component';
@@ -2018,8 +2062,8 @@ return (
 export default App;
 EOF
 
-    # Create the Component.js file
-    cat >src/Component.js <<EOF
+	# Create the Component.js file
+	cat >src/Component.js <<EOF
 import React, { useEffect, useRef, useState } from 'react';
 
 const Component = () => {
@@ -2116,8 +2160,8 @@ return (
 export default Component;
 EOF
 
-    # Create a Tailwind CSS file for custom styling
-    cat >src/styles.css <<EOF
+	# Create a Tailwind CSS file for custom styling
+	cat >src/styles.css <<EOF
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -2127,8 +2171,8 @@ font-family: 'Arial', sans-serif;
 }
 EOF
 
-    # 5. Create Webpack configuration file
-    cat >webpack.config.js <<EOF
+	# 5. Create Webpack configuration file
+	cat >webpack.config.js <<EOF
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
@@ -2163,59 +2207,57 @@ devServer: {
 };
 EOF
 
-    # 6. Set up Babel for React JSX support
-    npm install --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader
+	# 6. Set up Babel for React JSX support
+	npm install --save-dev @babel/core @babel/preset-env @babel/preset-react babel-loader
 
-    # 7. Set up npm scripts for start and build commands
-    echo "Configuring npm scripts..."
+	# 7. Set up npm scripts for start and build commands
+	echo "Configuring npm scripts..."
 
-    sed -i '' 's/"scripts": {/&\n    "start": "webpack serve --open",\n    "build": "webpack --mode production",/' package.json
+	sed -i '' 's/"scripts": {/&\n    "start": "webpack serve --open",\n    "build": "webpack --mode production",/' package.json
 
-    echo "Installing Python"
+	echo "Installing Python"
 
-    # Default to Python
-    PYTHON=${PYTHON:-python}
+	# Default to Python
+	PYTHON=${PYTHON:-python}
 
-    # Create virtual environment if it doesn’t exist
-    if [ ! -d ".venv" ]; then
-	echo "[Taku] Creating virtual environment..."
-	$PYTHON -m venv .venv
-    fi
+	# Create virtual environment if it doesn’t exist
+	if [ ! -d ".venv" ]; then
+		echo "[Taku] Creating virtual environment..."
+		$PYTHON -m venv .venv
+	fi
 
-    # Activate the environment
-    echo "[Taku] Activating .venv"
-    source .venv/bin/activate
+	# Activate the environment
+	echo "[Taku] Activating .venv"
+	source .venv/bin/activate
 
-    # Upgrade pip (optional, but usually helpful)
-    pip install --upgrade pip
+	# Upgrade pip (optional, but usually helpful)
+	pip install --upgrade pip
 
-    # 8. Run the app (optional step, can be run later)
-    echo "Project setup complete! Run 'npm start' to start the app."
+	# 8. Run the app (optional step, can be run later)
+	echo "Project setup complete! Run 'npm start' to start the app."
 }
 
-
 dir() {
-    hash "$@"
+	hash "$@"
 }
 
 cnf() {
-    if [[ "$1" == "init" ]]; then
-	 if [[ ! -z "$2" ]]; then
-	     mkdir -p "$BLUEPRINTS/$2"
-	     target="$BLUEPRINTS/$(basename $(realpath $pwd))";
-	     mkdir -p "$target"
-	     pushd "$target"
-	     ditto "$DINGLEHOPPER/blueprints/*.md" "$target"
-	 fi
-    else
-	cd "$XDG_CONFIG_HOME/$1"	
-    fi
+	if [[ "$1" == "init" ]]; then
+		if [[ ! -z "$2" ]]; then
+			mkdir -p "$BLUEPRINTS/$2"
+			target="$BLUEPRINTS/$(basename $(realpath $pwd))"
+			mkdir -p "$target"
+			pushd "$target"
+			ditto "$DINGLEHOPPER/blueprints/*.md" "$target"
+		fi
+	else
+		cd "$XDG_CONFIG_HOME/$1"
+	fi
 }
 
-
 copy() {
-    $@ | pbcopy
-    export v=$(pbpaste)
+	$@ | pbcopy
+	export v=$(pbpaste)
 }
 
 # v() {
@@ -2227,23 +2269,23 @@ alias ugit=/usr/bin/git
 __wrap_notice git
 
 git() {
-    if [[ "$1" == "sum" ]]; then
-	git log --oneline
-	read -r -p "Press any key to continue..."
-	git status --short
-	/usr/bin/git diff --minimal --color=always | less -R
-    elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" || "$1" == "acp"  ]]; then
-	dash "$XDG_CONFIG_HOME/git/aliases.sh" "$@"
-    elif [[ "$1" == "list" ]]; then
-	find /Volumes/ -type d -name ".git" | tee $HOME/tmp/git.list;
-	say "Here's your list of git repositories";
-	bat "$HOME/tmp/git.list"
+	if [[ "$1" == "sum" ]]; then
+		git log --oneline
+		read -r -p "Press any key to continue..."
+		git status --short
+		/usr/bin/git diff --minimal --color=always | less -R
+	elif [[ "$1" == "remote" || "$1" == "log" || "$1" == "branch" || "$1" == "acp" ]]; then
+		dash "$XDG_CONFIG_HOME/git/aliases.sh" "$@"
+	elif [[ "$1" == "list" ]]; then
+		find /Volumes/ -type d -name ".git" | tee $HOME/tmp/git.list
+		say "Here's your list of git repositories"
+		bat "$HOME/tmp/git.list"
 
-    else
-	echo "Running /usr/bin/git \"$@\""
-	/usr/bin/git "$@"
-	
-    fi
+	else
+		echo "Running /usr/bin/git \"$@\""
+		/usr/bin/git "$@"
+
+	fi
 }
 
 # Get the path of the current script
@@ -2251,93 +2293,91 @@ script_path="${0}"
 
 echo "$PATH" | grep -q "/Users/donaldmoore/bin" || export PATH="$HOME/bin:$PATH"
 
-
 # Declare associative array for TODO cache
 typeset -gA __TODO_CACHE
 shellcheck() {
-    if cat "$1" | grep -q '^#!.*zsh'; then
-	echo "zsh -n \"$1\""
-	output=$(zsh -n "$1")
-	if [[ -n "$output" ]]; then
-	    echo -e "❌ \033[38;5;1mFound issues:\033[0m"
-	    echo "$output"
+	if cat "$1" | grep -q '^#!.*zsh'; then
+		echo "zsh -n \"$1\""
+		output=$(zsh -n "$1")
+		if [[ -n "$output" ]]; then
+			echo -e "❌ \033[38;5;1mFound issues:\033[0m"
+			echo "$output"
+		else
+			echo -e "✅ \033[38;5;2mNo issues found by shellcheck.\033[0m"
+		fi
 	else
-	    echo -e "✅ \033[38;5;2mNo issues found by shellcheck.\033[0m"
+		command shellcheck "$1" 2>&1
 	fi
-    else
-	command shellcheck "$1" 2>&1
-    fi
 
 }
 
 local add2pathCounter=0
 local ignoredPaths=0
 add2path() {
-    # Initialize a counter variable
-    add2pathCounter=$((add2pathCounter + 1))
-    # Add a directory to the PATH if it's not already present
-    if (( add2pathCounter % 100 == 0 )); then
-	echo -e "\033[38;5;3mWarning: add2path Counter reached the 100 times checkpoint.\033[0m"
-    fi
-    local dir="$1"
-    if [[ ! -d "$dir" ]]; then
-	echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping...\033[0m"
-	return
-    fi
-    if [[ ":$PATH:" != *":$dir:"* ]]; then
-	export PATH="$dir:$PATH"
-    else
-	ignoredPaths=$((ignoredPaths + 1))
-	if (( add2pathCounter % 100 == 0 )); then
-	    echo -e "\033[38;5;3mWarning: Reached the 100 times checkpoint.\033[0m"
+	# Initialize a counter variable
+	add2pathCounter=$((add2pathCounter + 1))
+	# Add a directory to the PATH if it's not already present
+	if ((add2pathCounter % 100 == 0)); then
+		echo -e "\033[38;5;3mWarning: add2path Counter reached the 100 times checkpoint.\033[0m"
 	fi
-    fi
+	local dir="$1"
+	if [[ ! -d "$dir" ]]; then
+		echo -e "\033[38;5;1madd2path: Directory '$dir' does not exist. Skipping...\033[0m"
+		return
+	fi
+	if [[ ":$PATH:" != *":$dir:"* ]]; then
+		export PATH="$dir:$PATH"
+	else
+		ignoredPaths=$((ignoredPaths + 1))
+		if ((add2pathCounter % 100 == 0)); then
+			echo -e "\033[38;5;3mWarning: Reached the 100 times checkpoint.\033[0m"
+		fi
+	fi
 }
-
 
 tabula_rasa() {
-    if [[ "$TABULA_RASA" != 1 ]]; then
-	export TABULA_RASA=1
-	echo "Tabula Rasa mode is enabled. No configurations will be loaded."
-	echo "Do you want to continue and reload in Tabula Rasa mode? (y/N)"
-	read -r response
-	if [[ "$response" == [Yy] ]]; then
-	    exec zsh -l
+	if [[ "$TABULA_RASA" != 1 ]]; then
+		export TABULA_RASA=1
+		echo "Tabula Rasa mode is enabled. No configurations will be loaded."
+		echo "Do you want to continue and reload in Tabula Rasa mode? (y/N)"
+		read -r response
+		if [[ "$response" == [Yy] ]]; then
+			exec zsh -l
+		fi
+	else
+		export TABULA_RASA=0
+		echo "Tabula Rasa mode is disabled. Configurations will be loaded."
 	fi
-    else
-	export TABULA_RASA=0
-	echo "Tabula Rasa mode is disabled. Configurations will be loaded."
-    fi
 }
-i_manifest_gods_not_exiles		() {
-    echo "This will output all relevant debug information into your home directory at $HOME/+imgnx/"
-    # Create the directory if it doesn't exist
-    mkdir -p "$HOME/+imgnx"
-    # Dumping all shell functions
-    functions >"$HOME/+imgnx/functions.txt"
-    # Dumping all aliases with formatting
-    alias | awk -F'=' '{ print "alias " $1 "=" $2 }' >"$HOME/+imgnx/aliases.txt"
-    # Dumping environment variables
-    env >"$HOME/+imgnx/variables.txt"
-    # Dumping command hash values
-    hash >"$HOME/+imgnx/hashes.txt"
-    # Dumping current shell settings
-    set >"$HOME/+imgnx/shell_settings.txt"
-    # Dumping shell type and version
-    echo "Shell: $SHELL" >"$HOME/+imgnx/shell_info.txt"
-    echo "Shell version: $(zsh --version)" >>"$HOME/+imgnx/shell_info.txt"
-    # Dumping current working directory and system PATH
-    echo "Current directory: $(pwd)" >"$HOME/+imgnx/current_directory.txt"
-    echo "Current PATH: $PATH" >>"$HOME/+imgnx/current_directory.txt"
-    # Dumping list of running processes
-    ps aux >"$HOME/+imgnx/process_list.txt"
-    # Dumping disk usage
-    df -h >"$HOME/+imgnx/disk_usage.txt"
-    # Dumping network connections (listening ports)
-    netstat -tuln >"$HOME/+imgnx/network_connections.txt"
-    # Dumping command history
-    history >"$HOME/+imgnx/command_history.txt"
-    echo "All debug information has been saved to $HOME/+imgnx/."
+i_manifest_gods_not_exiles() {
+	echo "This will output all relevant debug information into your home directory at $HOME/+imgnx/"
+	# Create the directory if it doesn't exist
+	mkdir -p "$HOME/+imgnx"
+	# Dumping all shell functions
+	functions >"$HOME/+imgnx/functions.txt"
+	# Dumping all aliases with formatting
+	alias | awk -F'=' '{ print "alias " $1 "=" $2 }' >"$HOME/+imgnx/aliases.txt"
+	# Dumping environment variables
+	env >"$HOME/+imgnx/variables.txt"
+	# Dumping command hash values
+	hash >"$HOME/+imgnx/hashes.txt"
+	# Dumping current shell settings
+	set >"$HOME/+imgnx/shell_settings.txt"
+	# Dumping shell type and version
+	echo "Shell: $SHELL" >"$HOME/+imgnx/shell_info.txt"
+	echo "Shell version: $(zsh --version)" >>"$HOME/+imgnx/shell_info.txt"
+	# Dumping current working directory and system PATH
+	echo "Current directory: $(pwd)" >"$HOME/+imgnx/current_directory.txt"
+	echo "Current PATH: $PATH" >>"$HOME/+imgnx/current_directory.txt"
+	# Dumping list of running processes
+	ps aux >"$HOME/+imgnx/process_list.txt"
+	# Dumping disk usage
+	df -h >"$HOME/+imgnx/disk_usage.txt"
+	# Dumping network connections (listening ports)
+	netstat -tuln >"$HOME/+imgnx/network_connections.txt"
+	# Dumping command history
+	history >"$HOME/+imgnx/command_history.txt"
+	echo "All debug information has been saved to $HOME/+imgnx/."
 }
 # F6596432_CA98_4A50_9972_E10B0EE99CE9() {
 # 	local mtime
@@ -2355,43 +2395,43 @@ i_manifest_gods_not_exiles		() {
 # 	print -P "$(colorize \n$sysline)"
 # }
 detect_usb_config() {
-    # Too slow... maybe another time...
-    for vol in /Volumes/*; do
-	if [[ -d "$vol" && "$vol" =~ ^/Volumes/[0-9]+_([A-Z]+)$ && -d "$vol/**/.config" ]]; then
+	# Too slow... maybe another time...
+	for vol in /Volumes/*; do
+		if [[ -d "$vol" && "$vol" =~ ^/Volumes/[0-9]+_([A-Z]+)$ && -d "$vol/**/.config" ]]; then
 
-	    echo "🔌 Config found in drive: $vol"
-	    return
-	fi
-    done
+			echo "🔌 Config found in drive: $vol"
+			return
+		fi
+	done
 }
 
 brew() {
-    if [[ "$1" == "link" ]]; then
-	shift
-	command brew link --overwrite "$@" 2>&1 | sed -e 's/^/🔧 /'
+	if [[ "$1" == "link" ]]; then
+		shift
+		command brew link --overwrite "$@" 2>&1 | sed -e 's/^/🔧 /'
+		return "${pipestatus[1]:-$?}"
+	fi
+	command brew "$@" 2>&1 | sed -e 's/^/🔧 /'
 	return "${pipestatus[1]:-$?}"
-    fi
-    command brew "$@" 2>&1 | sed -e 's/^/🔧 /'
-    return "${pipestatus[1]:-$?}"
 }
 
 ucd() {
-    # which pushd
-    builtin cd "$@" || return
-    __TODO_CACHE[$PWD]="" || return
-    ls || return
+	# which pushd
+	builtin cd "$@" || return
+	__TODO_CACHE[$PWD]="" || return
+	ls || return
 }
 alias icd='ucd'
 
 colorize() {
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-	echo "Usage: colorize [~|--foreground] [|--background] <text>"
-	echo "Options:"
-	echo "  ~, --foreground   Colorize text with foreground colors"
-	echo "  |, --background   Colorize text with background colors"
-	echo "  -h, --help         Show this help message"
-    else
-	gawk 'BEGIN {
+	if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+		echo "Usage: colorize [~|--foreground] [|--background] <text>"
+		echo "Options:"
+		echo "  ~, --foreground   Colorize text with foreground colors"
+		echo "  |, --background   Colorize text with background colors"
+		echo "  -h, --help         Show this help message"
+	else
+		gawk 'BEGIN {
 			# Initialize colors
 			for (i = 0; i < 256; i++) {
 				if (i == 0 || i == 15 || i == 231 || i == 255) continue; # Skip black and white
@@ -2432,99 +2472,99 @@ colorize() {
 			}
 			print out;
 		}' <<<"$*" | while IFS= read -r line; do
-	    print -P -- "$line"
-	done
-    fi
+			print -P -- "$line"
+		done
+	fi
 }
 
 console() {
-    logger -t "imgnx" $@
+	logger -t "imgnx" $@
 }
 ¡d() {
-    dirs -v | head -n 10
+	dirs -v | head -n 10
 }
 diff() {
-    local arg1 arg2
-    if command -v realpath >/dev/null 2>&1; then
-	arg1=$(realpath "$1")
-	arg2=$(realpath "$2")
-    elif command -v readlink >/dev/null 2>&1; then
-	arg1=$(readlink -f "$1")
-	arg2=$(readlink -f "$2")
-    else
-	arg1="$1"
-	arg2="$2"
-    fi
-    if [ -d "$arg1" ] && [ -d "$arg2" ]; then
-	local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/diff"
-	mkdir -p "$cache_dir"
-	local base1=$(basename "$arg1")
-	local base2=$(basename "$arg2")
-	local cache_file="$cache_dir/${base1}_vs_${base2}.txt"
-	command diff -qr "$arg1" "$arg2" | tee "$cache_file"
-	echo -e "\033[33mgit status\033[0m: \033[31m❌ Missing from $arg2 (only in $arg1):\033[0m"
-	grep --color=auto -n "^Only in $arg1" "$cache_file" | sed "s|Only in $arg1/||"
-	echo
-	echo -e "\033[33mgit status\033[0m: \033[32m✅ New in $arg2 (only in $arg2):\033[0m"
-	grep --color=auto -n "^Only in $arg2" "$cache_file" | sed "s|Only in $arg2/||"
-	echo
-	echo -e "\033[33mgit status\033[0m: \033[33m📝 Modified (different content):\033[0m"
-	grep --color=auto -n "^Files .* differ$" "$cache_file" | sed -e 's/^Files //' -e 's/ and \[.*\] differ$//'
-	echo "Would you like to compare differentiating files? (y/n)"
-	read -r answer
-	if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-	    # Compare each pair of files that differ
-	    while IFS= read -r line; do
-		file1=$(echo "$line" | sed -n 's/^Files \(.*\) and \(.*\) differ$/\1/p')
-		file2=$(echo "$line" | sed -n 's/^Files \(.*\) and \(.*\) differ$/\2/p')
-		if [ -n "$file1" ] && [ -n "$file2" ]; then
-		    echo "Comparing: $file1 $file2"
-		    command code -d -n "$file1" "$file2"
-		fi
-	    done < <(grep "^Files .* differ$" "$cache_file")
+	local arg1 arg2
+	if command -v realpath >/dev/null 2>&1; then
+		arg1=$(realpath "$1")
+		arg2=$(realpath "$2")
+	elif command -v readlink >/dev/null 2>&1; then
+		arg1=$(readlink -f "$1")
+		arg2=$(readlink -f "$2")
 	else
-	    echo "Skipping file comparison."
+		arg1="$1"
+		arg2="$2"
 	fi
-	return 0
-    elif [ -f "$arg1" ] && [ -f "$arg2" ]; then
-	command code -d -n "$arg1" "$arg2"
-    else
-	echo "❌ Error: diff expects two files or two directories" >&2
-	return 1
-    fi
+	if [ -d "$arg1" ] && [ -d "$arg2" ]; then
+		local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/diff"
+		mkdir -p "$cache_dir"
+		local base1=$(basename "$arg1")
+		local base2=$(basename "$arg2")
+		local cache_file="$cache_dir/${base1}_vs_${base2}.txt"
+		command diff -qr "$arg1" "$arg2" | tee "$cache_file"
+		echo -e "\033[33mgit status\033[0m: \033[31m❌ Missing from $arg2 (only in $arg1):\033[0m"
+		grep --color=auto -n "^Only in $arg1" "$cache_file" | sed "s|Only in $arg1/||"
+		echo
+		echo -e "\033[33mgit status\033[0m: \033[32m✅ New in $arg2 (only in $arg2):\033[0m"
+		grep --color=auto -n "^Only in $arg2" "$cache_file" | sed "s|Only in $arg2/||"
+		echo
+		echo -e "\033[33mgit status\033[0m: \033[33m📝 Modified (different content):\033[0m"
+		grep --color=auto -n "^Files .* differ$" "$cache_file" | sed -e 's/^Files //' -e 's/ and \[.*\] differ$//'
+		echo "Would you like to compare differentiating files? (y/n)"
+		read -r answer
+		if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+			# Compare each pair of files that differ
+			while IFS= read -r line; do
+				file1=$(echo "$line" | sed -n 's/^Files \(.*\) and \(.*\) differ$/\1/p')
+				file2=$(echo "$line" | sed -n 's/^Files \(.*\) and \(.*\) differ$/\2/p')
+				if [ -n "$file1" ] && [ -n "$file2" ]; then
+					echo "Comparing: $file1 $file2"
+					command code -d -n "$file1" "$file2"
+				fi
+			done < <(grep "^Files .* differ$" "$cache_file")
+		else
+			echo "Skipping file comparison."
+		fi
+		return 0
+	elif [ -f "$arg1" ] && [ -f "$arg2" ]; then
+		command code -d -n "$arg1" "$arg2"
+	else
+		echo "❌ Error: diff expects two files or two directories" >&2
+		return 1
+	fi
 }
 dna() {
-    local dir=$(dirs -v | fzf --reverse | awk '{print $2}')
-    echo "DEBUG: dir=$dir"
-    [ -n "$dir" ] && cd "${dir/#\~/$HOME}"
+	local dir=$(dirs -v | fzf --reverse | awk '{print $2}')
+	echo "DEBUG: dir=$dir"
+	[ -n "$dir" ] && cd "${dir/#\~/$HOME}"
 }
 duhast() {
-    df -ahicY -ahicY
+	df -ahicY -ahicY
 }
 elev8r() {
-    afplay "$SAMPLES/Media/bkgd.mp3" &>/dev/null
+	afplay "$SAMPLES/Media/bkgd.mp3" &>/dev/null
 }
 hello() {
-    echo "Hello"
+	echo "Hello"
 }
 hr() {
-    local length=${1:-80} # Default length is 80 characters
-    printf '%*s\n' "$length" '' | tr ' ' '─'
+	local length=${1:-80} # Default length is 80 characters
+	printf '%*s\n' "$length" '' | tr ' ' '─'
 }
 html2ansi() {
-    script="$ZDOTDIR/functions/html2ansi.js"
-    if [ ! -f "$script" ]; then
-	echo "Error: html2ansi.js not found in $ZDOTDIR/functions/"
-    else
-	node "$script" "$@" | while IFS= read -r line; do
-	    local truncated=$(truncate_ansi_to_columns "$line")
-	    echo "$truncated"
-	done
-    fi
+	script="$ZDOTDIR/functions/html2ansi.js"
+	if [ ! -f "$script" ]; then
+		echo "Error: html2ansi.js not found in $ZDOTDIR/functions/"
+	else
+		node "$script" "$@" | while IFS= read -r line; do
+			local truncated=$(truncate_ansi_to_columns "$line")
+			echo "$truncated"
+		done
+	fi
 }
 import() {
-    prompt=("Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick." 'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.' "Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n" 'Is this what you meant to do? (y/N)')
-    answer="$(safeguard "${prompt[@]}")"
+	prompt=("Did you mean to run \033[5;38;5;1mimport\033[0m in the current terminal? \033[38;5;5mimport\033[39m is currently set to run ImageMagick." 'You likely meant to add a shebang to the top of a JavaScript file and the terminal found an "import" statement instead.' "Here is the shebang for Node.js:\n\n\033[38;5;2m\#!/usr/bin/env node\033[39m\n\n" 'Is this what you meant to do? (y/N)')
+	answer="$(safeguard "${prompt[@]}")"
 }
 # is-at-least () {
 # 	emulate -L zsh
@@ -2560,117 +2600,116 @@ import() {
 # 	done
 # }
 isdark() {
-    local COLOR="$1"
-    local R=$((0x$(echo "$COLOR" | cut -c2-3)))
-    local G=$((0x$(echo "$COLOR" | cut -c4-5)))
-    local B=$((0x$(echo "$COLOR" | cut -c6-7)))
-    local LUMINANCE=$((R * 299 + G * 587 + B * 114))
-    if ((LUMINANCE < 128000)); then
-	return 0
-    else
-	return 1
-    fi
+	local COLOR="$1"
+	local R=$((0x$(echo "$COLOR" | cut -c2-3)))
+	local G=$((0x$(echo "$COLOR" | cut -c4-5)))
+	local B=$((0x$(echo "$COLOR" | cut -c6-7)))
+	local LUMINANCE=$((R * 299 + G * 587 + B * 114))
+	if ((LUMINANCE < 128000)); then
+		return 0
+	else
+		return 1
+	fi
 }
 
 pid() {
-    pgrep "$1" | pbcopy
+	pgrep "$1" | pbcopy
 	echo "\"$1\" PID(s) copied to clipboard."
 }
 
 truncate_ansi_to_columns() {
-    local input="$1"
-    local clean visible raw_line result i chr
-    clean=$(echo "$input" | sed 's/\x1B\[[0-9;]*[mK]//g')
-    local max=${COLUMNS:-80}
-    local count=0
-    result=""
-    i=1
-    while [ $i -le ${#input} ] && [ $count -lt "$max" ]; do
-	chr="${input[i]}"
-	if [ "$chr" = $'\033' ]; then
-	    while [ "${input[i]}" != "m" ] && [ $i -le ${#input} ]; do
-		result+="${input[i]}"
+	local input="$1"
+	local clean visible raw_line result i chr
+	clean=$(echo "$input" | sed 's/\x1B\[[0-9;]*[mK]//g')
+	local max=${COLUMNS:-80}
+	local count=0
+	result=""
+	i=1
+	while [ $i -le ${#input} ] && [ $count -lt "$max" ]; do
+		chr="${input[i]}"
+		if [ "$chr" = $'\033' ]; then
+			while [ "${input[i]}" != "m" ] && [ $i -le ${#input} ]; do
+				result+="${input[i]}"
+				((i++))
+			done
+			result+="${input[i]}"
+		else
+			result+="$chr"
+			((count++))
+		fi
 		((i++))
-	    done
-	    result+="${input[i]}"
-	else
-	    result+="$chr"
-	    ((count++))
-	fi
-	((i++))
-    done
-    echo "$result"
+	done
+	echo "$result"
 }
 uuid() {
-    uuidgen | tr '[:lower:]-' '[:upper:]_' | sed 's/^/MAIN_/'
+	uuidgen | tr '[:lower:]-' '[:upper:]_' | sed 's/^/MAIN_/'
 }
 visual_length() {
-    emulate -L zsh
-    local expanded=$(print -P -- "$1")
-    local clean=$(print -r -- "$expanded" | sed $'s/\x1B\\[[0-9;]*[mGKH]//g')
-    print ${#clean}
+	emulate -L zsh
+	local expanded=$(print -P -- "$1")
+	local clean=$(print -r -- "$expanded" | sed $'s/\x1B\\[[0-9;]*[mGKH]//g')
+	print ${#clean}
 }
 # Removed 'wk' function to avoid conflict with alias 'wk' in aliases.zsh
 xdg-lint() {
-    echo "🔍 Scanning $HOME for non-XDG config files..."
-    for file in $HOME/.*; do
-	[ -e "$file" ] || continue
-	local name=${file##*/}
-	echo "⚠️  $name may be violating XDG spec. Consider moving it to:"
-	echo "    $XDG_CONFIG_HOME/$name or $XDG_DATA_HOME/$name"
-    done
+	echo "🔍 Scanning $HOME for non-XDG config files..."
+	for file in $HOME/.*; do
+		[ -e "$file" ] || continue
+		local name=${file##*/}
+		echo "⚠️  $name may be violating XDG spec. Consider moving it to:"
+		echo "    $XDG_CONFIG_HOME/$name or $XDG_DATA_HOME/$name"
+	done
 }
-
 
 # Custom ls function with git status coloring
 statusls() {
-    # Check if we're in a git repository
-    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-	# Set up XDG cache directory
-	local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ls-git-colors"
-	mkdir -p "$cache_dir"
+	# Check if we're in a git repository
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		# Set up XDG cache directory
+		local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ls-git-colors"
+		mkdir -p "$cache_dir"
 
-	# Create unique cache file based on current directory and ls arguments
-	local cache_key=$(echo "$PWD $*" | sha256sum | cut -d' ' -f1)
-	local ls_cache_file="$cache_dir/ls_output_${cache_key}"
-	local git_cache_file="$cache_dir/git_info_${cache_key}"
+		# Create unique cache file based on current directory and ls arguments
+		local cache_key=$(echo "$PWD $*" | sha256sum | cut -d' ' -f1)
+		local ls_cache_file="$cache_dir/ls_output_${cache_key}"
+		local git_cache_file="$cache_dir/git_info_${cache_key}"
 
-	# Get git information efficiently
-	local git_status_output=$(git status --porcelain 2>/dev/null)
-	local git_tracked_output=$(git ls-files 2>/dev/null)
+		# Get git information efficiently
+		local git_status_output=$(git status --porcelain 2>/dev/null)
+		local git_tracked_output=$(git ls-files 2>/dev/null)
 
-	# Cache the original ls output
-	/bin/ls "$@" 2>/dev/null >"$ls_cache_file"
+		# Cache the original ls output
+		/bin/ls "$@" 2>/dev/null >"$ls_cache_file"
 
-	# Read the cached output
-	local ls_output=$(<"$ls_cache_file")
-	local colored_output="$ls_output"
+		# Read the cached output
+		local ls_output=$(<"$ls_cache_file")
+		local colored_output="$ls_output"
 
-	# Process each actual file in the directory
-	for file in *; do
-	    [[ ! -e "$file" ]] && continue
+		# Process each actual file in the directory
+		for file in *; do
+			[[ ! -e "$file" ]] && continue
 
-	    local color=""
-	    local reset=$'\033[0m'
+			local color=""
+			local reset=$'\033[0m'
 
-	    if echo "$git_tracked_output" | grep -q "^${file}$"; then
-		# File is tracked - check for modifications
-		if echo "$git_status_output" | grep -q "^.M ${file}$\|^M. ${file}$"; then
-		    color=$'\033[33m' # Modified - yellow
-		elif echo "$git_status_output" | grep -q "^A. ${file}$"; then
-		    color=$'\033[32m' # Added - green
-		elif echo "$git_status_output" | grep -q "^.D ${file}$\|^D. ${file}$"; then
-		    color=$'\033[31m' # Deleted - red
-		else
-		    color=$'\033[32m' # Tracked and clean - green
-		fi
-	    elif echo "$git_status_output" | grep -q "^?? ${file}$"; then
-		color=$'\033[31m' # Untracked - red
-	    fi
+			if echo "$git_tracked_output" | grep -q "^${file}$"; then
+				# File is tracked - check for modifications
+				if echo "$git_status_output" | grep -q "^.M ${file}$\|^M. ${file}$"; then
+					color=$'\033[33m' # Modified - yellow
+				elif echo "$git_status_output" | grep -q "^A. ${file}$"; then
+					color=$'\033[32m' # Added - green
+				elif echo "$git_status_output" | grep -q "^.D ${file}$\|^D. ${file}$"; then
+					color=$'\033[31m' # Deleted - red
+				else
+					color=$'\033[32m' # Tracked and clean - green
+				fi
+			elif echo "$git_status_output" | grep -q "^?? ${file}$"; then
+				color=$'\033[31m' # Untracked - red
+			fi
 
-	    # Apply color if we have one - use awk for precise matching
-	    if [[ -n "$color" ]]; then
-		colored_output=$(echo "$colored_output" | awk -v file="$file" -v color="$color" -v reset="$reset" '
+			# Apply color if we have one - use awk for precise matching
+			if [[ -n "$color" ]]; then
+				colored_output=$(echo "$colored_output" | awk -v file="$file" -v color="$color" -v reset="$reset" '
 					{
 						# Split line into fields and reconstruct with colors
 						line = $0
@@ -2678,29 +2717,29 @@ statusls() {
 						print line
 					}
 				')
-	    fi
-	done
+			fi
+		done
 
-	# Clean up cache files
-	rm -f "$ls_cache_file" "$git_cache_file"
+		# Clean up cache files
+		rm -f "$ls_cache_file" "$git_cache_file"
 
-	echo "$colored_output"
-    else
-	# Not in a git repository, use normal ls
-	/bin/ls "$@"
-    fi
+		echo "$colored_output"
+	else
+		# Not in a git repository, use normal ls
+		/bin/ls "$@"
+	fi
 }
 
 when() {
-    find "${1:-.}" -maxdepth 1 -exec stat -f "%B %N" {} + \
-        | sort -nr \
-        | head -n 10 \
-        | while read ts file; do
-        echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
-    done
+	find "${1:-.}" -maxdepth 1 -exec stat -f "%B %N" {} + |
+		sort -nr |
+		head -n 10 |
+		while read ts file; do
+			echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
+		done
 }
 whoami() {
-    cat << 'EOF'
+	cat <<'EOF'
 __/\\\\\\\\\\\\___________________________________/\\\\\\\\\\\\_____/\\\______________/\\\__/\\\\____________/\\\\_
 _\/\\\////////\\\________________________________\/\\\////////\\\__\/\\\_____________\/\\\_\/\\\\\\________/\\\\\\_
 _\/\\\______\//\\\_______________________________\/\\\______\//\\\_\/\\\_____________\/\\\_\/\\\//\\\____/\\\//\\\_
@@ -2711,7 +2750,7 @@ _\/\\\_______\/\\\__/\\/\\\\\\\__________________\/\\\_______\/\\\_\//\\\____/\\
 	_\/\\\\\\\\\\\\/___\/\\\__________/\\\___________\/\\\\\\\\\\\\/_______\//\\\__\//\\\______\/\\\_____________\/\\\_
 		_\////////////_____\///__________\///____________\////////////__________\///____\///_______\///______________\///__
 EOF
-    /usr/bin/whoami "$@" | sed 's/^/👤 /'
+	/usr/bin/whoami "$@" | sed 's/^/👤 /'
 }
 
 # clean-hooks() {
@@ -2729,24 +2768,22 @@ EOF
 # 	code -r "$WORKSPACE/.vscode/Workbench.code-workspace"
 # }
 
-
 # Print the size of the current file.
 # print -P -n "[%F{green}functions%f]"
 
 spinner() {
-    local pid=$1
-    local delay=0.1
-    local spinstr='|/-\'
-    while kill -0 "$pid" 2>/dev/null; do
-	local temp=${spinstr#?}
-	printf " [%c]  " "$spinstr"
-	spinstr=$temp${spinstr%"$temp"}
-	sleep "$delay"
-	printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
+	local pid=$1
+	local delay=0.1
+	local spinstr='|/-\'
+	while kill -0 "$pid" 2>/dev/null; do
+		local temp=${spinstr#?}
+		printf " [%c]  " "$spinstr"
+		spinstr=$temp${spinstr%"$temp"}
+		sleep "$delay"
+		printf "\b\b\b\b\b\b"
+	done
+	printf "    \b\b\b\b"
 }
-
 
 # pmodload () {
 # 	local -A ices
@@ -2819,12 +2856,11 @@ spinner() {
 # 	local sysline=""
 # 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
 
-
 # }
 
 pppp() {
-    echo -e "\033[36m"
-    cat<<EOF
+	echo -e "\033[36m"
+	cat <<EOF
 # Pick, Process, Push, Persist
 
 How a computer processes items in a loop.
@@ -2862,29 +2898,31 @@ Mnemonic:
 "Pick, Process, Push, Persist" is a nice, rhythmic phrase that can help you remember the cycle of how a loop or command executes at both the shell and assembly level.
 
 EOF
-    echo -e "\033[0m"
+	echo -e "\033[0m"
 }
 
 unalias ls >/dev/null 2>&1
 __wrap_notice ls
 ls() {
-    args="$@";
-    if [[ -z "$args" ]]; then
-        print -rl -- ./* | sort -h | col -b 	
-    elif [[ "$@" == *" -l "* || "$@" == *" l "* ]]; then
-	eza -bGF --header --git --color=always --group-directories-first --long "$args";
-    else
-        eza -bGF --header --git --color=always --group-directories-first "$@"
-    fi
+	args="$@"
+	if [[ -z "$args" ]]; then
+		# node --
+		print -rl -- ./* | sort -h | col -b
+		# Todo: Organize folders at top, files underneath, and alphabetized.
+	elif [[ "$@" == *" -l "* || "$@" == *" l "* ]]; then
+		eza -bGF --header --git --color=always --group-directories-first --long "$args"
+	else
+		eza -bGF --header --git --color=always --group-directories-first "$@"
+	fi
 }
 
 unalias eza >/dev/null 2>&1
 __wrap_notice eza
 eza() {
-    command eza --icons "$@";
+	command eza --icons "$@"
 }
 
 if [[ -s error.log ]]; then
-  echo -e "\033[38;2;255;25;0mNotice: You can still use `fn.sh` as long as `alias.zsh` is still intact."
-  cat error.log
+	echo -e "\033[38;2;255;25;0mNotice: You can still use $(fn.sh) as long as $(alias.zsh) is still intact."
+	cat error.log
 fi
