@@ -11,10 +11,13 @@
 # End TuxGuitar
 
 export SRC="$HOME/src"
-export DINGLEHOPPER="cd $DINGLEHOPPER"
+# export DINGLEHOPPER="cd $DINGLEHOPPER"
+export BLUEPRINTS="$DINGLEHOPPER/blueprints";
+export bp="$DINGLEHOPPER/blueprints"
 export dh="$DINGLEHOPPER"
 export srv="cd $DINGLEHOPPER/srv"
 export triage="cd $DINGLEHOPPER/triage"
+
 
 # ==============================
 # Placeholder
@@ -117,6 +120,8 @@ export DH="/Users/donaldmoore/src/dinglehopper"
 hash -d dh=DH
 export STDLN="/Users/donaldmoore/src/dinglehopper/stdln"
 hash -d stdln=STDLN
+export BP="/Users/donaldmoore/src/dinglehopper/blueprints"
+hash -d bp=BP
 
 # hash -d bin=$BIN
 # hash -d labs=$LABS

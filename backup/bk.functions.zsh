@@ -33,18 +33,6 @@
 # pomodoro_scheduler &
 
 
-			
-# --- wrapper helpers (must be defined before use) ----------------------------
-# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
-__wrap_notice() {
-  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
-    local name="$1" path
-    path=$(command -v "$name" 2>/dev/null || true)
-    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
-  fi
-}
-
-
 	# --- gpt: Chat with OpenAI from your terminal --------------------------------
 	# deps: curl, jq
 	# env: OPENAI_API_KEY (required)
@@ -1375,16 +1363,6 @@ printf "    \b\b\b\b"
 # 	fi
 # 	local sysline=""
 # 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
-
-# --- wrapper helpers ---------------------------------------------------------
-# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
-__wrap_notice() {
-  if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
-    local name="$1" path
-    path=$(command -v "$name" 2>/dev/null || true)
-    [[ -n "$path" ]] && echo "[wrap] $name -> $path"
-  fi
-}
 
 # 	# Ensure a newline before sysline block
 # 	colorize $sysline

@@ -1,7 +1,12 @@
 alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
 
+alias _M='cd "$HOME/_M";
+alias _G='cd "$DINGLEHOPPER/_GLOBAL";
+
+alias -s md="info $@"
 alias -s gp5=abc
 alias -s ptb=abc
+alias -s gpx=abc
 
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
@@ -40,6 +45,7 @@ alias bin='cd "$BIN"'
 alias bk="back_up"
 alias bkgd='afplay "$BKGD" &'
 alias bkup="back_up"
+alias bp='cd "$BLUEPRINTS"';
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
 alias c=copy
 alias cache='cd "$XDG_CACHE_HOME"'
@@ -51,12 +57,14 @@ alias cedit="emacs \"$(which $1)\"" # command edit
 alias clean-precmd="precmd_functions=()"
 alias cli='cd "$SRC/dinglehopper/src/cli"'
 alias cnt='cd "$HOME/src"'
+alias pb="pbcopy || pbpaste"
 alias copycat="copy"
 alias data='cd "$XDG_DATA_HOME"'
 # Keep a single df alias
 alias df='df -h'
 alias dw="$DOWNLOADS"
 alias dwn="$DOWNLOADS"
+alias dwm="/opt/homebrew/bin/dwm";
 alias env='env | sort' # Sorted environment variables
 alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
 alias fe='emacs' # file edit
@@ -151,3 +159,4 @@ alias xdg-open="open"
 alias xdg='cd "$XDG_CONFIG_HOME"'
 
 alias wallpapers="cd $HOME/Pictures/Wallpapers"
+alias iphonefix="noiphone"

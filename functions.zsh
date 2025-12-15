@@ -3,13 +3,151 @@
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
+trax(){
+    if [[ ! -d $XDG_CACHE_DIR ]]; then                                                                                                                 \
+
+        mkdir -p "$HOME/.cache/triptrax"
+        export XDG_CACHE_DIR="$HOME/.cache"
+
+    fi
+
+}
+
+
+
+__wrap_notice man
+man() {
+    local command="$1";
+    echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m";
+    /usr/bin/man "$command" | col -b  | tee "$HOME/Desktop/${command}.info";
+    echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy
+in your ~/Desktop/folder.
+
+If you would like to turn this feature off, simple rename it to something else. It's either on or it's off.
+
+\033[48;2;69;17;255mopen ~/Desktop/${command} \033[0m";
+}
+
+blueprints () {
+  local cmd="${1:-}"
+case "$cmd" in
+    ""|"ls")
+      command ls -1 "$BLUEPRINTS"/*.bp(N:t:r)
+      ;;
+    "cat")
+      [[ -n "${2:-}" ]] || return 2
+      command cat -- "$BLUEPRINTS/$2.bp"
+      ;;
+    "new")
+      [[ -n "${2:-}" ]] || return 2
+      command mkdir -p -- "$BLUEPRINTS"
+      : >| "$BLUEPRINTS/$2.bp"
+      ${EDITOR:-vi} "$BLUEPRINTS/$2.bp"
+      ;;
+    *)
+      if [[ -f "$BLUEPRINTS/$cmd.bp" ]]; then
+        command cat -- "$BLUEPRINTS/$cmd.bp"
+      else
+        print -u2 "Usage: bp [ls]|cat <name>|new <name>|<name>"
+        return 2
+      fi
+      ;;
+  esac
+}
+
+_bp () {
+  local -a names
+  names=("$BLUEPRINTS"/*.bp(N:t:r))
+  _arguments \
+    '1:blueprint:->bpnames' \
+    '2:arg:_guard ".*" ""'
+  case $state in
+    bpnames) compadd -a names ;;
+  esac
+}
+compdef _bp bp
+
+bp_expand () {
+  local -a names
+  names=("$BLUEPRINTS"/*.bp(N:t:r))
+  [[ ${#names[@]} -gt 0 ]] || { zle -M "no blueprints in $BLUEPRINTS"; return 0; }
+  local name=""
+  if [[ -n "${1:-}" ]]; then
+    name="$1"
+  else
+    if command -v fzf >/dev/null 2>&1; then
+      zle -I
+      name="$(printf '%s\n' "${names[@]}" | fzf --prompt='bp> ' --height=40% --reverse)"
+      zle reset-prompt
+    else
+      zle -M "install fzf for picker (or pass a name: bp_expand <name>)"
+      return 0
+    fi
+  fi
+
+  [[ -n "$name" && -f "$BLUEPRINTS/$name.bp" ]] || return 0
+
+  local content prefix rest
+  content="$(<"$BLUEPRINTS/$name.bp")"
+
+  if [[ "$content" == *"{{CURSOR}}"* ]]; then
+    prefix="${content%%\{\{CURSOR\}\}*}"
+    rest="${content#*\{\{CURSOR\}\}}"
+    content="${prefix}${rest}"
+    local before="$LBUFFER" after="$RBUFFER"
+    BUFFER="${before}${content}${after}"
+    CURSOR=$(( ${#before} + ${#prefix} ))
+  else
+    LBUFFER+="$content"
+  fi
+}
+
+zle -N bp_expand
+
+bp_expand_from_buffer () {
+  local b="$BUFFER"
+  if [[ "$b" == bp\ * ]]; then
+    local name="${b#bp }"
+    name="${name%% *}"
+    if [[ -n "$name" && -f "$BLUEPRINTS/$name.bp" ]]; then
+      BUFFER=""
+      CURSOR=0
+      bp_expand "$name"
+      return 0
+    fi
+  fi
+  zle expand-or-complete
+}
+zle -N bp_expand_from_buffer
+
+bindkey '^X^B' bp_expand
+bindkey '^I' bp_expand_from_buffer
+
+
+step1() {
+    local manifesto="$(basename $(realpath ./))"; # Use descriptive names for your projects.
+    local target="$DH/bin/create-${manifesto}-wkbn";
+    mv ./setup.sh "$target" && echo "Moved setup.sh to \"\$DH/bin\". You can now use it like \`create-${manifesto}-wkbn";
+    ln -s "\$target" ./setup.sh;
+    echo "Done! \`setup.sh\` has been symlinked in the current directory."
+}
+
+setup() {
+    touch ./setup.sh
+    cat<<\\EOF>setup.sh
+"$@"
+\EOF
+    chmod +x ./setup.sh
+    ./setup.sh
+}
+
 bd() {
     cd "$(dirs -p | sed -n "${1:-1}p")"
 }
 
-man() {
-    man "$@" | bat --style plain
-}
+# man() {
+#     man "$@" | bat --style plain
+# }
 
 dwimnwis() {
     echo "$@"
@@ -18,29 +156,39 @@ dwimnwis() {
 #     fzf
 # }
 
+
+##
+ #    █████  █████████████ ██████▌██░
+ #    ▀▀███    ███ ██▘█░█████ ███░██░
+ #    ▀▀███   ███ █████░██ ███ ██░██░
+ #    ▀▀███  ███ ███░ █░██ ▝███ ████░
+ #
+ #  GitTaku.com - Create hook
+ #  Learn more about testing: https://browsersync.io
+##
 create() {
-    
     set -e
-
     APP_NAME="${1:-my-electron-app}"
-
     mkdir -p "$APP_NAME"
-    cd "$APP_NAME"
-
+    pushd "$APP_NAME"
+    mkdir -p src
+    mkdir -p frontend
+    mkdir -p frontend/public
     npm init -y
-
-    npm install --save-dev electron
+    npm install --save-dev electron browser-sync >/dev/null 2>&1
     npm install --save react react-dom tailwindcss @tailwindcss/cli
+    touch public/index.html # target for browser-sync
+
     cat > main.js << 'EOF'
 const { app, BrowserWindow } = require('electron')
 
 function createWindow () {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1920,
+    height: 1080,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: true
     }
   })
 
@@ -66,9 +214,14 @@ EOF
 <head>
   <meta charset="UTF-8">
   <title>Electron App</title>
+  <style>
+    body {
+        background-color: "#007BFF";
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello from Electron</h1>
+  <h1>Taku!</h1>
   <p>If you can read this, it worked.</p>
 </body>
 </html>
@@ -81,6 +234,7 @@ const pkgPath = 'package.json'
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
 pkg.scripts = pkg.scripts || {}
 pkg.scripts.start = 'electron .'
+pkg.scripts.dev = 'browser-sync'
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
 EOF
 
@@ -297,11 +451,11 @@ imgcloud() {
     tput bel
 }
 
-x2list() {
+list() {
     # Define a new array called 'my_args'
     argv=("$@")
-
-    if [[ -z "$argv" ]]; then
+    
+    usage() {
 	echo -e "\033[38;2;255;20;0mUsage: \033[0m$0 \033[2m<arguments>\033[0m"
 	echo "n Results:
 FIRST_ARGUMENT
@@ -309,6 +463,10 @@ SECOND_ARGUMENT
 THIRD_ARGUMENT
 FOURTH_ARGUMENT
 Up to 50...";
+    }
+    
+    if [[ -z "$argv" ]]; then
+	usage
     fi
     
     # Print the elements of the array
@@ -323,7 +481,16 @@ Up to 50...";
 	export argv${v}="$item";
 	echo "argv${v}=$item";
     done;
+
+    echo "Press \033[38;2;255;205;0m[CTRL-c]\033[0m to quit and use your list as variables only."
+    echo "Enter a filename to create a file"
+    echo -ne "Filename:"
+    read -r filename
     
+    touch "./$filename"
+    for item in "${argv[@]}"; do
+	echo "$item" >> $filename
+    done;
 }
 
 # texas - emacs in tmux
@@ -445,12 +612,12 @@ resume() {
 }
 # End of Codex AI
 
-kiwi-strawberry() {
+keys() {
     name="$1"
     security find-generic-password -a "$USER" -s "$name" -w 2>/dev/null | pbcopy || return 1;
 }
-
-alias ks="kiwi-strawberry $@"
+alias pass="keys"
+alias k="keys"
 
 al() {
     emacs /Users/donaldmoore/.config/zsh/aliases.zsh;
@@ -486,7 +653,8 @@ draft() {
     cd "$DINGLEHOPPER/draft"
 }
 
-oncd(){
+oncd() {
+    pushd "$(realpath ./)"
     if [[ -f ./.automx ]]; then
 	./.automx
     fi
@@ -591,7 +759,121 @@ reset() {
 #     pnpm "$@"; # muahahah
 # }
 
-__wrap_notice grep
+__wrap_notice rg
+re() {
+      # prog="search"
+   
+    help() {
+    
+cat <<'EOF'
+search: a path-first wrapper for ripgrep (rg)
+
+USAGE:
+  search <path> <pattern> [-- rg flags...]
+  search <pattern> [path] [-- rg flags...]
+
+EXAMPLES:
+  search . taku
+  search src "TODO|FIXME" -n
+  search . "export default" -tjs
+  search "taku" . --hidden --no-ignore
+  search --files .
+  search --help
+
+RULES:
+  - If the first arg is a directory/file that exists, it's treated as <path>.
+  - Otherwise, the first arg is treated as <pattern>.
+  - If you include a literal '--', everything after it is passed straight to rg.
+  - With no args, defaults to: search . <you forgot the pattern>
+
+COMMON SHORTCUTS:
+  -tjs / -tts / -trs / -tpy etc. are passed to rg as-is.
+  Use rg --help for the full flag list.
+
+EOF
+    }
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  help
+  exit 0
+fi
+
+if [[ "${1:-}" == "" ]]; then
+  help
+  exit 2
+fi
+
+args=("$@")
+pass=()
+pre=()
+post=()
+seen_dd=0
+
+for a in "${args[@]}"; do
+  if [[ "$seen_dd" == "0" && "$a" == "--" ]]; then
+    seen_dd=1
+    continue
+  fi
+  if [[ "$seen_dd" == "0" ]]; then
+    pre+=("$a")
+  else
+    post+=("$a")
+  fi
+done
+
+first="${pre[0]:-}"
+second="${pre[1]:-}"
+
+path=""
+pattern=""
+rest=()
+
+if [[ -n "$first" && ( -d "$first" || -f "$first" ) ]]; then
+  path="$first"
+  pattern="${second:-}"
+  if [[ "${#pre[@]}" -gt 2 ]]; then
+    rest=("${pre[@]:2}")
+  else
+    rest=()
+  fi
+else
+  pattern="$first"
+  if [[ -n "$second" && ( -d "$second" || -f "$second" ) ]]; then
+    path="$second"
+    if [[ "${#pre[@]}" -gt 2 ]]; then
+      rest=("${pre[@]:2}")
+    else
+      rest=()
+    fi
+  else
+    path="."
+    if [[ "${#pre[@]}" -gt 1 ]]; then
+      rest=("${pre[@]:1}")
+    else
+      rest=()
+    fi
+  fi
+fi
+
+if [[ -z "${pattern:-}" ]]; then
+  printf '%s\n' "error: missing <pattern>" >&2
+  printf '%s\n' "try:  search . <pattern>  OR  search <pattern> ." >&2
+  exit 2
+fi
+
+if command -v rg >/dev/null 2>&1; then
+  exec rg "${rest[@]}" "${post[@]}" -- "${pattern}" "${path}"
+else
+  printf '%s\n' "error: rg not found in PATH" >&2
+  exit 127
+fi
+}
+
+
+# grep() {
+    # echo -e -n "\033[0mYou are using a wrapper on \033[38;2;91;0;255mRust:Ripgrep (\`rg\`)\033[0m. For the actual grep package, use \033[38;2;255;255;91m/usr/bin/grep\033[0m. $@";
+#    rg -Hin -e="/$1/ig" "${2:}"
+# }
 
 #grep() {
 #    if ! command -v rg >/dev/null 2>&1; then
@@ -925,7 +1207,7 @@ alias gatekeeper="gtkpr"
 
 docs() {
     emulate -L zsh
-    setopt pipefail
+    setopt pipefails
 
     # Binaries
     local LS=/bin/ls
@@ -1241,18 +1523,6 @@ even_better_prompt() {
 # pomodoro_scheduler &
 
 
-
-# --- wrapper helpers (must be defined before use) ----------------------------
-# Suppress wrapper notices unless explicitly enabled via ZSH_DEBUG=true
-__wrap_notice() {
-    if [[ "${ZSH_DEBUG:-false}" == "true" ]]; then
-	local name="$1" path
-	path=$(command -v "$name" 2>/dev/null || true)
-	[[ -n "$path" ]] && echo "[wrap] $name -> $path"
-    fi
-}
-
-
 # --- gpt: Chat with OpenAI from your terminal --------------------------------
 # deps: curl, jq
 # env: OPENAI_API_KEY (required)
@@ -1400,15 +1670,15 @@ pbucket() {
 }
 
 # Ensure Emacs uses XDG init dir (Emacs 29+: --init-directory)
-__wrap_notice emacs
-emacs() {
-    local initdir="${EMACSDIR:-$XDG_CONFIG_HOME/emacs}"
-    if command emacs --help 2>&1 | grep -q -- '--init-directory'; then
-        command emacs --init-directory "$initdir" "$@"
-    else
-        EMACSDIR="$initdir" DOOMDIR="${DOOMDIR:-$XDG_CONFIG_HOME/doom}" DOOMLOCALDIR="${DOOMLOCALDIR:-$XDG_CONFIG_HOME/emacs/.local}" command emacs "$@"
-    fi
-}
+# __wrap_notice emacs
+# emacs() {
+#     local initdir="${EMACSDIR:-$XDG_CONFIG_HOME/emacs}"
+#     if command emacs --help 2>&1 | grep -q -- '--init-directory'; then
+#         command emacs --init-directory "$initdir" "$@"
+#     else
+#         EMACSDIR="$initdir" DOOMDIR="${DOOMDIR:-$XDG_CONFIG_HOME/doom}" DOOMLOCALDIR="${DOOMLOCALDIR:-$XDG_CONFIG_HOME/emacs/.local}" command emacs "$@"
+#     fi
+# }
 
 lock() {
     sudo chflags -R uchg "$@"
@@ -1534,8 +1804,22 @@ rm() {
     fi
 }
 
-urm() {
-    /bin/rm "$@"
+__wrap_notice rm
+real() {
+    case "$1" in
+        "rm")
+	    /bin/rm "$@";
+        ;;
+	"gcloud")
+	    /opt/homebrew/bin/gcloud "$@";
+	    ;;
+	"gsutil")
+	    /opt/homebrew/bin/gsutil "$@";
+	    ;;
+    *)
+        echo "Command not found. A list of commands is kept in \`$HOME/Desktop/real.req.list\`  Exiting."
+        ;;
+    esac
 }
 
 init() {
@@ -1543,7 +1827,7 @@ init() {
     . $HOME/src/init/main.sh
 }
 
-ufind() {
+find() {
     # Unix find
     /usr/bin/find "$@"
 }
@@ -1554,16 +1838,16 @@ midi() {
     #
 }
 
-__wrap_notice find
-find() {
-    tempfile=$(mktemp)
-    trap 'rm -f "$tempfile"' EXIT
-    if /usr/bin/find "$@" > "$tempfile"; then
-	bat --style=plain "$tempfile"
-    else
-	/usr/bin/find "$@"
-    fi
-}
+# __wrap_notice find
+# find() {
+#    tempfile=$(mktemp)
+#    trap 'rm -f "$tempfile"' EXIT
+#    if /usr/bin/find "$@" > "$tempfile"; then
+#	bat -A --style=plain "$tempfile"
+#    else
+#	/usr/bin/find "$@"
+#    fi
+#}
 
 import() {
     prompt=(
@@ -1915,8 +2199,19 @@ dir() {
 }
 
 cnf() {
-    cd "$HOME/.config/$1"
+    if [[ "$1" == "init" ]]; then
+	 if [[ ! -z "$2" ]]; then
+	     mkdir -p "$BLUEPRINTS/$2"
+	     target="$BLUEPRINTS/$(basename $(realpath $pwd))";
+	     mkdir -p "$target"
+	     pushd "$target"
+	     ditto "$DINGLEHOPPER/blueprints/*.md" "$target"
+	 fi
+    else
+	cd "$XDG_CONFIG_HOME/$1"	
+    fi
 }
+
 
 copy() {
     $@ | pbcopy
@@ -2276,11 +2571,10 @@ isdark() {
 	return 1
     fi
 }
-k() {
-    pgrep "$1" | xargs kill
-}
+
 pid() {
     pgrep "$1" | pbcopy
+	echo "\"$1\" PID(s) copied to clipboard."
 }
 
 truncate_ansi_to_columns() {
@@ -2574,10 +2868,13 @@ EOF
 unalias ls >/dev/null 2>&1
 __wrap_notice ls
 ls() {
-    if [[ "  " == *" -l "* || "  " == *" l "* ]]; then
-        eza -bGF --header --git --color=always --group-directories-first --long ""
+    args="$@";
+    if [[ -z "$args" ]]; then
+        print -rl -- ./* | sort -h | col -b 	
+    elif [[ "$@" == *" -l "* || "$@" == *" l "* ]]; then
+	eza -bGF --header --git --color=always --group-directories-first --long "$args";
     else
-        eza -bGF --header --git --color=always --group-directories-first ""
+        eza -bGF --header --git --color=always --group-directories-first "$@"
     fi
 }
 

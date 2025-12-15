@@ -1,10 +1,11 @@
 #!/bin/zsh
 __wrap_notice() {
-    [[ "${ZSH_DEBUG:-false}" == "true" ]] && (
-	local name="$1";
-	local path=$(command -v "$name" 2>/dev/null || true);
-	[[ -n "$path" ]] && (
-	    echo "[wrap] $name -> $path"
+
+	[[ "${ZSH_DEBUG:-false}" == "true" ]] && (
+		local name="$1"
+		local path=$(command -v "$name" 2>/dev/null || true)
+		[[ -n "$path" ]] && (
+			echo "[wrap] $name -> $path"
+		)
 	)
-    )
 }

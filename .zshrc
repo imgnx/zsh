@@ -24,7 +24,6 @@ if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions:"* ]]; then ex
 [[ -o interactive ]] || return
 
 # Anything after this point runs only for interactive shells.
-# echo "Expectations are pre‑meditated resentments"
 # … your other prompt customizations …
 
 # export PATH="$PATH:$HOME/.config/nvm"
@@ -70,7 +69,6 @@ export RPROMPT="${yellow}󰮯${red} · · · · ${blinky}󱙝 ${clyde}󱙝 ${ink
 
 # --- Optional cleanup trap on exit ---
 # (Uncomment if you want to remove tempfile when you close shell)
-TRAPEXIT() { rm -f "$tmpIpFile"; rm -f "$bannerTmp" }
 # | Glyph | Unicode | Name                                     |
 # | ----- | ------- | ---------------------------------------- |
 # | `█`   | U+2588  | Full Block                               |
@@ -225,14 +223,14 @@ debounceBanner() {
         read -r last_ts < "$stampfile"
     fi
 
-    echo "DEBUG: delta=$(( timestamp - last_ts ))"
+    echo "Δ = $(( timestamp - last_ts ))"
 
     # Only show banner if more than5 600 seconds (10 min) passed
     if (( timestamp - last_ts > 600 )); then
-	banner;
+    banner.sh
     fi
     # Update last-seen timestamp
-    printf '%s\n' "$timestamp" > "$stampfile
+    printf '%s\n' "$timestamp" > "$stampfile"
 }
 
 add-zsh-hook precmd debounceBanner
