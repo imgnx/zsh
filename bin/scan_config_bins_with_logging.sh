@@ -1,10 +1,10 @@
 #!/bin/zsh
 # Scan ~/.config for bin folders and output new ones to a file
 
-BLACKLISTED="$HOME/.config/zsh/blacklisted_bins.txt"
-WHITELISTED="$HOME/.config/zsh/whitelisted_bins.txt"
-OUTPUT="$HOME/.config/zsh/last_bin_scan.txt"
-LOG_FILE="$HOME/.config/zsh/bin_scan.log"
+BLACKLISTED="$HOME/.config/zsh/bin.black.list"
+WHITELISTED="$HOME/.config/zsh/bin.white.list"
+OUTPUT="$HOME/.config/zsh/.bins.timestamp"
+LOG_FILE="$HOME/.config/zsh/.bins.log"
 
 # Clear output file
 : > "$OUTPUT"

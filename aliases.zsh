@@ -71,7 +71,7 @@ alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
 alias fe='emacs' # file edit
 alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
-alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
+alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/bin.zsh"
 alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
 
 alias free='vm_stat' # Memory usage details on macOS

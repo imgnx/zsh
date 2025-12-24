@@ -12,8 +12,6 @@ export XDG_CONFIG_HOME="/Users/donaldmoore/.config"
 export XDG_CACHE_HOME="/Users/donaldmoore/.cache"
 export XDG_DATA_HOME="/Users/donaldmoore/.local/share"
 export XDG_STATE_HOME="/Users/donaldmoore/.local/state"
-export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
-export ZSH_HOOKS_DIR="$ZDOTDIR/hooks.d"
 
 setopt DEBUG_BEFORE_CMD
 

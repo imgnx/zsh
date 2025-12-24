@@ -3,6 +3,7 @@
 
 # Delayed script loader hook and periodic bin folder scanner
 
+
 # --- Periodic stats updater for prompt ---
 _imgnx_stats_last=0
 PERIOD_STATS=10 # seconds
@@ -86,13 +87,13 @@ scan_new_config_bins() {
 # }
 
 
-# --- Delayed loader: source scripts in functions.zsh.d ---
+# --- Delayed loader: source scripts in functions ---
 # function D36B034A_2E4A_4D7D_A93C_4C5EB0A197A7() {
 #     echo -e "[ delayed-script-loader ]"
-#     printf '🔧 %s called. Sourcing scripts in %s/functions.zsh.d/\n' \
+#     printf '🔧 %s called. Sourcing scripts in %s/functions/\n' \
 #         "${funcstack[1]}" "$ZDOTDIR"
 
-#     for file in "$ZDOTDIR/functions.zsh.d/"*; do
+#     for file in "$ZDOTDIR/functions/"*; do
 #         [[ -f $file ]] || continue
 #         local script_name=${file:t:r}
 #         case "$file" in
@@ -128,21 +129,19 @@ hooks() {
 }
 
 
-if ! [[ "${precmd_functions[*]}" == *_IMGNX_* ]]; then
+if ! [[ "${precmd_functions[*]}" == *even_better_prompt* ]]; then
   if typeset -f add-zsh-hook >/dev/null 2>&1; then
     export PERIOD_SCAN_BINS=300
     export PERIOD_ALIAS_FUNCS=600
     add-zsh-hook periodic scan_new_config_bins
     add-zsh-hook periodic imgnx_update_stats
     add-zsh-hook precmd even_better_prompt
-    # add-zsh-hook chpwd pushd
-    # unfunction pushd
     echo -e "Press [Enter] to load hooks."
   fi
 else
   echo "Hooks already loaded."
+  hooks
 fi
-hooks
 
 if ! whence add2path >/dev/null 2>&1; then
     add2path() { [[ -d $1 ]] && PATH="$1:$PATH"; }

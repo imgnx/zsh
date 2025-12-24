@@ -9,6 +9,8 @@ if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions.d:"* ]]; then
 fi
 # export PATH="$PATH:$HOME/.config/nvm"
 
+source $XDG_CONFIG_HOME/zsh/completions.zsh
+
 DARKNESS="\033[48;2;29;29;32m"
 tangerine="%F{#FF3300}"
 green="%F{#AABFAA}"
@@ -30,8 +32,10 @@ RESET="\033[0m"
 
 # print -P "${dim}"
 
+local ZDOTDIR="/Users/donaldmoore/.config/zsh"
+
 source $ZDOTDIR/variables.zsh
-source $ZDOTDIR/functions.zsh
+source $ZDOTDIR/bin.zsh
 source "$ZDOTDIR/aliases.zsh"
 . "$ZDOTDIR/history.zsh"
 

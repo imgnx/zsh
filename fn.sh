@@ -1,1 +1,1 @@
-./functions.zsh
+/Users/donaldmoore/.config/zsh/bin.zsh
