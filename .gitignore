@@ -19,6 +19,11 @@ compdump/
 sessions/
 .zsh_sessions/
 
+*history*
+**/*history*
+*session*
+**/*session*
+
 # Backup and temporary files
 *~
 *.bak
