@@ -1,0 +1,17 @@
+#!/usr/bin/env zsh
+
+set -e
+
+SCRIPT="${(%):-%N}"
+SCRIPT_DIR="${SCRIPT:A:h}"
+ROOT_DIR="${SCRIPT_DIR:h}"
+CLEAN_ZDOTDIR="$ROOT_DIR/codex-shell"
+
+if [[ ! -d "$CLEAN_ZDOTDIR" ]]; then
+  echo "Codex shell profile missing at $CLEAN_ZDOTDIR" >&2
+  exit 1
+fi
+
+export ZDOTDIR="$CLEAN_ZDOTDIR"
+
+exec zsh -l "$@"

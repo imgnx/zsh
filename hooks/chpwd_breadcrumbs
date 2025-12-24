@@ -1,0 +1,18 @@
+#!/bin/zsh
+# shellcheck disable=all
+
+zmodload zsh/datetime # Use this with $EPOCHREALTIME
+
+# chpwd hook: execute ./.automx in the current directory if present.
+chpwd_automx() {
+    emulate -L zsh
+    local crumb="./.breadcrumb"
+    if [[ ! -f "$crumb" ]]; then
+	touch "./.breadcrumb"
+	if [[ ! -z "$EPOCHREALTIME" ]]; then
+	    echo "$EPOCHREALTIME">./.breadcrumb
+	else
+	    date +%s>./.breadcrumb
+	fi
+    fi
+}

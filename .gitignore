@@ -24,6 +24,8 @@ sessions/
 *session*
 **/*session*
 
+.breadcrumb
+
 # Backup and temporary files
 *~
 *.bak

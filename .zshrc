@@ -10,6 +10,7 @@ fi
 # export PATH="$PATH:$HOME/.config/nvm"
 
 source $XDG_CONFIG_HOME/zsh/completions.zsh
+zmodload zsh/datetime # Use this with $EPOCHREALTIME
 
 DARKNESS="\033[48;2;29;29;32m"
 tangerine="%F{#FF3300}"
@@ -132,3 +133,4 @@ plugins=(... dirs)
 . "/Users/donaldmoore/.deno/env"
 
 print -P "${reset}"
+
