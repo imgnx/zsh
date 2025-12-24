@@ -87,13 +87,13 @@ scan_new_config_bins() {
 # }
 
 
-# --- Delayed loader: source scripts in functions.zsh.d ---
+# --- Delayed loader: source scripts in functions.d ---
 # function D36B034A_2E4A_4D7D_A93C_4C5EB0A197A7() {
 #     echo -e "[ delayed-script-loader ]"
-#     printf '🔧 %s called. Sourcing scripts in %s/functions.zsh.d/\n' \
+#     printf '🔧 %s called. Sourcing scripts in %s/functions.d/\n' \
 #         "${funcstack[1]}" "$ZDOTDIR"
 
-#     for file in "$ZDOTDIR/functions.zsh.d/"*; do
+#     for file in "$ZDOTDIR/functions.d/"*; do
 #         [[ -f $file ]] || continue
 #         local script_name=${file:t:r}
 #         case "$file" in

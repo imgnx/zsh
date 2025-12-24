@@ -5,6 +5,14 @@
 # If this zsh session is non‑interactive, exit quietly.
 echo "" >"$HOME/Desktop/zsh_debug.log"
 
+# XDG Base Directory
+export XDG_CONFIG_HOME="/Users/donaldmoore/.config"
+export XDG_CACHE_HOME="/Users/donaldmoore/.cache"
+export XDG_DATA_HOME="/Users/donaldmoore/.local/share"
+export XDG_STATE_HOME="/Users/donaldmoore/.local/state"
+export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+export ZSH_HOOKS_DIR="$ZDOTDIR/hooks.d"
+
 setopt DEBUG_BEFORE_CMD
 
 if [[ ! -o interactive ]]; then
@@ -12,12 +20,7 @@ if [[ ! -o interactive ]]; then
 	return
 fi
 
-autoload -Uz compinit
-compinit
-
-# if [[ ! -z "$ZSH_DEBUG" ]]; then
-#     which compdef
-# fi
+#### PLACE ALL NEW SCRIPTS BELOW THIS LINE ####
 
 # Feature flags
 # export TABULA_RASA="${TABULA_RASA}" # Can't do that with this one and it has to be first. It's the "blank slate" feature flag.
@@ -55,7 +58,7 @@ for flag in $FEATURE_FLAGS; do
 			;;
 		esac
 	else
-	    echo -en "\033[48;2;255;0;0m ${flag} \033[0m"
+	    echo -en "\033[48;2;20;20;20m\033[2m ${flag} \033[0m"
 	fi
 
 	echo -n " "
@@ -79,7 +82,7 @@ alias ci="code-insiders"
 alias gcp="gcloud storage cp --no-clobber"
 alias grsync="gcloud storage rsync --no-clobber"
 alias ai="cd $HOME/src/dinglehopper/agents/codex.d && ls -la; say \"Please select an action to perform from the list of prompts or say \`divide by seven\` and hit enter to begin interactively.\""
-print -P "\033[0m\033[38;2;255;225;0m%B Tip: exec \`nmap\` to scan the network.${reset}\033[0m"
+echo -e "\033[0m\033[38;2;255;225;0m\033[1m Tip: exec \`nmap\` to scan the network.\033[0m"
 
 export NVM_DIR="$HOME/.config/nvm"
 
@@ -91,8 +94,12 @@ python -c "import sys; print(sys.executable); print(sys.prefix)" >/dev/null &&
 	echo -en "\033[2mpip:\033[0m\033[32m canhaz\033[0m\n" ||
 	echo -en "\033[2mpip:\033[0m\033[5m\033[31m cannothaz\!\033[0m\n"
 
-# XDG Base Directory
-export XDG_CONFIG_HOME="/Users/donaldmoore/.config"
-export XDG_CACHE_HOME="/Users/donaldmoore/.cache"
-export XDG_DATA_HOME="/Users/donaldmoore/.local/share"
-export XDG_STATE_HOME="/Users/donaldmoore/.local/state"
+echo -e "\033[48;2;30;30;33m\"When in doubt, use brute force.\"
+- Ken Thompson\033[0m";
+autoload -Uz compinit
+compinit
+
+# if [[ ! -z "$ZSH_DEBUG" ]]; then
+#     which compdef
+# fi
+

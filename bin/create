@@ -1,0 +1,72 @@
+#!/bin/zsh
+
+set -e
+APP_NAME="${1:-my-electron-app}" 
+mkdir -p "$APP_NAME"
+pushd "$APP_NAME"
+mkdir -p src
+mkdir -p frontend
+mkdir -p frontend/public
+npm init -y
+npm install --save-dev electron browser-sync > /dev/null 2>&1
+npm install --save react react-dom tailwindcss @tailwindcss/cli
+touch public/index.html
+cat > main.js <<'EOF'
+const { app, BrowserWindow } = require('electron')
+
+function createWindow () {
+const win = new BrowserWindow({
+width: 1920,
+height: 1080,
+webPreferences: {
+nodeIntegration: true,
+contextIsolation: true
+}
+})
+
+win.loadFile('index.html')
+}
+
+app.whenReady().then(() => {
+createWindow()
+
+app.on('activate', () => {
+if (BrowserWindow.getAllWindows().length === 0) createWindow()
+})
+})
+
+app.on('window-all-closed', () => {
+if (process.platform !== 'darwin') app.quit()
+})
+EOF
+cat > index.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Electron App</title>
+<style>
+body {
+background-color: "#007BFF";
+}
+</style>
+</head>
+<body>
+<h1>Taku!</h1>
+<p>If you can read this, it worked.</p>
+</body>
+</html>
+EOF
+node - <<'EOF'
+const fs = require('fs')
+const pkgPath = 'package.json'
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+pkg.scripts = pkg.scripts || {}
+pkg.scripts.start = 'electron .'
+pkg.scripts.dev = 'browser-sync'
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+EOF
+echo -e "\033[38;2;0;209;255mDone!\033[0m Happy hacking!"
+echo "Run:"
+echo "  cd $APP_NAME"
+echo "  npm start"

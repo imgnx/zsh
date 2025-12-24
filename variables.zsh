@@ -11,6 +11,8 @@
 # End TuxGuitar
 
 export SRC="$HOME/src"
+
+export MONOLITH="$HOME/src/dinglehopper"
 # export DINGLEHOPPER="cd $DINGLEHOPPER"
 export BLUEPRINTS="$DINGLEHOPPER/blueprints";
 export bp="$DINGLEHOPPER/blueprints"
@@ -450,3 +452,8 @@ export HSTS_FILE="${HSTS_FILE:-$XDG_CACHE_HOME/wget-hsts}"
 
 
 export BREW_CELLAR_HOME="/usr/local/Cellar/"
+
+# Python
+export VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto" 
+export VIRTUAL_ENV_DISABLE_PROMPT=1 # Custom handler in fn.sh 
+

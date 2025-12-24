@@ -8,10 +8,13 @@ fi
 # Anything after this point runs only for interactive shells.
 # … your other prompt customizations …
 
-# Add deno completions to search path
-if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions:"* ]]; then export FPATH="/Users/donaldmoore/.config/zsh/completions:$FPATH"; fi
+# Add completions to search path
+if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions.d:"* ]]; then
+    export FPATH="/Users/donaldmoore/.config/zsh/completions.d:$FPATH";
+fi
 # export PATH="$PATH:$HOME/.config/nvm"
 
+DARKNESS="\033[48;2;29;29;32m"
 tangerine="%F{#FF3300}"
 green="%F{#AABFAA}"
 indigo="%F{#5D00FF}"
@@ -28,19 +31,31 @@ bkgd_blk="%K{#000000}"
 # UTIL
 dim=$'%{\e[2m%}'
 reset=$'%{\e[0m%}%f%k%s%b'
+RESET="\033[0m"
 
 # print -P "${dim}"
 
+source $ZDOTDIR/variables.zsh
+source $ZDOTDIR/functions.zsh
+source "$ZDOTDIR/aliases.zsh"
+. "$ZDOTDIR/history.zsh"
 
-source $HOME/.config/zsh/variables.zsh
-source $XDG_CONFIG_HOME/zsh/functions.zsh
-source "$XDG_CONFIG_HOME/zsh/aliases.zsh"
+
+# . $ZDOTDIR/.zshrc" # automatic
+# . "$ZDOTDIR/.zshenv" # automatic
+[[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
 . /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
 
-. "$XDG_CONFIG_HOME/zsh/history.zsh"
-# . "$XDG_CONFIG_HOME/zsh/.zshrc" # automatic
-# . "$XDG_CONFIG_HOME/zsh/.zshenv" # automatic
-[[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
+PATH_1="$(mktemp)";
+FPATH_1="$(mktemp)";
+
+TRAPEXIT() {
+    /bin/rm -f $PATH_1 $FPATH_1
+}
+
+echo "PATH Debugger: \$[F]PATH_1"
+print -rl -- ${(s.:.)PATH} > $PATH_1
+print -rl -- ${(s.:.)FPATH} > $FPATH_1
 
 # --- Homebrew environment ---
 eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -48,7 +63,8 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 # --- Get public IP once per session ---
 tmpIpFile="$(mktemp)"
 
-curl -fsS --max-time 5 ifconfig.me >"${tmpIpFile}"
+# curl -fsS --max-time 5 ifconfig.me >"${tmpIpFile}"
+echo " 71.45.102.76" > "${tmpIpFile}"
 
 # --- Prompt setup ---
 setopt PROMPT_SUBST
@@ -60,7 +76,7 @@ ip="$(cat $tmpIpFile)"
 
 export PS1='%B  𓃠  [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.${jobs}[jobs:%j]%f.) %S $ip ${dim}%s${reset}
 %B${highlighter} %S %n@%M ${dim}%s${reset}
-%B${green}  %S %~ ${dim}%s 
+%B${green}  %S $SHELL %~ ${dim}%s 
 ${reset}${white}󱚞${dim}   ${reset} '
 
 blinky="%F{#FF0000}"

@@ -49,10 +49,9 @@ alias bkgd='afplay "$BKGD" &'
 alias bkup="back_up"
 alias bp='cd "$BLUEPRINTS"';
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
-alias c=copy
 alias cache='cd "$XDG_CACHE_HOME"'
 alias cash="$money"
-alias cc="copy"
+# alias cc="copy"
 alias cdspc='codespace'
 alias ce="emacs \"$(which $1)\"" # command edit
 alias cedit="emacs \"$(which $1)\"" # command edit
@@ -110,6 +109,7 @@ alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions
 alias ll='eza -la --octal-permissions --group-directories-first'
 # Remove duplicate llm (icons are provided globally)
 alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
+# alias ls='eza'
 alias lsd.="eza -d -a | grep -E '^\.'"
 alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"
@@ -162,3 +162,5 @@ alias xdg='cd "$XDG_CONFIG_HOME"'
 
 alias wallpapers="cd $HOME/Pictures/Wallpapers"
 alias iphonefix="noiphone"
+
+alias hexedit="hexedit --color $@"
