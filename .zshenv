@@ -3,6 +3,8 @@
 # Zsh environment configuration file.
 # Loaded for all zsh invocations, including non-interactive shells.
 # If this zsh session is non‑interactive, exit quietly.
+[[ ! -o interactive || "$TABULA_RASA" == (1|true) ]] && return
+
 echo "" >"$HOME/Desktop/zsh_debug.log"
 
 # XDG Base Directory
@@ -14,11 +16,6 @@ export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
 export ZSH_HOOKS_DIR="$ZDOTDIR/hooks.d"
 
 setopt DEBUG_BEFORE_CMD
-
-if [[ ! -o interactive ]]; then
-	# Non-interactive zsh session; exiting .zshenv...
-	return
-fi
 
 #### PLACE ALL NEW SCRIPTS BELOW THIS LINE ####
 
@@ -63,7 +60,7 @@ for flag in $FEATURE_FLAGS; do
 
 	echo -n " "
 done
-echo "\n"
+echo -n "\n"
 
 source $XDG_CONFIG_HOME/zsh/bin/__wrap_notice
 
@@ -82,7 +79,10 @@ alias ci="code-insiders"
 alias gcp="gcloud storage cp --no-clobber"
 alias grsync="gcloud storage rsync --no-clobber"
 alias ai="cd $HOME/src/dinglehopper/agents/codex.d && ls -la; say \"Please select an action to perform from the list of prompts or say \`divide by seven\` and hit enter to begin interactively.\""
-echo -e "\033[0m\033[38;2;255;225;0m\033[1m Tip: exec \`nmap\` to scan the network.\033[0m"
+typeset -a TIPS
+TIPS=("exec \`nmap\` to scan the network." "exec \`path\` or \`fpath\` to help you debug \$PATH vars.")
+RANDOM_TIP="$TIPS[RANDOM % $#TIPS + 1]"
+echo -e "\033[0m\033[38;2;255;225;0m\033[1m Tip: $RANDOM_TIP\033[0m"
 
 export NVM_DIR="$HOME/.config/nvm"
 

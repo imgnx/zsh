@@ -16,32 +16,22 @@ lolcat<<\\EOF
 ▀▀███    ███ ██▘█░█████ ███░██░
 ▀▀███   ███ █████░██ ███ ██░██░
 ▀▀███  ███ ███░ █░██ ▝███ ████░
-
-Learn more about Zsh: https://wiki.zshell.dev/
-Learn more about BrowserSync: https://gittaku.com/browsersync
 \EOF
-
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
+
 path() {
-    PATH_2="$(mktemp)"
-    TRAPEXIT() {
-	/bin/rm -f "$PATH_2"
-    }
-    echo -en "\033[38;2;0;123;255mStart: \033[0m$(cat $PATH_1)
----
-\033[38;2;0;123;255mNow: \033[0m";
-    print -rl -- "${(s.:.)PATH}" | tee "$PATH_2";
+    export PATH_2="$(mktemp)"
+    print -rl -- "${(s.:.)PATH}" > "$PATH_2";
     diff "$PATH_1" "$PATH_2"
 }
 
 fpath() {
-    echo -en "\033[38;2;0;123;255mStart: \033[0m$(cat $FPATH_1)
-\033[38;2;0;123;255mNow: \033[0m";
-    print -rl -- "${(s.:.)FPATH}";
+    export FPATH_2="$(mktemp)"
+    print -rl -- "${(s.:.)FPATH}" > "$FPATH_2";
+    diff "$FPATH_1" "$FPATH_2"
 }
-
 
 shava() {
     node -e "$(cat <<@@@
@@ -3315,4 +3305,17 @@ debounceBanner() {
     # Update last-seen timestamp
     printf '%s\n' "$timestamp" >"$stampfile"
 }
+
+unquarantine () {
+    for path in "$@"; do
+        if [[ -f "$path" ]]; then
+            xattr -c "$path"
+        elif [[ -d "$path" ]]; then
+            xattr -cr "$path"
+        fi
+    done
+}
+
+debounceBanner
 add-zsh-hook precmd debounceBanner
+

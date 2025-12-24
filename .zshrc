@@ -1,10 +1,5 @@
 # If this zsh session is non‑interactive, exit quietly.
-[[ -o interactive ]] || return
-
-if [[ "$TABULA_RASA" == "1" || "$TABULA_RASA" == "true" ]]; then
-    return
-fi
-
+[[ ! -o interactive || "$TABULA_RASA" == (1|true) ]] && return
 # Anything after this point runs only for interactive shells.
 # … your other prompt customizations …
 
@@ -50,10 +45,10 @@ PATH_1="$(mktemp)";
 FPATH_1="$(mktemp)";
 
 TRAPEXIT() {
-    /bin/rm -f $PATH_1 $FPATH_1
+    /bin/rm -f $PATH_1 $FPATH_1 $PATH_2 $FPATH_2
 }
 
-echo "PATH Debugger: \$[F]PATH_1"
+(( ZSH_DEBUG > 0 )) && echo "[ZSH_DEBUG]: [F]PATH Debugger: \$[F]PATH_1"
 print -rl -- ${(s.:.)PATH} > $PATH_1
 print -rl -- ${(s.:.)FPATH} > $FPATH_1
 
