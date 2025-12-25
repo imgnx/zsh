@@ -11,12 +11,12 @@ VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto"
 
 [[ ! -z "$ZSH_DEBUG" ]] && echo "" >"$HOME/Desktop/zsh_debug.log"
 
-lolcat<<\\EOF
-█████  █████████████ ██████▌██░
-▀▀███    ███ ██▘█░█████ ███░██░
-▀▀███   ███ █████░██ ███ ██░██░
-▀▀███  ███ ███░ █░██ ▝███ ████░
-\EOF
+# lolcat<<\\EOF
+# █████  █████████████ ██████▌██░
+# ▀▀███    ███ ██▘█░█████ ███░██░
+# ▀▀███   ███ █████░██ ███ ██░██░
+# ▀▀███  ███ ███░ █░██ ▝███ ████░
+# \EOF
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
@@ -2398,7 +2398,7 @@ dir() {
 
 cnf() {
     if [[ "$1" == "init" ]]; then
-	local project_name;
+	local project_names;
 	local basedirname="$(basename $(realpath $pwd))" # default to the basename of the current working directory.
 
 	if [[ -z "$2" ]]; then
@@ -2406,7 +2406,6 @@ cnf() {
 	    echo -en "\033[38;2;255;234;0mPlease enter a name for your project.\033[0m
 project-name: (default: ${basedirname})";
 	    read -r project_name
-
 	    if [[ -z "$project_name" ]]; then
 		project_name="$basedirname"
 	    fi
@@ -2443,6 +2442,96 @@ copy() {
 alias ugit=/usr/bin/git
 __wrap_notice git
 
+electron() {
+    case "$1" in
+	init)
+	    #!/bin/zsh
+
+	    local project_name="$(basename $(realpath $pwd))"
+	    if [[ -z "$2" ]]
+	    then
+	    set -e
+
+	    APP_NAME="${2:-project_name}"
+	    mkdir -p "$APP_NAME"
+	    pushd "$APP_NAME"
+	    mkdir -p src
+	    mkdir -p frontend
+	    mkdir -p frontend/public
+	    npm init -y
+	    npm install --save-dev electron browser-sync > /dev/null 2>&1
+	    npm install --save react react-dom tailwindcss @tailwindcss/cli > /dev/null 2>&1 
+	    touch public/index.html
+
+	    cat<<\\EOF>main.js
+const { app, BrowserWindow } = require('electron')
+
+	    function createWindow () {
+		const win = new BrowserWindow({
+						 width: 1920,
+						 height: 1080,
+						 webPreferences: {
+						     nodeIntegration: true,
+						     contextIsolation: true
+						 }
+					     })
+
+		win.loadFile('index.html')
+	    }
+
+	    app.whenReady().then(() => {
+				     createWindow()
+
+				     app.on('activate', () => {
+						if (BrowserWindow.getAllWindows().length === 0) createWindow()
+					    })
+				 })
+
+	    app.on('window-all-closed', () => {
+		       if (process.platform !== 'darwin') app.quit()
+		   })
+	    \EOF
+
+	    cat > index.html<<\\EOF
+	    <!DOCTYPE html>
+	    <html>
+	    <head>
+	    <meta charset="UTF-8">
+	    <title>Electron App</title>
+	    <style>
+	    body {
+		background-color: "#181820";
+	    }
+	    </style>
+	    </head>
+	    <body>
+	    <h1>Taku!</h1>
+	    <p>If you can read this, it worked.</p>
+	    </body>
+	    </html>
+	    \EOF
+
+	    node - <<\\EOF
+	    const fs = require('fs')
+	    const pkgPath = 'package.json'
+	    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+	    pkg.scripts = pkg.scripts || {}
+	    pkg.scripts.start = 'electron .'
+	    pkg.scripts.dev = 'browser-sync'
+	    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+\EOF
+
+#	    echo -e "\033[38;2;0;209;255mDone\!\033[0m Happy hacking\!"
+#	    echo "Run:"
+#	    echo "  cd $APP_NAME"
+#	    echo "  npm start"
+	    ;;
+	*)
+	    echo -en "\033[31m This is not the `electron` that you think it is. Either call it explicitly or rename this function."
+	    ;;
+    esac
+}
+
 git() {
     if [[ "$1" == "sum" ]]; then
 	git log --oneline
@@ -2455,7 +2544,66 @@ git() {
 	find /Volumes/ -type d -name ".git" | tee $HOME/tmp/git.list
 	say "Here's your list of git repositories"
 	bat "$HOME/tmp/git.list"
+    elif [[ "$1" == "init" ]]; then
+	local PWD="$(realpath ./)"
+	/usr/bin/git init --quiet --template="/Users/donaldmoore/src/dinglehopper/blueprints/default"
+	if [[ -d "${PWD}/.git" ]]; then
+	    echo "(Re)initialized git repository in ${PWD}";
+	else
+	    echo "Initialized git repository in ${PWD}"
+	fi
+	touch "${PWD}/AGENTS.md"
+	local DEFAULT_AGENTS_MD="This is a new repository. All relative business communication files and documentation (including .agent-strength and RATING_SYSTEM.md) are in ./.git ($PWD/.git)."
+	if [[ -z "$(cat ${PWD}/AGENTS.md)" ]]; then
+	    echo -e "Please give a \033[48;2;205;0;255m one-sentence (~15-20 words) description \033[0m of this repository and/or what it does for the AGENTS.md file."
+	    echo -en "\nDefault (included): $DEFAULT_AGENTS_MD\n\n\033[38;2;205;0;255mBrief Description \033[0m: "
+	    ln -s "$CODEXDOTDIR/prompts" ./prompts
+	    mkdir -p "$PWD/web-static"
+	    cat<<\\EOF>$PWD/web-static/index.html
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
+<body>
+  <h1 class="text-3xl font-bold underline">
+    Hello world!
+  </h1>
+</body>
+
+</html>
+\EOF
+
+
+	    
+    	    npx create-react-app "$PWD/web-adaptive" --template=typescript >/dev/null  > /dev/null 2>&1 &
+	    npx create-ink-app --typescript "$PWD/takuscript" > /dev/null 2>&1  &
+	    npx cap init "$PWD/mobile" "com.$(basename $PWD).mobile" > /dev/null 2>&1  &
+	    electron init > /dev/null 2>&1 
+	    
+	    read -r message
+	    if [[ -z $message ]]; then
+	       message="$DEFAULT_AGENTS_MD"
+	    fi
+	    echo -en "\n\033[38;2;0;205;0mAgent Strength ([1-10] default: 7) \033[0m: "
+
+	    read -r agent_strength;
+	    if [[ -z $agent_strength ]]; then
+		agent_strength=7
+	    fi
+	    
+	    echo "# \`$(basename $PWD)\`\n\n## Agent Debriefing\n\n${=message} ${=DEFAULT_AGENTS_MD}\n\nThanks,\n\nIMGNX Org." > "${PWD}/AGENTS.md"
+	    echo -e "\nWrote \033[38;2;0;123;255mAGENTS.md\033[0m :\033[0m\n"
+
+	    echo "$agent_strength" > "${PWD}/.agent-strength"
+	    cat "$PWD/AGENTS.md"
+	    echo "prompts" > "$PWD/.gitignore"
+	else
+	    echo -e "\033[5m\033[31mAGENTS.md is not empty.\033[0m"
+	fi
     else
 	echo "Running /usr/bin/git \"$@\""
 	/usr/bin/git "$@"
@@ -3286,6 +3434,7 @@ venvreset() {
 add-zsh-hook chpwd venv_autoactivate
 
 debounceBanner() {
+
     local stampfile="/tmp/taku.banner.last_ts"
     local timestamp last_ts=0
 
@@ -3300,11 +3449,31 @@ debounceBanner() {
 
     # Only show banner if more than5 600 seconds (10 min) has passed since the last time...
     if ((timestamp - last_ts > 600)); then
-	banner.sh
+      banner.sh
     fi
     # Update last-seen timestamp
     printf '%s\n' "$timestamp" >"$stampfile"
 }
+
+topBanner() {
+
+    local stampfile="/tmp/taku.banner.last_ts"
+    local timestamp last_ts=0
+
+    timestamp="$(date +%s)"
+
+    echo -en "\033[48;2;123;123;123mopts:\033[0m $(setopt | xargs -I{} printf "\033[38;20;20;20;0m%s\033[0m " "{}")
+\033[0m\033[48;2;123;123;123mmods:\033[0m $(zmodload | xargs -I{} printf "\033[38;20;20;20;0m%s\033[0m " "{}")
+\033[0m\n"
+    banner.sh
+
+    echo
+
+    printf '%s\n' "$timestamp" >"$stampfile"
+
+    add-zsh-hook -d precmd topBanner
+}
+
 
 unquarantine () {
     for path in "$@"; do
@@ -3318,4 +3487,4 @@ unquarantine () {
 
 debounceBanner
 add-zsh-hook precmd debounceBanner
-
+add-zsh-hook precmd topBanner

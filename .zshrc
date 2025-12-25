@@ -11,6 +11,7 @@ fi
 
 source $XDG_CONFIG_HOME/zsh/completions.zsh
 zmodload zsh/datetime # Use this with $EPOCHREALTIME
+setopt extendedglob
 
 DARKNESS="\033[48;2;29;29;32m"
 tangerine="%F{#FF3300}"

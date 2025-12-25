@@ -4,11 +4,11 @@
 #`````````````````#
 #++ TEMPORARY ++++#
 #_________________#
-# Start TuxGuitar
+# Start Java[TuxGuitar]
 # export MODEL=x86_64
 # export OUTPUT_DIR=build_output
 # export JAVA_HOME=$(/usr/libexec/java_home)
-# End TuxGuitar
+# End Java[TuxGuitar]
 
 export SRC="$HOME/src"
 
@@ -20,6 +20,8 @@ export dh="$DINGLEHOPPER"
 export srv="cd $DINGLEHOPPER/srv"
 export triage="cd $DINGLEHOPPER/triage"
 
+export CODEXDOTDIR="$XDG_CONFIG_HOME/codex"
+export TAKUDOTDIR="$XDG_CONFIG_HOME/taku"
 
 # ==============================
 # Placeholder
