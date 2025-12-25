@@ -2456,8 +2456,8 @@ electron() {
 	    mkdir -p "$APP_NAME"
 	    pushd "$APP_NAME"
 	    mkdir -p src
-	    mkdir -p frontend
-	    mkdir -p frontend/public
+	    mkdir -p desktop
+	    mkdir -p desktop/public
 	    npm init -y
 	    npm install --save-dev electron browser-sync > /dev/null 2>&1
 	    npm install --save react react-dom tailwindcss @tailwindcss/cli > /dev/null 2>&1 
@@ -2558,8 +2558,8 @@ git() {
 	    echo -e "Please give a \033[48;2;205;0;255m one-sentence (~15-20 words) description \033[0m of this repository and/or what it does for the AGENTS.md file."
 	    echo -en "\nDefault (included): $DEFAULT_AGENTS_MD\n\n\033[38;2;205;0;255mBrief Description \033[0m: "
 	    ln -s "$CODEXDOTDIR/prompts" ./prompts
-	    mkdir -p "$PWD/web-static"
-	    cat<<\\EOF>$PWD/web-static/index.html
+	    mkdir -p "$PWD/play"
+	    cat<<\\EOF>$PWD/play/index.html
 <!doctype html>
 <html>
 <head>
@@ -2579,8 +2579,8 @@ git() {
 
 
 	    
-    	    npx create-react-app "$PWD/web-adaptive" --template=typescript >/dev/null  > /dev/null 2>&1 &
-	    npx create-ink-app --typescript "$PWD/takuscript" > /dev/null 2>&1  &
+    	    npx create-react-app "$PWD/frontend" --template=typescript >/dev/null  > /dev/null 2>&1 &
+	    npx create-ink-app --typescript "$PWD/cli" > /dev/null 2>&1  &
 	    npx cap init "$PWD/mobile" "com.$(basename $PWD).mobile" > /dev/null 2>&1  &
 	    electron init > /dev/null 2>&1 
 	    
