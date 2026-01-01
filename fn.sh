@@ -16,6 +16,9 @@
 # ▀▀███  ███ ███░ █░██ ▝███ ████░
 # \EOF
 
+# Auto-activate per-project .venv if present
+autoload -U add-zsh-hook
+
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
 path() {
@@ -3482,23 +3485,30 @@ eza() {
 	command eza --icons "$@"
 }
 
-autoLog() {
-	if [[ -s error.log ]]; then
-		echo -e "\033[5mDonald(@imgnx) autoLog(fn.sh): \033[31m"
-		cat error.log
-		echo -e "\033[0mEnd of Donald(@imgnx) autoLog(fn.sh)"
+autoLogy() {
+	if [[ -s ./error.log ]]; then
+		echo -e "error.log[0-10] - Donald(@imgnx) autoLogy(fn.sh): \033[31m"
+		cat ./error.log | head -n 10
+		echo -e "\033[0mEnd of ./error.log[0-10] - see ./error.log for more info - Donald(@imgnx) autoLogy(fn.sh)"
+	fi
+	if [[ -s ./warning.log ]]; then
+		echo -e "warning.log[0-10] - Donald(@imgnx) autoLogy(fn.sh): \033[33m"
+		cat ./warning.log | head -n 10
+		echo -e "\033[0mEnd of warning.log[0-10] - see ./warning.log for more info - Donald(@imgnx) autoLogy(fn.sh)"
+	fi
+	if [[ -s ./info.log ]]; then
+		echo -e "info.log[0-10] - Donald(@imgnx) autoLogy(fn.sh): \033[32m"
+		cat ./info.log | head -n 10
+		echo -e "\033[0mEnd of info.log[0-10] - see ./info.log for more info - Donald(@imgnx) See autoLogy(fn.sh)"
 	fi
 }
 
-add-zsh-hook precmd autoLog
+add-zsh-hook precmd autoLogy
 
 _retro_indexes() {
 	compadd 1 2 3 4 5 6 7 8 9 10
 }
 compdef _retro_indexes retro
-
-# Auto-activate per-project .venv if present
-autoload -U add-zsh-hook
 
 activate_venv_update_ps1() {
 	if [[ $PY_DEBUG == 1 ]]; then

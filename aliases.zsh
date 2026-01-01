@@ -48,6 +48,7 @@ alias bk="back_up"
 alias bkgd='afplay "$BKGD" &'
 alias bkup="back_up"
 alias bp='cd "$BLUEPRINTS"';
+alias btstrpr="cd $DINGLEHOPPER/modules/bootstrapper"
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
 alias cache='cd "$XDG_CACHE_HOME"'
 alias cash="$money"
