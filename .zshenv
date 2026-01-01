@@ -28,6 +28,9 @@ if [[ "$DEBUG_LEVEL" > 0 ]]; then
 	echo "ZSH DEBUG_LEVEL: $DEBUG_LEVEL"
 fi
 
+
+echo # Readability
+
 for flag in $FEATURE_FLAGS; do
 	if [[ -n ${flag//[^a-zA-Z0-9_]/} ]]; then
 		val=$(eval echo \$$flag) # sanitize flag to ensure it's a valid variable name and retrieve its value
@@ -58,7 +61,8 @@ for flag in $FEATURE_FLAGS; do
 
 	echo -n " "
 done
-echo -n "\n"
+echo -n "\n" # End line
+echo # Readability
 
 source $XDG_CONFIG_HOME/zsh/bin/__wrap_notice
 

@@ -4,7 +4,6 @@
 # export ZSH_DEBUG =
 # export PY_DEBUG=
 # export HARD_RESET=
-VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto"
 
 ##### FLAGS AND VARIABLES GO ABOVE THIS LINE
 
@@ -872,10 +871,10 @@ forline() {
 #    cd "/Users/donaldmoore/Documents/Aequilibrium"
 #}
 
-_taku_venv() {
-	python -m venv --prompt "${PWD:t}" .venv
-	source .venv/bin/activate
-}
+# _taku_venv() {
+# 	python -m venv --prompt "${PWD:t}" .venv
+# 	source .venv/bin/activate
+# }
 
 navi() {
 	while true; do
@@ -1418,7 +1417,6 @@ alias gatekeeper="gtkpr"
 
 docs() {
 	emulate -L zsh
-	setopt pipefails
 
 	# Binaries
 	local LS=/bin/ls
@@ -2069,7 +2067,7 @@ hop() {
 	before="$PWD"
 	cd $(realpath)
 	after="$PWD"
-	echo "$before -> $after"
+	echo -e "\033[38;2;255;205;0m@realpath/hop: \033[0m$before -> $after"
 }
 
 clean_old() {
@@ -3484,10 +3482,15 @@ eza() {
 	command eza --icons "$@"
 }
 
-if [[ -s error.log ]]; then
-	echo -e "\033[38;2;255;25;0mNotice: You can still use $(fn.sh) as long as $(alias.zsh) is still intact."
-	cat error.log
-fi
+autoLog() {
+	if [[ -s error.log ]]; then
+		echo -e "\033[5mDonald(@imgnx) autoLog(fn.sh): \033[31m"
+		cat error.log
+		echo -e "\033[0mEnd of Donald(@imgnx) autoLog(fn.sh)"
+	fi
+}
+
+add-zsh-hook precmd autoLog
 
 _retro_indexes() {
 	compadd 1 2 3 4 5 6 7 8 9 10
@@ -3497,32 +3500,46 @@ compdef _retro_indexes retro
 # Auto-activate per-project .venv if present
 autoload -U add-zsh-hook
 
-update_ps1_with_venv() {
+activate_venv_update_ps1() {
 	if [[ $PY_DEBUG == 1 ]]; then
-		# echo -e "Updating PS1 with \"[venv]\":
-		# \$1: $1
-		# \$VIRTUAL_ENV: $VIRTUAL_ENV"
-
+		echo -e "\`venv_autoactivate\`: Attempting to activate [venv]:
+\$REALPATH: $1
+\$ACTFILE: $2
+"
+		echo "\`venv_autoactivate\`: PS1 has venv: $PS1_HAS_VENV"
 	fi
 
-	python_version="$(python -V)"
-	local DIR="$(dirname $1)"
-	local BASE_DIR="$(basename $DIR)"
-	local BASE_HOC="$(basename $1)"
-	export PS1="$(python) | [${BASE_DIR}/${BASE_HOC}]
+	REALPATH="$1"
+	ACTFILE="$2"
+	VERSION="$(python -V | awk '{print $2}')"
+	local DIR="$(basename $(dirname $REALPATH))"
+	local BASE="$(basename $REALPATH)"
+	if [[ $PS1_HAS_VENV == 1 ]]; then
+		echo "Cannot activate [${DIR}/${BASE}]. .venv is $PS1_HAS_VENV for $ACTIVE_VENV"
+		return 1
+	fi
+	source "$ACTFILE"
+	export ACTIVE_VENV=" Python .venv: [${DIR}/${BASE}] (v${VERSION})"
+	export PS1="$ACTIVE_VENV
 $PS1"
 	export PS1_HAS_VENV=1
 }
 
 venv_autoactivate() {
+	add-zsh-hook -d precmd venv_autoactivate
+	if [[ $PY_DEBUG == 1 ]]; then
+		echo "exec: venv_autoactivate in $ZDOTDIR/fn.sh"
+	fi
+	VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto"
 	PS1_HAS_VENV="${PS1_HAS_VENV:-0}"
-	[[ $PY_DEBUG == 1 ]] && echo "\`venv_autoactivate\`: Prompt has venv: $PS1_HAS_VENV"
 	export VIRTUAL_ENV_DISABLE_PROMPT=1
 	local errno=1 # pessimistic default
 	local net=1   # safety net: allows retry once
-	local actfile dir decision reply
+	local ACTFILE dir decision reply
 
 	TRAPEXIT() {
+		unset VIRVUAL_ENV
+		unset PS1_HAS_VENV
 		# If we failed AND net is still armed, retry exactly once
 		if ((errno != 0 && net == 1)); then
 			net=0
@@ -3549,67 +3566,62 @@ venv_autoactivate() {
 
 	# Locate activation script
 	# `-mindepth 3 maxdepth 3` should lock it down to the exact place where .venv is located.
-	actfile=$(find . -maxdepth 3 -mindepth 3 -type f -name activate 2>/dev/null | head -n 1)
+	ACTFILE=$(find . -maxdepth 3 -mindepth 3 -type f -name activate 2>/dev/null | head -n 1)
 
 	if [[ "$PY_DEBUG" == 1 ]]; then
-		echo "Results: $actfile"
+		echo "Results: $ACTFILE"
 	fi
 
-	if [[ -z "$actfile" ]]; then
+	if [[ -z "$ACTFILE" ]]; then
 		errno=0
 		return
 	fi
 
-	dir=$(realpath "$(dirname "$actfile")")
-	hoc="$(realpath ./)"
-	# Check remembered decisions
-	decision=$(grep "^$dir " "$VENVAUTO_FILE" 2>/dev/null | awk '{print $2}')
+	dir=$(realpath "$(dirname "$ACTFILE")")
+	REALPATH="$(realpath ./)"
 
-	[[ $PY_DEBUG == 1 ]] && echo "Remembered decision: $decision"
+	# Check remembered decisions
+	record=$(grep "^$dir " "$VENVAUTO_FILE" 2>/dev/null)
+	decision=$(echo $record | awk '{print $2}')
 
 	case "$decision" in
 	always)
-		echo "Python .venv autoactivation: always"
-		echo "$(realpath ./)"
-		source "$actfile"
-		update_ps1_with_venv $hoc
+		echo "Python .venv [$(realpath ./)] autoactivation: \033[42m\033[1m\033[38;2;0;0;0m always \033[0m"
+		activate_venv_update_ps1 $REALPATH $ACTFILE
 		errno=0
 		return
 		;;
 	never)
-		echo "Python .venv autoactivation: never"
-		echo "$(realpath ./)"
+		echo "\033[41m autovenv disabled: \033[0m ${record}"
 		errno=0
 		return
 		;;
 	esac
 
 	# Prompt user
-	echo -en "\033[5m\033[48;2;0;123;255mFound virtualenv in:\033[0m \033[1m$dir
+	echo -en "\033[5m\033[48;2;0;123;255mActivate .venv in $dir?\033[0m \033[1m
+	1. (y)es
+	2. (n)o
+	3. (a)lways
+	4. (N)ever\033[0m
 
-	Activate?
-	(y)es
-	(n)o
-	(a)lways
-	(N)ever
-
-	\033[0m"
-	echo
+Decision:"
 	read -k 1 -r reply
 	echo
 
 	case "$reply" in
-	[yY])
-		source "$actfile"
-		update_ps1_with_venv $hoc
+	[yY1])
+		echo -e "$ACTFILE set to \033[48;2;0;255;0mactivate once\033[0m"
+		activate_venv_update_ps1 $REALPATH $ACTFILE
 		;;
-	[aA])
-		echo "$dir always" >>"$VENVAUTO_FILE"
-		source "$actfile"
-		update_ps1_with_venv $hoc
+	[aA3])
+		echo -e "$ACTFILE set to \033[48;2;0;255;0malways\033[0m"
+		activate_venv_update_ps1 $REALPATH $ACTFILE
+		echo "$dir always" | tee "$VENVAUTO_FILE"
 		;;
-	[N])
-		echo "$dir never" >>"$VENVAUTO_FILE"
+	[N4])
+		echo -e "$ACTFILE set to \033[48;2;255;20;0mnever\033[0m"
+		echo "$dir never" | tee "$VENVAUTO_FILE"
 		;;
 	*) ;; # explicit no-op
 	esac
@@ -3626,6 +3638,7 @@ venvreset() {
 	fi
 }
 
+add-zsh-hook precmd venv_autoactivate
 add-zsh-hook chpwd venv_autoactivate
 
 debounceBanner() {
@@ -3684,7 +3697,23 @@ tipTop() {
 		# debounceBanner
 		throttleBanner
 	fi
+	# To remove the hook:
+	# add-zsh-hook -d precmd tipTop
 }
+
+add-zsh-hook precmd tipTop
+
+ifTaku() {
+	if [[ -f ./.taku || -d ./.taku ]]; then
+		if [[ -f ./.taku ]]; then
+			lolcat -i -p 0.5 -S 90 <<<"Found .taku env file"
+		else
+			lolcat -i -p 0.5 -S 90 <<<"Found .taku config"
+		fi
+	fi
+}
+
+add-zsh-hook precmd ifTaku
 
 unquarantine() {
 	for path in "$@"; do
@@ -3733,30 +3762,4 @@ typeset -gi ZSH_SCROLL_MARGIN_PCT=40
 #   zle && zle -R
 # }
 
-add-zsh-hook precmd tipTop
-
-0bsd() {
-	location="$(git rev-parse --show-toplevel)/LICENSE"
-	cat <<'EOF'
-	>"$location"
-    Note: Despite its name, Zero-Clause BSD is an alteration of the ISC license, and is not textually derived from licenses in the BSD family. Zero-Clause BSD was originally approved under the name “Free Public License 1.0.0”.
-
-    Zero-Clause BSD
-    =============
-
-    Permission to use, copy, modify, and/or distribute this software for
-    any purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED “AS IS” AND THE AUTHOR DISCLAIMS ALL
-    WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
-    OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
-    FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
-    DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
-    AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-    OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-EOF
-}
-
-echo -e "\033[38;2;0;255;0m\033[5m online \033[0m"
-
+echo -en "\033[48;2;0;0;0m\033[32m\033[1m fn.sh online \033[0m"

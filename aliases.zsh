@@ -99,6 +99,7 @@ eza() { command eza --icons "$@"; }
 alias l="eza"
 alias l.="eza './.??*'" # l. (you might see a bullet point because of a common ligature)
 alias la='eza --long --all -bGF --header --git --color=always --group-directories-first --icons'
+alias lsa='ls -lahO' # long, all, human-readable, and output flags (macOS)
 alias labs='cd "$LABS"'
 alias ld='eza -1 --color=always --group-directories-first --icons'
 alias lh="eza -a | grep -E '^\.|^total'"
