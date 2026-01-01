@@ -89,6 +89,7 @@ _sanitize_emacs_var EMACS_DUMP_FILE  "${XDG_STATE_HOME}/emacs/auto-save-list/.em
 #  Zsh Configuration
 # ==============================
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+export ZSHDOTDIR="${ZDOTDIR}";
 export ZINIT_HOME="${ZINIT_HOME:-$XDG_CONFIG_HOME/zinit}"
 export ZSH="${ZSH:-$XDG_CONFIG_HOME/zsh}"
 export ZSH_CACHE_DIR="${ZSH_CACHE_DIR:-$XDG_CACHE_HOME/zsh/cache}"
@@ -178,7 +179,6 @@ export EDITOR="emacs"
 export ESLINT_USE_FLAT_CONFIG=false
 export EXA_COLORS="ln=1;35"
 export ICLOUD_DRIVE="$HOME/Library/Mobile Documents/com~apple~CloudDocs"
-export JSH="$SRC/jsh"
 export LABS="$WORKBENCH/_____LABS"
 export LIB="$HOME/lib"
 export MEDIA="$ICLOUD_DRIVE/_____MEDIA"
@@ -460,3 +460,4 @@ export BREW_CELLAR_HOME="/usr/local/Cellar/"
 export VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto" 
 export VIRTUAL_ENV_DISABLE_PROMPT=1 # Custom handler in fn.sh 
 
+FONTS=/Users/donaldmoore/Library/Fonts

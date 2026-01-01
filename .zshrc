@@ -36,16 +36,8 @@ RESET="\033[0m"
 
 local ZDOTDIR="/Users/donaldmoore/.config/zsh"
 
-source $ZDOTDIR/variables.zsh
-source $ZDOTDIR/bin.zsh
-source "$ZDOTDIR/aliases.zsh"
-. "$ZDOTDIR/history.zsh"
-
-
-# . $ZDOTDIR/.zshrc" # automatic
-# . "$ZDOTDIR/.zshenv" # automatic
 [[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
-. /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
+source /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
 
 PATH_1="$(mktemp)";
 FPATH_1="$(mktemp)";
@@ -53,6 +45,11 @@ FPATH_1="$(mktemp)";
 TRAPEXIT() {
     /bin/rm -f $PATH_1 $FPATH_1 $PATH_2 $FPATH_2
 }
+
+source $ZDOTDIR/variables.zsh 
+source $ZDOTDIR/bin.zsh
+source "$ZDOTDIR/aliases.zsh" 
+source "$ZDOTDIR/history.zsh"
 
 (( ZSH_DEBUG > 0 )) && echo "[ZSH_DEBUG]: [F]PATH Debugger: \$[F]PATH_1"
 print -rl -- ${(s.:.)PATH} > $PATH_1
@@ -77,15 +74,15 @@ ip="$(cat $tmpIpFile)"
 
 export PS1='%B  𓃠  [pid:$$] %(?..%F{red}[exit:%?]%f) %(1j.${jobs}[jobs:%j]%f.) %S $ip ${dim}%s${reset}
 %B${highlighter} %S %n@%M ${dim}%s${reset}
-%B${green}  %S $SHELL %~ ${dim}%s 
+%B${green}  %S $(basename $SHELL) %~ ${dim}%s 
 ${reset}${white}󱚞${dim}   ${reset} '
 
 blinky="%F{#FF0000}"
 clyde="%F{#FEB945}"
 inky="%F{#02FFDF}"
 pinky="%F{#FEB9DF}"
-export RPROMPT="${yellow}󰮯${red} · · · · ${blinky}󱙝 ${clyde}󱙝 ${inky}󱙝 ${pinky}󱙝 ${reset}"
-export SRC="/Users/donaldmoore/src"
+export RPROMPT="${yellow}󰮯${red} · · · · ${blinky}󱙝 ${clyde}󱙝 ${inky}󱙝 ${pinky}󱙝${reset} "
+Export="/Users/donaldmoore/src"
 export DINGLEHOPPER="$SRC/dinglehopper"
 export TRIAGE="$DINGLEHOPPER/triage"
 # export CRATES="/Users/donaldmoore/src/dinglehopper/triage"
@@ -95,7 +92,7 @@ export PATH="$PATH:$HOME/secret/top"
 
 if [ ! "$COLUMNS" -ge 35 ]; then
 	echo -en '\033[5m\033[1m\033[38;2;222;173;237m'
-	echo "[banner]"
+	echo "[insert banner here]"
 	echo -en "\033[0m"
 fi
 
@@ -135,3 +132,4 @@ plugins=(... dirs)
 
 print -P "${reset}"
 
+source "$ZDOTDIR/tmp-alias.zsh"
