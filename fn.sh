@@ -3017,10 +3017,11 @@ typeset -gi ZSH_SCROLL_MARGIN_PCT=40
 
 # export PATH="$(bash \"$ZDOTDIR/cleanup.path.sh\")"
 
+
 autoThemeFile() {
-    if [[ -f "./themefile" ]]; then
-	THEME "$(cat ./themefile)"
-    fi
+  (( $+functions[load_themefile] )) || return 0
+  load_themefile
 }
 
 add-zsh-hook chpwd autoThemeFile
+autoThemeFile
