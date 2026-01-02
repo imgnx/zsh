@@ -166,3 +166,5 @@ alias wallpapers="cd $HOME/Pictures/Wallpapers"
 alias iphonefix="noiphone"
 
 alias hexedit="hexedit --color $@"
+alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
+MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"

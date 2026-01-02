@@ -1,16 +1,1 @@
-/Users/donaldmoore/src/dinglehopper/triage/midi-labs/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/guitar-to-midi/bin always
-/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/.cache/fsh never
-/Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/musicgen/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/faster-whisper/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/_voicebridge/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/fuzzyfinder/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/draft/art/audio/spectral_tone_divider/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/draft/___COMPONENTS___/not-directly-interactive/tts-imgnx/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/draft/tablature_rasa/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/draft/bricks-tablature-to-sequencer/.venv/bin always
-/Users/donaldmoore/src/dinglehopper/draft/bricks-audio-pitch-modulator/py/.venv/bin always
-/Users/donaldmoore/bin/venv_autoactivate.d/test/.venv/bin always
-/Users/donaldmoore/test/test/.venv/bin always
+/Users/donaldmoore/src/dinglehopper/triage/nm2midi/backend/.venv/bin always

@@ -1,0 +1,144 @@
+docs() {
+	emulate -L zsh
+
+	# Binaries
+	local LS=/bin/ls
+	local SAY=/usr/bin/say
+	local QLMANAGE=/usr/bin/qlmanage
+	local OPEN=/usr/bin/open
+	local PANDOC=$(command -v pandoc || true)
+	local WKHTMLTOIMAGE=$(command -v wkhtmltoimage || true)
+
+	# Flags
+	local interactive=0
+	local include_readme=1
+	local generate_previews=0
+	local start="."
+
+	# Parse args
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		-r | --read) interactive=1 ;;
+		-p | --previews) generate_previews=1 ;;
+		--exclude-readme) include_readme=0 ;;
+		-h | --help)
+			cat <<'USAGE'
+Usage: docs [options] [start_path]
+
+Options:
+  -r, --read           After listing, open a menu to read a file aloud (macOS 'say').
+  -p, --previews       Generate PNG previews (thumbnails) for Markdown files.
+      --exclude-readme Exclude README.md from listings/menu/previews.
+  -h, --help           Show this help.
+
+Examples:
+  docs
+  docs -r
+  docs -p --exclude-readme ~/Projects/app
+USAGE
+			return 0
+			;;
+		*) start="$1" ;;
+		esac
+		shift
+	done
+
+	# Collect files if interactive
+	typeset -a choices
+	choices=()
+
+	# Helper: render PNG thumbnail for one Markdown file
+	_render_md_png() {
+		local md="$1"
+		local outdir="${md:h}/.previews"
+		local png="$outdir/${md:t}.png"
+
+		mkdir -p "$outdir"
+
+		# Skip if up-to-date
+		if [[ -e "$png" && "$png" -nt "$md" ]]; then
+			echo "⏭️  Up-to-date: $png"
+			return
+		fi
+
+		# macOS Quick Look path
+		if [[ -x "$QLMANAGE" ]]; then
+			local tmpdir
+			tmpdir=$(mktemp -d)
+			if "$QLMANAGE" -t -s 512 -o "$tmpdir" -- "$md" >/dev/null 2>&1; then
+				local generated="$tmpdir/${md:t}.png"
+				[[ -e "$generated" ]] && mv -f "$generated" "$png"
+				rmdir "$tmpdir" 2>/dev/null || true
+				echo "🖼️  Generated: $png"
+				return
+			fi
+		fi
+
+		# Fallback Pandoc + wkhtmltoimage
+		if [[ -n "$PANDOC" && -n "$WKHTMLTOIMAGE" ]]; then
+			local tmpdir
+			tmpdir=$(mktemp -d)
+			local html="$tmpdir/out.html"
+			"$PANDOC" -s "$md" -o "$html" &&
+				"$WKHTMLTOIMAGE" --enable-local-file-access "$html" "$png" >/dev/null 2>&1 &&
+				echo "🖼️  Generated: $png"
+			rm -rf "$tmpdir"
+			return
+		fi
+
+		echo "❌ No renderer available for $md"
+	}
+
+	# Prompt if previews requested
+	if ((generate_previews)); then
+		echo "⚠️  Preview generation can use a lot of disk space."
+		read -q "?Proceed? [y/N] "
+		echo
+		[[ $REPLY != [Yy] ]] && {
+			echo "Cancelled."
+			return 1
+		}
+	fi
+
+	# Main loop
+	find "$start" -type f -name "README.md" \
+		-not -path "*/node_modules/*" \
+		-not -path "*/.git/*" \
+		-not -path "*/.venv/*" |
+		while IFS= read -r readme; do
+			local dir
+			dir="${readme:h}"
+			echo "📂 Directory: $dir"
+			echo "   └── README.md (found)"
+
+			local had_any=0
+			for f in "$dir"/*.md; do
+				[[ -e "$f" ]] || continue
+				if ((!include_readme)) && [[ "${f:t}" == "README.md" ]]; then
+					continue
+				fi
+				had_any=1
+				$LS -lhn -- "$f" | awk '{print "   ├── " $NF " (" $5 ")"}'
+				((interactive)) && choices+=("$f")
+				((generate_previews)) && _render_md_png "$f"
+			done
+
+			((had_any == 0)) && echo "   ├── (no other .md files)"
+			echo
+		done
+
+	# Interactive menu
+	if ((interactive)); then
+		if ((${#choices} == 0)); then
+			echo "No Markdown files found to read."
+			return 1
+		fi
+		echo "Choose a file to read (or press Enter with no selection to quit):"
+		local PS3="Select #: "
+		select md in "${choices[@]}"; do
+			[[ -z "$md" ]] && break
+			echo "🔊 Reading: $md"
+			"$SAY" -f "$md"
+		done
+	fi
+}

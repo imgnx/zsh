@@ -22,9 +22,7 @@
   },
   "homepage": "https://github.com/imgnx/zshconfig2#readme",
   "devDependencies": {
+    "chalk": "^5.6.2",
     "concurrently": "^9.2.0"
-  },
-  "dependencies": {
-    "chalk": "^5.6.2"
   }
 }
