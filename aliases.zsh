@@ -1,14 +1,31 @@
 alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
+alias docs="cd $DOCS"
+alias mods="cd $DINGLEHOPPER/modules/BARE"
 
 alias _M='cd "$HOME/_M";
 alias _G='cd "$DINGLEHOPPER/_GLOBAL";
 
 alias -s json="cat $@"
-alias -s taku="open $@"
+alias -s js="node $@"
+alias -s taku="taku $@"
 alias -s md="info $@"
 alias -s gp5=abc
 alias -s ptb=abc
 alias -s gpx=abc
+
+alias dirs="print -rl -- ./*(DR/)"
+alias d="print -rl -- ./*(DR/)"
+alias files="print -rl -- ./*(DR.)"
+alias f="print -rl -- ./*(DR.)"
+alias links="print -rl -- ./*(DR-/)"
+alias l="print -rl -- ./*(DR-/)"
+alias recursive_dirs="print -rl -- ./**/*(D/)"
+alias rd="print -rl -- ./**/*(D/)"
+alias recursive_files="print -rl -- ./**/*(D.)"
+alias rf="print -rl -- ./**/*(D.)"
+alias recursive_links="print -rl -- ./**/*(D-)"
+alias rl="print -rl -- ./**/*(D-)"
+
 
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
@@ -166,5 +183,9 @@ alias wallpapers="cd $HOME/Pictures/Wallpapers"
 alias iphonefix="noiphone"
 
 alias hexedit="hexedit --color $@"
-alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
+# alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
 MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
+BARE="$HOME/src/dinglehopper/modules/BARE/"
+
+alias z="cd $Z"
+

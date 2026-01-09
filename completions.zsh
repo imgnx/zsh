@@ -40,3 +40,9 @@ _codex_prompt_complete() {
   _default
 }
 compdef _codex_prompt_complete codex
+
+# SET_THEME completion: files anywhere, but prefer .themefile names.
+_set_theme_files() {
+  _files -g "*.themefile"
+}
+compdef _set_theme_files SET_THEME

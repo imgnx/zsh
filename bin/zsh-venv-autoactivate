@@ -1,4 +1,16 @@
-activate_venv_update_ps1() {
+#!/bin/zsh
+
+export ACTIVE_VENV_MSG
+
+autovenv_hook() {
+    echo -en "$ACTIVE_VENV_MSG"
+}
+
+wrap_deactivate() {
+    add-zsh-hook -d precmd autovenv_hook
+}
+
+activate_venv() {
 	if [[ $PY_DEBUG == 1 ]]; then
 		echo -e "\`venv_autoactivate\`: Attempting to activate [venv]:
 \$REALPATH: $1
@@ -7,22 +19,55 @@ activate_venv_update_ps1() {
 		echo "\`venv_autoactivate\`: PS1 has venv: $PS1_HAS_VENV"
 	fi
 
-	REALPATH="$1"
-	ACTFILE="$2"
-	VERSION="$(python -V | awk '{print $2}')"
-	local DIR="$(basename $(dirname $REALPATH))"
-	local BASE="$(basename $REALPATH)"
+	local REALPATH="$1"
+	local ACTFILE="$2"
+	local DIR="$(basename "$(dirname "$REALPATH")")"
+	local BASE="$(basename "$REALPATH")"
+	local version=""
+	local venv_python=""
+	local VENV_BIN=""
+	local VENV_ROOT=""
 	if [[ $PS1_HAS_VENV == 1 ]]; then
-		echo "Cannot activate [${DIR}/${BASE}]. .venv is $PS1_HAS_VENV for $ACTIVE_VENV"
+		echo "Cannot activate [${DIR}/${BASE}]. .venv is $PS1_HAS_VENV for $ACTIVE_VENV_MSG"
 		return 1
 	fi
+
+	# Keep Python's activate script from touching the prompt; use our precmd hook instead.
+	export VIRTUAL_ENV_DISABLE_PROMPT=1
 	source "$ACTFILE"
+
+	VENV_BIN="$(dirname "$ACTFILE")"
+	VENV_ROOT="$(dirname "$VENV_BIN")"
+
+	# Ensure PATH and VIRTUAL_ENV point at the venv even if activate didn't touch them.
+	if [[ -z "$VIRTUAL_ENV" ]]; then
+		export VIRTUAL_ENV="$VENV_ROOT"
+	fi
+	if [[ "${path[1]}" != "$VENV_BIN" ]]; then
+		path=($VENV_BIN ${path:#$VENV_BIN})
+	fi
+	hash -r 2>/dev/null
+
+	# Prefer the venv's interpreter so we don't accidentally hit a global Homebrew Python.
+	if [[ -n "$VIRTUAL_ENV" && -x "$VIRTUAL_ENV/bin/python" ]]; then
+		venv_python="$VIRTUAL_ENV/bin/python"
+	elif [[ -x "$VENV_BIN/python" ]]; then
+		venv_python="$VENV_BIN/python"
+	elif [[ -x "$VENV_BIN/python3" ]]; then
+		venv_python="$VENV_BIN/python3"
+	fi
+	if [[ -n "$venv_python" ]]; then
+		version="$("$venv_python" -V 2>/dev/null | awk '{print $2}')"
+	else
+		version="$(command python -V 2>/dev/null | awk '{print $2}')"
+	fi
 	export PS1L1="$(print -P $PS1 | head -n 1)"
 	export PS1L2="$(print -P $PS1 | tail -n +2)"
-	export ACTIVE_VENV=" Python .venv: [${DIR}/${BASE}] (v${VERSION})"
-	export PS1="$PS1L1 $ACTIVE_VENV
-$PS1L2"
-	export PS1_HAS_VENV=1
+	export ACTIVE_VENV_MSG="\033[38;2;0;255;0m  Python\033[0m .venv: [${DIR}/${BASE}] (v${version:-unknown})"
+	# export PS1='$PS1L1 $ACTIVE_VENV_MSG
+# $PS1L2'
+	# export PS1_HAS_VENV=1
+	add-zsh-hook precmd autovenv_hook
 }
 
 venv_autoactivate() {
@@ -56,8 +101,9 @@ venv_autoactivate() {
 
 	# Already in a venv → nothing to do
 	if [[ -n "$VIRTUAL_ENV" ]]; then
-		export VIRTUAL_ENV=""
-		deactivate >/dev/null 2 &>1 # Simple. They get it wrong, we destroy it.
+		deactivate &>/dev/null # Simple. They get it wrong, we destroy it.
+		# or ...
+		# deactivate >/dev/null 2>&1
 	fi
 
 	if [[ "$PY_DEBUG" == 1 ]]; then
@@ -67,6 +113,19 @@ venv_autoactivate() {
 	# Locate activation script
 	# `-mindepth 3 maxdepth 3` should lock it down to the exact place where .venv is located.
 	ACTFILE=$(find . -maxdepth 3 -mindepth 3 -type f -name activate 2>/dev/null | head -n 1)
+
+	# Fallback: walk upward a few levels for a shared project .venv.
+	if [[ -z "$ACTFILE" ]]; then
+		local updir="$PWD"
+		for _ in {1..4}; do
+			if [[ -f "$updir/.venv/bin/activate" ]]; then
+				ACTFILE="$updir/.venv/bin/activate"
+				break
+			fi
+			[[ "$updir" == "/" ]] && break
+			updir="$(dirname "$updir")"
+		done
+	fi
 
 	if [[ "$PY_DEBUG" == 1 ]]; then
 		echo "Results: $ACTFILE"
@@ -87,7 +146,7 @@ venv_autoactivate() {
 	case "$decision" in
 	always)
 		echo "Python .venv activated\!" | lolcat -paf
-		activate_venv_update_ps1 $REALPATH $ACTFILE
+		activate_venv $REALPATH $ACTFILE
 		errno=0
 		return
 		;;
@@ -112,11 +171,11 @@ Decision:"
 	case "$reply" in
 	[yY1])
 		echo -e "$ACTFILE set to \033[48;2;0;255;0mactivate once\033[0m"
-		activate_venv_update_ps1 $REALPATH $ACTFILE
+		activate_venv $REALPATH $ACTFILE
 		;;
 	[aA3])
 		echo -e "$ACTFILE set to \033[48;2;0;255;0malways\033[0m"
-		activate_venv_update_ps1 $REALPATH $ACTFILE
+		activate_venv $REALPATH $ACTFILE
 		echo "$dir always" | tee "$VENVAUTO_FILE"
 		;;
 	[N4])

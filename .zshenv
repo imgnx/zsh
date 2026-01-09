@@ -18,11 +18,13 @@ setopt DEBUG_BEFORE_CMD
 #### PLACE ALL NEW SCRIPTS BELOW THIS LINE ####
 
 # Feature flags
+. "${Z:-/Users/donaldmoore/.config/zsh}/flags.zsh" # <------ Set flags here
 # export TABULA_RASA="${TABULA_RASA}" # Can't do that with this one and it has to be first. It's the "blank slate" feature flag.
 export HARD_RESET="${HARD_RESET:-}"
 export ZSH_DEBUG="${ZSH_DEBUG:-}"
 export DEBUG_LEVEL="${DEBUG_LEVEL:-}"
-export FEATURE_FLAGS=("TABULA_RASA" "HARD_RESET" "ZSH_DEBUG")
+export DISABLE_TMUX="${DISABLE_TMUX:-}"
+export FEATURE_FLAGS=("TABULA_RASA" "HARD_RESET" "ZSH_DEBUG" "DISABLE_TMUX")
 
 if [[ "$DEBUG_LEVEL" > 0 ]]; then
 	echo "ZSH DEBUG_LEVEL: $DEBUG_LEVEL"
@@ -39,7 +41,7 @@ for flag in $FEATURE_FLAGS; do
 	fi
 	if [[ $val == true || ($val =~ '^[0-9]+$' && $val -gt 0) ]]; then
 
-		echo -en "\033[48;2;20;255;0m ${flag} \033[0m"
+		echo -en "\033[38;2;20;255;0m ${flag} \033[0m"
 		case $flag in
 		TABULA_RASA)
 			if [[ "$TABULA_RASA" == true || (($TABULA_RASA -gt 1)) ]]; then
@@ -71,7 +73,7 @@ source $XDG_CONFIG_HOME/zsh/bin/__wrap_notice
 # Homebrew
 
 alias cl="clear"
-alias python="/opt/homebrew/bin/python3.12"
+alias python="python3"
 # alias pythong="python"
 alias pip="pip3" # Homebrew
 alias ls="eza"
@@ -82,7 +84,7 @@ alias gcp="gcloud storage cp --no-clobber"
 alias grsync="gcloud storage rsync --no-clobber"
 alias ai="cd $HOME/src/dinglehopper/agents/codex.d && ls -la; say \"Please select an action to perform from the list of prompts or say \`divide by seven\` and hit enter to begin interactively.\""
 typeset -a TIPS
-TIPS=("exec \`nmap\` to scan the network." "exec \`path\` or \`fpath\` to help you debug \$PATH vars.")
+TIPS=("exec \`nmap\` to scan the network." "exec \`path\` or \`fpath\` to help you debug \$PATH vars." "For an integrated terminal within the Emacs development environment, type \`M-x eshell\`." "JSON is a data interchange format. It cannot contain methods, call \`setImmediate()\`, or represent an iterator.")
 RANDOM_TIP="$TIPS[RANDOM % $#TIPS + 1]"
 echo -e "\033[0m\033[38;2;255;225;0m\033[1m Tip: $RANDOM_TIP\033[0m"
 
@@ -96,7 +98,7 @@ python -c "import sys; print(sys.executable); print(sys.prefix)" >/dev/null &&
 	echo -en "\033[2mpip:\033[0m\033[32m canhaz\033[0m\n" ||
 	echo -en "\033[2mpip:\033[0m\033[5m\033[31m cannothaz\!\033[0m\n"
 
-echo -e "\033[48;2;30;30;33m\"When in doubt, use brute force.\"
+echo -e "\n\033[48;2;30;30;33m\"When in doubt, use brute force.\"
 - Ken Thompson\033[0m";
 autoload -Uz compinit
 compinit

@@ -1,9 +1,15 @@
+#!/bin/zsh
 #shellcheck disable=all
+#shfmt disable=all
 
 # export TABULAR_RASA=
 # export ZSH_DEBUG =
 # export PY_DEBUG=
 # export HARD_RESET=
+
+debug() {
+	zsh -xv
+}
 
 ##### FLAGS AND VARIABLES GO ABOVE THIS LINE
 
@@ -21,6 +27,65 @@ autoload -U add-zsh-hook
 
 ##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
+when() {
+	# Find .breadcrumb files, print mtime + path, sort newest first
+	local files
+	files=$(find "$HOME" -type f -name ".breadcrumb" -print0 |
+		xargs -0 stat -f "%m %N" |
+		sort -rn |
+		cut -d' ' -f2-)
+
+	# If nothing found, exit quietly
+	[ -z "$files" ] && return 0
+
+	# Output contents to bat
+	printf "%s\n" "$files" | xargs bat --style=plain
+}
+
+theme() {
+	cmd="$1"
+	case $cmd in
+	init)
+		THEME_INIT "$@"
+		;;
+	set)
+		SET_THEME "$@"
+		;;
+	roll | reroll)
+		THEME_ROLL "$@"
+		;;
+	*)
+		echo -en "Please select an action:
+
+1. \033[38;2;0;123;255m(i) \033[33mtheme init\033[0m
+2. \033[38;2;0;123;255m(s) \033[33mtheme set\033[0m
+3. \033[38;2;0;123;255m(r) \033[33mtheme roll/reroll\033[0m
+
+Your selection: "
+		read -r -k 1 res
+		case $res in
+		[1i])
+			theme init
+			;;
+		[2s])
+			theme set
+			;;
+		[3r])
+			theme roll
+			;;
+		*)
+			echo "Invalid response \`$res\`. Exiting."
+			;;
+		esac
+		;;
+	esac
+}
+
+modules() {
+	cd "$MODULES"
+	when | head -n 10
+}
+
 path() {
 	export PATH_2="$(mktemp)"
 	print -rl -- "${path[@]}" >"$PATH_2"
@@ -35,9 +100,9 @@ fpath() {
 
 shava() {
 	node -e <(
-		cat <<@@@
+		cat <<'EOF'
 console.log("Hello, $(basename $HOME)! Your first argument is \${process.argv[1]}");
-@@@
+EOF
 	) -- "$ARG1"
 
 }
@@ -63,36 +128,218 @@ chkyn() {
 	done
 }
 
-__wrap_notice codex
-codex() {
+seza() {
 	emulate -L zsh
-	set -euo pipefail
+	setopt pipefail
 
-	local OUT UUID
-	OUT="$(mktemp)"
-
-	if [[ -x "./codex" ]]; then
-		script -q -F "$OUT" ./codex "$@"
+	local themefile
+	if (($ + functions[THEMEFILE])); then
+		themefile="$(THEMEFILE)"
 	else
-		script -q -F "$OUT" /opt/homebrew/bin/codex "$@"
+		themefile="${THEMEFILE:-$HOME/.themefile}"
+	fi
+	[[ -f "$themefile" ]] && source "$themefile"
+
+	local seza_theme_color="${THEME_COLOR:-}"
+	local seza_theme_icon=""
+	# Prefer explicit seza icon vars, otherwise reuse NAMESPACE as requested.
+	if [[ -n "${SEZA_ICON:-}" ]]; then
+		seza_theme_icon="$SEZA_ICON"
+	elif [[ -n "${SEZA_NAMESPACE_ICON:-}" ]]; then
+		seza_theme_icon="$SEZA_NAMESPACE_ICON"
+	elif [[ -n "${NAMESPACE:-}" ]]; then
+		seza_theme_icon="$NAMESPACE"
 	fi
 
-	UUID="$(rg -o 'codex resume ([A-Fa-f0-9-]{36})' "$OUT" | awk '{print $3}' | tail -n 1)"
+	if ! command -v eza >/dev/null 2>&1; then
+		print -u2 "seza: eza is not installed"
+		return 127
+	fi
 
-	if [[ -n "${UUID:-}" ]]; then
-		cat >./codex <<EOF
-#!/usr/bin/env bash
-exec /opt/homebrew/bin/codex resume $UUID "\$@"
-EOF
-		chmod +x ./codex
-		echo "✓ Created ./codex wrapper for session $UUID" >&2
-		rm -f "$OUT"
+	local -a pairs
+	local k v
+	if typeset -p EZA_SPECIAL >/dev/null 2>&1; then
+		if [[ "$(typeset -p EZA_SPECIAL 2>/dev/null)" == *"-A"* ]]; then
+			typeset -A EZA_SPECIAL
+			local -a __eza_special_keys=()
+			eval '__eza_special_keys=("${(@k)EZA_SPECIAL}")'
+			for k in "${__eza_special_keys[@]}"; do
+				v="${EZA_SPECIAL[$k]}"
+				pairs+=("${k}=${v}")
+			done
+		else
+			for k in "${EZA_SPECIAL[@]}"; do
+				pairs+=("$k")
+			done
+		fi
+	fi
+
+	# Auto-add the current directory’s own theme defaults (THEME_COLOR + NAMESPACE-as-icon)
+	if [[ -n "$seza_theme_color" ]]; then
+		local cwd_base="${PWD:t}"
+		local cwd_abs="${PWD:A}"
+		local have_base=0 have_abs=0
+		for k in "${pairs[@]}"; do
+			[[ "$k" == "${cwd_base}="* ]] && have_base=1
+			[[ "$k" == "${cwd_abs}="* ]] && have_abs=1
+		done
+		((have_base)) || pairs+=("${cwd_base}=${seza_theme_color}")
+		((have_abs)) || pairs+=("${cwd_abs}=${seza_theme_color}")
+	fi
+
+	local eza_colors="${EZA_COLORS:-}"
+	if ((${#pairs[@]})); then
+		local joined_pairs
+		local IFS=:
+		joined_pairs="${pairs[*]}"
+		if [[ -n "$eza_colors" ]]; then
+			eza_colors="${eza_colors}:${joined_pairs}"
+		else
+			eza_colors="$joined_pairs"
+		fi
+	fi
+
+	local -a argv
+	argv=("$@")
+
+	local want_icons=0
+	local arg
+	for arg in "${argv[@]}"; do
+		[[ "$arg" == "--special-icons" ]] && want_icons=1
+	done
+	if ((want_icons)); then
+		local -a filtered_args=()
+		for arg in "${argv[@]}"; do
+			[[ "$arg" == "--special-icons" ]] && continue
+			filtered_args+=("$arg")
+		done
+		argv=("${filtered_args[@]}")
+	fi
+
+	if ((want_icons)); then
+		local icons_kv="${EZA_SPECIAL_ICONS_KV:-}"
+		if [[ -z "$icons_kv" ]] && typeset -p EZA_SPECIAL_ICONS >/dev/null 2>&1 && [[ "$(typeset -p EZA_SPECIAL_ICONS 2>/dev/null)" == *"-A"* ]]; then
+			local -a icon_kv_flat=()
+			eval 'icon_kv_flat=("${(@kv)EZA_SPECIAL_ICONS}")'
+			local -a icon_pairs
+			local i
+			for ((i = 1; i <= ${#icon_kv_flat[@]}; i += 2)); do
+				k="${icon_kv_flat[i]}"
+				v="${icon_kv_flat[i + 1]}"
+				icon_pairs+=("${k}=${v}")
+			done
+			if ((${#icon_pairs[@]})); then
+				icons_kv="$(printf '%s\n' "${icon_pairs[@]}")"
+			fi
+		fi
+
+		if [[ -n "$seza_theme_icon" ]]; then
+			local cwd_base="${PWD:t}"
+			local cwd_abs="${PWD:A}"
+			local -a icon_lines
+			if [[ -n "$icons_kv" ]]; then
+				while IFS= read -r line; do
+					icon_lines+=("$line")
+				done <<<"$icons_kv"
+			fi
+			local have_base=0 have_abs=0
+			for k in "${icon_lines[@]}"; do
+				[[ "$k" == "${cwd_base}="* ]] && have_base=1
+				[[ "$k" == "${cwd_abs}="* ]] && have_abs=1
+			done
+			((have_base)) || icon_lines+=("${cwd_base}=${seza_theme_icon}")
+			((have_abs)) || icon_lines+=("${cwd_abs}=${seza_theme_icon}")
+			if ((${#icon_lines[@]})); then
+				icons_kv="$(printf '%s\n' "${icon_lines[@]}")"
+			fi
+		fi
+
+		local -a env_prefix
+		[[ -n "$eza_colors" ]] && env_prefix+=("EZA_COLORS=$eza_colors")
+		[[ -n "$icons_kv" ]] && env_prefix+=("EZA_SPECIAL_ICONS_KV=$icons_kv")
+
+		{ "${env_prefix[@]}" eza --oneline --icons --color=always "${argv[@]}"; } | python3 - <<'PY'
+import fnmatch
+import os
+import re
+import sys
+
+ansi = re.compile(r'\x1b\[[0-9;]*m')
+raw_map = os.environ.get("EZA_SPECIAL_ICONS_KV", "")
+icons = {}
+for line in raw_map.splitlines():
+    if "=" in line:
+        key, val = line.split("=", 1)
+        icons[key] = val
+
+for raw_line in sys.stdin:
+    raw_line = raw_line.rstrip("\n")
+    plain = ansi.sub("", raw_line).strip()
+    if not plain:
+        sys.stdout.write(raw_line + "\n")
+        continue
+
+    parts = plain.split(None, 1)
+    name = parts[1] if len(parts) > 1 else parts[0]
+
+    prefix = ""
+    for pattern, icon in icons.items():
+        if fnmatch.fnmatch(name, pattern):
+            prefix = icon + " "
+            break
+
+    sys.stdout.write(prefix + raw_line + "\n")
+PY
+		return $?
+	fi
+
+	if [[ -n "$eza_colors" ]]; then
+		EZA_COLORS="$eza_colors" eza --icons "${argv[@]}"
 	else
-		echo "✗ No resume UUID found in $OUT" >&2
+		eza --icons "${argv[@]}"
+	fi
+}
+
+__wrap_notice codex
+codex() {
+	touch ./codex.log
+
+	local ROOT OUT UUID BIN
+	ROOT="$(realpath ./)"
+	OUT="$ROOT/codex.log"
+
+	if [[ -x "$ROOT/codex" ]]; then
+		BIN="$ROOT/codex"
+	else
+		BIN="/opt/homebrew/bin/codex"
+	fi
+
+	script -a -q -F "$OUT" "$BIN" -c history.persistence=none "$@"
+
+	UUID="$(rg -oP 'codex resume \K[0-9A-Fa-f-]{36}' "$OUT" | tail -n 1)"
+	if [[ -n "${UUID:-}" ]]; then
+		cat >"$ROOT/codex" <<EOF
+#!/usr/bin/env bash
+exec /opt/homebrew/bin/codex -c history.persistence=none resume $UUID "\$@"
+EOF
+		chmod +x "$ROOT/codex"
+		print -ru2 -- "✓ Created $ROOT/codex wrapper for session $UUID"
+	else
+		print -ru2 -- "✗ No resume UUID found in $OUT"
 		return 1
 	fi
 
-	echo "\033[42View logs with codexlog\033[0m";
+	printf "\033[42mView logs with: codexlog\033[0m\n"
+}
+
+codexlog() {
+	local ROOT OUT
+	ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
+	OUT="$ROOT/codex.log"
+	[[ -f "$OUT" ]] && bat "$OUT" || {
+		print -ru2 -- "No log at $OUT"
+		return 1
+	}
 }
 
 # replace_line() {
@@ -102,7 +349,7 @@ EOF
 #     "$target"' > "$tmp" && mv "$tmp" "$target"
 # }
 
-unalias rl >/dev/null 2>&1
+# unalias rl >/dev/null 2>&1
 alias rl="replace_line"
 alias rp="replace_line"
 
@@ -115,47 +362,51 @@ trip() {
 alias trax="trip"
 
 __wrap_notice man
+export READER="bat"
 man() {
 	local command="$1"
 	echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
 	mkdir -p "${MONOLITH:-HOME}/docs/info"
 	LOX="${MONOLITH:-HOME}/docs/info/${command}.info"
-	if /usr/bin/man -w "$command" >/dev/null 2>&1; then
+	if [[ -f ${LOX} ]]; then
+		echo -en "A mandoc for $command already exists in$LOX. To refresh it, execute \`\033[33m/bin/rm -rf $LOX\033[0m\`."
+		$READER $LOX
+	elif /usr/bin/man -w "$command" >/dev/null 2>&1; then
 		/usr/bin/man "$command" | col -b >"$LOX"
-		echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy
-in \033[38;2;255;205;0m${MONOLITH:-HOME}/docs/info/$command.info\033[0m ."
+		echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-HOME}/docs/info/$command.info\033[0m ."
 		echo
 		echo -e "Menu Options:
 
 Press ...[1] to ...[2]
-b     Open the doc in \`bat\`
-c     \`cat\` the doc to the shell and exit
-d     Open the doc with \`info\`
-e     Open the doc with $EDITOR
-r     Open the doc with the native reader.*
+1. (a)     Open the doc with $READER.
+2. (b)     Open the doc in 'bat'.
+3. (c)     Open the doc with 'cat' and exit.
+4. (d)     Open the doc with 'info'.
+5. (e)     Open the doc with $EDITOR.
+
 
 * You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the docs with.
 "
 
 		read -r answer
 		case $answer in
-		b)
+		a | 1)
+			$READER "$LOX"
+			;;
+		b | 2)
 			bat "$LOX"
 			;;
-		c)
+		c | 3)
 			cat "$LOX"
 			;;
-		d)
+		d | 4)
 			info "$LOX"
 			;;
-		e)
+		e | 5)
 			$EDITOR "$LOX"
 			;;
-		r)
-			open "$LOX"
-			;;
 		*)
-			echo "Exiting..."
+			open "$LOX"
 			;;
 		esac
 	fi
@@ -339,7 +590,7 @@ function createWindow () {
   win.loadFile('index.html')
 }
 
-app.whenReady().then(() => {
+app.whenwReady().then(() => {
   createWindow()
 
   app.on('activate', () => {
@@ -400,7 +651,6 @@ root() {
 dusort() {
 	du -sh -- ./*(D) | sort -hr | bat --style=plain
 }
-alias d="dusort"
 
 # In a file now...
 # clean() {
@@ -853,7 +1103,7 @@ wakewin() {
 }
 
 function daw() {
-	cd "$TRIAGE/digital-audio-workspace/"
+	cd "$MODULES/BARE/digital-audio-workspace/"
 }
 
 fnsh() {
@@ -935,8 +1185,8 @@ reset() {
 #     pnpm "$@"; # muahahah
 # }
 
-# re() extracted to bin/re.zsh
-source "${ZDOTDIR:-.}/bin/re.zsh"
+# re() extracted to bin/zsh-re
+source "${ZDOTDIR:-.}/bin/zsh-re"
 
 alert() {
 	while true; do
@@ -944,6 +1194,14 @@ alert() {
 		read -t 2 || continue
 		break
 	done
+	fg
+}
+
+daily() {
+	setopt local_options monitor
+	"$@" |& $EDITOR &
+	alert
+	fg %+
 }
 
 srv() {
@@ -981,14 +1239,8 @@ alias st=static
 alias std=static
 alias standalone=static
 
-__wrap_notice eza
-eza() {
-	/opt/homebrew/bin/eza --icons=always "$@"
-}
-
-# can() extracted to bin/can.zsh
-source "${ZDOTDIR:-.}/bin/can.zsh"
-
+# can() extracted to bin/zsh-can
+source "${ZDOTDIR:-.}/bin/zsh-can"
 
 # --- wrapper on "undefined": zsh hook for missing commands -------------------
 # If a command is not found, suggest brew install lines (formula vs cask)
@@ -1026,9 +1278,8 @@ gtkpr() {
 
 alias gatekeeper="gtkpr"
 
-# docs() extracted to bin/docs.zsh
-source "${ZDOTDIR:-.}/bin/docs.zsh"
-
+# docs() extracted to bin/zsh-docs
+source "${ZDOTDIR:-.}/bin/zsh-docs"
 
 imgnx() {
 	local src="$1" dest="$2"
@@ -1470,24 +1721,6 @@ rm() {
 	if [[ ${#files[@]} -eq 0 ]]; then
 		/bin/rm "${flags[@]}"
 	fi
-}
-
-__wrap_notice rm
-real() {
-	case "$1" in
-	"rm")
-		/bin/rm "$@"
-		;;
-	"gcloud")
-		/opt/homebrew/bin/gcloud "$@"
-		;;
-	"gsutil")
-		/opt/homebrew/bin/gsutil "$@"
-		;;
-	*)
-		echo "Command not found. A list of commands is kept in \`$HOME/Desktop/real.req.list\`  Exiting."
-		;;
-	esac
 }
 
 init() {
@@ -2009,14 +2242,10 @@ init_capacitor() {
 }
 
 taku-swift() {
-	if [ "$#" -ne 1 ]; then
-		printf 'Usage: %s <output-file>\n' "$0" >&2
-		exit 1
-	fi
-
-	output_file=$1
-
-	cat <<'EOF' >"$output_file"
+	mkdir -p ./swift && pushd ./swift
+	echo "Creating executable..."
+	swift package init --type executable
+	cat <<'EOF' >"WebKitAppDelegate.swift"
 import Cocoa
 import WebKit
 
@@ -2065,6 +2294,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 EOF
+	echo -e "\033[32mSwift package init complete."
+	popd
 }
 
 taku-c() {
@@ -2172,9 +2403,8 @@ EOF
 	# 	fi
 }
 
-# git() extracted to bin/git.zsh
-source "${ZDOTDIR:-.}/bin/git.zsh"
-
+# git() extracted to bin/zsh-git
+source "${ZDOTDIR:-.}/bin/zsh-git"
 
 # Get the path of the current script
 script_path="${0}"
@@ -2628,6 +2858,13 @@ when() {
 		done
 }
 
+where() {
+	# From chpwd_breadcrumbs
+	find . "$@" -type f -iname ".breadcrumb*" | xargs stat -f "%m %N" | sort -hr | bat &
+	alert && fg
+
+}
+
 spinner() {
 	local pid=$1
 	local delay=0.1
@@ -2642,220 +2879,9 @@ spinner() {
 	printf "    \b\b\b\b"
 }
 
-# pmodload () {
-# 	local -A ices
-# 	(( ${+ICE} )) && ices=("${(kv)ICE[@]}" teleid '')
-# 	local -A ICE ZINIT_ICE
-# 	ICE=("${(kv)ices[@]}") ZINIT_ICE=("${(kv)ices[@]}")
-# 	while (( $# ))
-# 	do
-# 		ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
-# 		ZINIT_ICE[teleid]="PZT::modules/$1${ICE[svn]-/init.zsh}"
-# 		if zstyle -t ":prezto:module:$1" loaded 'yes' 'no'
-# 		then
-# 			shift
-# 			continue
-# 		else
-# 			[[ -z ${ZINIT_SNIPPETS[PZT::modules/$1${ICE[svn]-/init.zsh}]} && -z ${ZINIT_SNIPPETS[https://github.com/sorin-ionescu/prezto/trunk/modules/$1${ICE[svn]-/init.zsh}]} ]] && .zinit-load-snippet PZT::modules/"$1${ICE[svn]-/init.zsh}"
-# 			shift
-# 		fi
-# 	done
-# }
-
-# System Information
-# function 6D078F25_9FBE_4352_A453_71F7947A3B01() {
-
-# 	local ZSH_COUNT CPU_USAGE RAM
-# 	local mtime
-# 	if [[ "$OSTYPE" == darwin* ]]; then
-# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-# 	else
-# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-# 	fi
-# 	[[ ! -d "$HOME/tmp" ]] && mkdsir -p "$HOME/tmp"
-# 	[[ ! -f $SYSLINE_CACHE ]] && touch $SYSLINE_CACHE
-# 	CPU_USAGE=$(LANG=C ps -A -o %cpu | awk '{s+=$1} END {printf "%.1f", s}')
-# 	if vm_stat >/dev/null 2>&1; then
-# 		RAM=$(vm_stat | awk "/Pages free/ { printf \"%.1f\", \$3 * 4096 / 1024 / 1024 }")
-# 	else
-# 		RAM=$(free -m | awk "/Mem:/ { printf \"%.1f\", \$4 }")
-# 	fi
-# 	ZSH_COUNT=$(pgrep -c zsh 2>/dev/null || ps -eo comm | grep -c "^zsh")
-# 	if [[ $ZSH_COUNT -gt 30 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FF2000} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 20 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FF8000} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 15 ]]; then
-# 		CONCURRENT_SHELLS="%F{#FFFF00} ${ZSH_COUNT} %f"
-# 	elif [[ $ZSH_COUNT -gt 10 ]]; then
-# 		CONCURRENT_SHELLS="%F{#80FF00} ${ZSH_COUNT} %f"
-# 	else
-# 		CONCURRENT_SHELLS="%F{#4400CC} ${ZSH_COUNT} %f"
-# 	fi
-
-# 	# Newline for sparsity
-# 	echo -e "~zQt:| ${CONCURRENT_SHELLS} |~\tCPU:| ${CPU_USAGE}%% |~\tRAM:| ${RAM}MB" >"$SYSLINE_CACHE"
-# }
-
-# Prompt
-# function F6596432_CA98_4A50_9972_E10B0EE99CE9() {
-# 	local mtime
-# 	if [[ "$OSTYPE" == darwin* ]]; then
-# 		mtime=$(stat -f %m "$SYSLINE_CACHE" 2>/dev/null)
-# 	else
-# 		mtime=$(stat -c %Y "$SYSLINE_CACHE" 2>/dev/null)
-# 	fi
-# 	local now=$(date +%s)
-# 	if [[ -n "$mtime" && "$mtime" -lt $((now - 10)) ]]; then
-# 		6D078F25_9FBE_4352_A453_71F7947A3B01
-
-# 	fi
-# 	local sysline=""
-# 	[[ -f $SYSLINE_CACHE ]] && sysline=$(<"$SYSLINE_CACHE")
-
-# }
-
-pppp() {
-
-	echo -e "\033[36m"
-
-	cat <<EOF
-    # Pick, Process, Push, Persist
-
-    How a computer processes items in a loop.
-
-    Breakdown:
-
-    Pick (Load):
-    Pick the data, value, or input for processing. In a loop, this is where you load the current item (e.g., a file name, or the current loop value).
-    You pick the value or item to work on next.
-
-    Process (Execute):
-    Process the data or command. This is the execution phase where your loop or command actually does something—whether it's comparing values, running a command, or modifying something.
-You process the data or execute the logic.
-
-Push (Offload temporarily):
-Push the data out temporarily, like sending it to stdout, a buffer, or the screen. This is the point where you send the result somewhere briefly.
-You push the result to an output (such as printing to the terminal).
-
-Persist (Offload persistently):
-Persist the result if needed. This might involve saving the output to a file, database, or storing the final result somewhere permanent.
-You persist the data if necessary (e.g., write to a file, save a result).
-
-
-Why it Works:
-
-Pick: Like picking a fruit off a tree — you’re selecting the data to work with.
-
-Process: The actual processing or execution of commands, like squeezing or pressing to shape something.
-
-Push: Pushing the results somewhere temporary, like pushing a button.
-
-Persist: When you keep or store the result, like a keepsake or an important piece of data.
-
-Mnemonic:
-"Pick, Process, Push, Persist" is a nice, rhythmic phrase that can help you remember the cycle of how a loop or command executes at both the shell and assembly level.
-EOF
-	echo -e "\033[0m"
-}
-
-unalias ls >/dev/null 2>&1
-__wrap_notice ls
-ls() {
-	if [[ ! -o interactive ]]; then
-		/bin/ls "$@"
-		return
-	fi
-
-	if [[ -n $1 ]]; then
-		eza "$@"
-		return
-	fi
-
-	#tmpfile="$(mktemp)";
-	#TRAPEXIT() {
-	#    /bin/rm -f $tmpfile
-	#}
-
-	eza "$@"
-
-	echo "\n\033[38;2;255;205;0mTip: execute the following command to get a plaintext list of files.\033[0m
-    print -rl -- ./* | sort -h | column -s $'\\\t'
-"
-
-	#eza --color=always --icons "$@" >&2 > "$tmpfile"
-
-	#echo -e "\n\033[34mstdout: (not including this line) (>&1)\033[0m\n" >&2 >/dev/null
-
-	#bat --style plain "$tmpfile";
-}
-
-# imgnx_ls() {
-#     tmpfile1="$(mktemp)"
-#     tmpfile2="$(mktemp)"
-#     TRAPEXIT() {
-# 	rm -rf "$tmpfile1" "$tmpfile2"
-#     }
-
-#     GREEN='\033[0;32m'
-#     NC='\033[0m' # No Color
-
-#     args="$@"
-
-#     # IFS=$'\t'
-
-#     if [[ -z "$args" ]]; then
-# 	print -rl -- ./* | sort -h | column -s $'\t' > $tmpfile1
-# 	echo "tmpfile:"
-# 	cat "$tmpfile1"
-# 	local prepend_delimiter="false"
-# 	# Process line by line
-# 	while IFS=$'\n' read -r line; do
-# 	    echo "line: $line";
-# 	    # Split the line into an array 'fields' using default IFS (whitespace)
-# 	    # Zsh's 'read -A' handles variable numbers of columns automatically
-# 	    while IFS=$'\t' read -r item; do
-# 		# -x checks if the file is executable
-# 		echo "item: $item"
-# 		if [[ -x "$item" ]]; then
-# 		    # Print with green highlighting
-# 		    printf "${GREEN}%-20s${NC} " "$item" >> $tmpfile2
-# 		else
-# 		    # Print normally
-# 		    printf "%-20s " "$item" >> $tmpfile2
-# 		fi
-# 	    done <<< $line
-# 	    echo "" >> $tmpfile2 # Newline after each row
-# 	done < $tmpfile1
-
-# 	# while IFS=$'\t' read -r ; do
-# 	#     if [[ $prepend_delimiter == "false" ]]; then
-# 	# 	prepend_delimiter="true"
-# 	#     elif [[ $prepend_delimiter == "true" ]]; then
-# 	# 	echo -en "\t" >> $tmpfile2
-# 	#     fi
-# 	#     if [[ -x "$line" ]]; then
-# 	# 	echo -en "\033[38;2;65;255;65m$line\033[0m" >> $tmpfile2
-# 	#     else
-# 	# 	echo -en "$line" >> $tmpfile2
-# 	#     fi
-
-# 	# done < $tmpfile1
-# 	# echo -en "\n" >> $tmpfile2
-# 	cat $tmpfile2 | column -s $'\t'
-
-# 	# elif [[ "$@" == *" -l "* || "$@" == *" l "* ]]; then
-# 	# eza -bGF --header --git --color=always --group-directories-first --long "$args"
-#     else
-# 	/bin/ls "$@"
-# 	# eza -bGF --header --git --color=always --group-directories-first "$@"
-#     fi
-# }
-
-unalias eza >/dev/null 2>&1
 __wrap_notice eza
 eza() {
-	command eza --icons "$@"
+	command eza --icons=always "$@"
 }
 
 autoLogy() {
@@ -2883,20 +2909,22 @@ _retro_indexes() {
 }
 compdef _retro_indexes retro
 
-# venv auto-activation helpers extracted to bin/venv_autoactivate.zsh
-source "${ZDOTDIR:-.}/bin/venv_autoactivate.zsh"
-
+# venv auto-activation helpers extracted to bin/zsh-venv-autoactivate
+source "${ZDOTDIR:-.}/bin/zsh-venv-autoactivate"
 
 debounceBanner() {
 
 	local stampfile="/tmp/taku.banner.last_ts"
-	local timestamp last_ts=0
+	local -i timestamp=0 last_ts=0
 
 	timestamp="$(date +%s)"
 
 	# If we have a previous stamp, read it
 	if [[ -f "$stampfile" ]]; then
-		read -r last_ts <"$stampfile"
+		local last_ts_raw
+		read -r last_ts_raw <"$stampfile"
+		# Strip any non-digits to avoid math parse errors.
+		last_ts=${last_ts_raw//[^0-9]/}
 	fi
 
 	echo "Δ = $((timestamp - last_ts))"
@@ -2912,13 +2940,16 @@ debounceBanner() {
 throttleBanner() {
 
 	local stampfile="/tmp/taku.banner.last_ts"
-	local timestamp last_ts=0
+	local -i timestamp=0 last_ts=0
 
 	timestamp="$(date +%s)"
 
 	# If we have a previous stamp, read it
 	if [[ -f "$stampfile" ]]; then
-		read -r last_ts <"$stampfile"
+		local last_ts_raw
+		read -r last_ts_raw <"$stampfile"
+		# Strip any non-digits to avoid math parse errors.
+		last_ts=${last_ts_raw//[^0-9]/}
 	fi
 
 	echo "Δ = $((timestamp - last_ts))"
@@ -3008,7 +3039,6 @@ typeset -gi ZSH_SCROLL_MARGIN_PCT=40
 #   zle && zle -R
 # }
 
-
 # cleanupPath() {
 #    export PATH="$(bash \"$ZDOTDIR/cleanup.path.sh\")"
 # }
@@ -3017,11 +3047,42 @@ typeset -gi ZSH_SCROLL_MARGIN_PCT=40
 
 # export PATH="$(bash \"$ZDOTDIR/cleanup.path.sh\")"
 
-
 autoThemeFile() {
-  (( $+functions[load_themefile] )) || return 0
-  load_themefile
+	(($ + functions[load_themefile])) || return 0
+	load_themefile
 }
 
 add-zsh-hook chpwd autoThemeFile
 autoThemeFile
+
+keychainenv() {
+	local var="$1"
+	local service="$2"
+
+	export "$var"="$(
+		security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null
+	)"
+}
+bare() {
+	cd "$BARE"
+	when | head -n 10
+}
+
+# Function to save current directory to a hidden file
+save_last_dir() {
+	pwd >~/tmp/.last_pwd
+}
+
+# Add the function to the chpwd hook array
+# This executes every time you use 'cd', 'pushd', or 'popd'
+add-zsh-hook chpwd save_last_dir
+
+# On shell startup, restore the directory if the file exists
+if [[ -f ~/tmp/.last_pwd ]]; then
+	cd "$(cat ~/tmp/.last_pwd)"
+fi
+
+docalert() {
+	bat &
+	alert && fg
+}

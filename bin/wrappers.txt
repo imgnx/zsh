@@ -1,0 +1,10 @@
+nginx -> /opt/homebrew/bin/nginx
+man -> /usr/bin/man
+codex -> /opt/homebrew/bin/codex
+rg -> /opt/homebrew/bin/rg
+reset -> /usr/bin/reset
+eza -> /opt/homebrew/bin/eza
+git -> /opt/homebrew/bin/git
+rm -> /bin/rm
+gsutil -> /opt/homebrew/bin/gsutil
+gcloud -> /opt/homebrew/bin/gcloud

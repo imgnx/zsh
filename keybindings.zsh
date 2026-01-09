@@ -9,17 +9,31 @@
 # Copy the last command’s output to clipboard
 copy_last_output() {
   local cmd out
-  cmd="$(fc -ln -1)" || return
-  out="$({ eval "$cmd"; } 2>/dev/null)"
+  # Defaults to debugger.
+  echo "Copying output of last command:"
+  
+  cmd="$(fc -ln -1)" || return 1
+  echo "Command: $cmd"
+
+  tmpfile="$(mktemp)"
+
+  TRAPEXIT() {
+      rm -rf "$tmpfile"
+  }
+  echo -e "\033[38;2;0;255;0mstdout:\033[0m"  
+  out="$( eval "$cmd" | tee \"$tmpfile\" )"
   print -rn -- "$out" | pbcopy
   zle -M "Copied output of: $cmd"
 }
 
 zle -N copy_last_output
 
+alias CLO="$(copy_last_output)"
+
+
 # Key bindings (Ctrl-R to copy last command output)
-bindkey '^[R' copy_last_output
-bindkey '^R' copy_last_text
+# bindkey '^[R' copy_last_output
+# bindkey '^R' copy_last_text
 bindkey "^A" beginning-of-line
 bindkey "^E" end-of-line
 bindkey "^B" backward-char

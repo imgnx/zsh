@@ -1,7 +1,4 @@
-#!/opt/homebrew/bin/bash
-# shellcheck shell=bash
-
-
+#!/bin/zsh
 
 #! NOTICE: Don't use this to add directories to your path.
 
@@ -16,8 +13,7 @@
 # 	echo "Installing chalk..."
 # fi
 
-mapfile -t imgnx < <(
-	node <<'EOF'
+imgnx=("${(@f)$(node <<'EOF'
 import chalk from "chalk";
 import { execSync } from "node:child_process";
 
@@ -51,7 +47,7 @@ const PATH=[...set].join(":");
 console.log(arr2.join(":"));
 console.log(PATH);
 EOF
-)
+)}")
 
 # export PATH="${imgnx[2]}"
 # echo -e "Current PATH: ${imgnx[0]}"

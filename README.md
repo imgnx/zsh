@@ -40,6 +40,10 @@
 
 ~/.zlogout is for cleanup when logging out.
 
+### 🎨 Theme Engine
+
+- Themes are configured in `.zshrc` and saved per-directory in `.themefile` (see `docs/theme-engine.md` for commands like `THEME`, `THEME_REROLL`, `THEME_INIT`, and `SET_THEME`).
+
 ---
 
 ### 🔥 Bonus Tip: Precedence

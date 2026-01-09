@@ -1,22 +1,63 @@
 #!/bin/zsh
 typeset -A WRAPPERS
+typeset -a WRAP_NOTICE_SUPPRESS=(
+	# Add command names here to silence duplicate wrap warnings.
+)
+
+__WRAP_NOTICE_FILE="${${(%):-%x}:A:h}/wrappers.txt"
 export WRAPPERS
+
+__write_wrappers_file() {
+	local wrap_file="${1:-$__WRAP_NOTICE_FILE}"
+
+	: >| "$wrap_file"
+	for key value in ${(kv)WRAPPERS}; do
+		print -- "$key -> $value" >> "$wrap_file"
+	done
+}
+
 __wrap_notice() {
 	if [[ "$ZSH_DEBUG" != "0" ]]; then
 		local name="$1"
-		local path="$(command -v "$name" 2>/dev/null || true)"
-		if [[ -n "$path" ]]; then
-		    if [[ -n WRAPPERS[$name] ]]; then
-			export WRAPPERS[$name]="$path"
-		    else
-			print -P "Command $name (WRAPPERS[$name]) is wrapped twice!"
-		    fi
+		local current_path
+		local wrap_file="$__WRAP_NOTICE_FILE"
+
+		if [[ -z "$name" ]]; then
+			return
+		fi
+
+		current_path="$(whence -p -- "$name" 2>/dev/null || true)"
+		if [[ -z "$current_path" ]]; then
+			current_path="$(command -v -- "$name" 2>/dev/null || true)"
+		fi
+
+		if [[ -n "$current_path" ]]; then
+			if [[ -z "${WRAPPERS[$name]:-}" ]]; then
+				WRAPPERS[$name]="$current_path"
+				__write_wrappers_file "$wrap_file"
+			else
+				local suppressed=0
+				for skip in "${WRAP_NOTICE_SUPPRESS[@]}"; do
+					if [[ "$skip" == "$name" ]]; then
+						suppressed=1
+						break
+					fi
+				done
+
+				if [[ "$suppressed" == "0" ]]; then
+					print -u2 -- "wrap_notice: command '$name' already wrapped; keeping original ${WRAPPERS[$name]} (silence: add '$name' to WRAP_NOTICE_SUPPRESS in __wrap_notice)"
+				fi
+			fi
 		fi
 	fi
 }
 
 __output_wrap_notice() {
-    for key value in ${(kv)WRAPPERS}; do
-	echo "$key → $value" | column
-    done
+	local wrap_file="$__WRAP_NOTICE_FILE"
+
+	__write_wrappers_file "$wrap_file"
+
+	for key value in ${(kv)WRAPPERS}; do
+		print -- "$key -> $value"
+	done
 }
