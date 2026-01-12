@@ -899,9 +899,14 @@ a() {
 __wrap_notice nginx
 nginx() {
     cd "/opt/homebrew/etc/nginx"
-    echo "The configuration is in here. If you really want to start the server, use the following:"
-    echo -e "\033[38;2;145;152;164m/opt/homebrew/bin/nginx\033[0m"
+    echo -e "The configuration file is in \033[33m$(realpath /opt/homebrew/bin/nginx)\033[0m. Either symlink it or use that one."
 }
+
+__wrap_notice cloudflared
+cloudflared() {
+    /opt/homebrew/bin/cloudflared --cred-file $XDG_CONFIG_HOME/cloudflared/cert.pem "$@"
+}
+
 
 format() {
     if [[ -z "$1" ]]; then
@@ -1027,16 +1032,25 @@ reset() {
 # re() extracted to bin/zsh-re
 source "${ZDOTDIR:-.}/bin/zsh-re"
 
+# alert() extracted to utils/alert
+# where() extracted to utils/where
+# daily() extracted to utils/daily
+
 
 alert() {
     local label="$1"
+    local job_status="Running."
     while true; do
         tput bel
         # Check if user pressed a key within 2 seconds
         if read -t 2; then
-            echo "\n--- Job Status for [$label] ---"
+            echo -e "\033[38;2;0;123;255m\n--- Job Status for \033[7m\033[1m[$label]\033[0m\033[38;2;0;123;255m ---\033[0m"
             # Use jobs -l with grep to show only the process with our UUID
-            jobs -l | grep "$label" || echo "Job completed."
+	    job_list="$(jobs -l)"
+            job_status="$(print -rl job_list | grep \"$label\" || echo \"Job completed.\")"
+	    job_no="$(print -rl job_list | grep \"^\[(0-9)*\]\")"
+	    # echo "$job_status"
+	    [[ ! -z job_no ]] && fg "$job_no"
             break
         fi
     done
@@ -1044,7 +1058,7 @@ alert() {
 
 where() {
     # Generate a unique label for this specific payload
-    local uuid="job_$(uuidgen | cut -d'-' -f1)"
+    local uuid=$(uuidgen)
 
     # Payload Logic: Backgrounded block
     {
@@ -1064,11 +1078,13 @@ where() {
 	    for k in "${(@onk)TWO}"; do
 		echo "${TWO[$k]}"
 	    done | sort -hr |  bat
-	}
-    } &
 
-    # Alert the user and wait for interaction to show status
-    alert "$uuid"
+
+	}
+	# Alert the user and wait for interaction to show status
+	alert "$uuid"
+
+    } &
 }
 
 
@@ -2778,26 +2794,30 @@ _retro_indexes() {
 compdef _retro_indexes retro
 
 # venv auto-activation helpers extracted to bin/zsh-venv-autoactivate
-source "${ZDOTDIR:-.}/bin/zsh-venv-autoactivate"
 
 debounceBanner() {
 
     local stampfile="/tmp/taku.banner.last_ts"
-    local -i timestamp=0 last_ts=0
+    local last_ts_raw timestamp_raw
+    integer timestamp=0 last_ts=0
 
-    timestamp="$(date +%s)"
+    timestamp_raw="$(command date +%s 2>/dev/null || printf '0')"
+    timestamp_raw=${timestamp_raw//[^[:digit:]]/}
+    [[ -n "$timestamp_raw" ]] || timestamp_raw=0
+    (( timestamp = timestamp_raw ))
 
     # If we have a previous stamp, read it
     if [[ -f "$stampfile" ]]; then
-	local last_ts_raw
 	read -r last_ts_raw <"$stampfile"
 	# Strip any non-digits to avoid math parse errors.
-	last_ts=${last_ts_raw//[^0-9]/}
+	last_ts_raw=${last_ts_raw//[^[:digit:]]/}
     fi
+    [[ -n "$last_ts_raw" ]] || last_ts_raw=0
+    (( last_ts = last_ts_raw ))
 
     echo "Δ = $((timestamp - last_ts))"
 
-    # Only show banner if more than5 600 seconds (10 min) has passed since the last time it was requested (debounce)
+    # Only show banner if more than5 600 seconds (10 min) has passed since last time it was requested (debounce)
     if ((timestamp - last_ts > 600)); then
 	banner.sh
     fi
@@ -2808,17 +2828,22 @@ debounceBanner() {
 throttleBanner() {
 
     local stampfile="/tmp/taku.banner.last_ts"
-    local -i timestamp=0 last_ts=0
+    local last_ts_raw timestamp_raw
+    integer timestamp=0 last_ts=0
 
-    timestamp="$(date +%s)"
+    timestamp_raw="$(command date +%s 2>/dev/null || printf '0')"
+    timestamp_raw=${timestamp_raw//[^[:digit:]]/}
+    [[ -n "$timestamp_raw" ]] || timestamp_raw=0
+    (( timestamp = timestamp_raw ))
 
     # If we have a previous stamp, read it
     if [[ -f "$stampfile" ]]; then
-	local last_ts_raw
 	read -r last_ts_raw <"$stampfile"
 	# Strip any non-digits to avoid math parse errors.
-	last_ts=${last_ts_raw//[^0-9]/}
+	last_ts_raw=${last_ts_raw//[^[:digit:]]/}
     fi
+    [[ -n "$last_ts_raw" ]] || last_ts_raw=0
+    (( last_ts = last_ts_raw ))
 
     echo "Δ = $((timestamp - last_ts))"
 
@@ -2829,7 +2854,7 @@ throttleBanner() {
 	printf '%s\n' "$timestamp" >"$stampfile"
     fi
 }
-
+ 
 LIVE_HOT=0
 
 tipTop() {

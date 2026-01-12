@@ -13,19 +13,25 @@ alias -s gp5=abc
 alias -s ptb=abc
 alias -s gpx=abc
 
+# Non-recursive (via R qualifier)
 alias dirs="print -rl -- ./*(DR/)"
 alias d="print -rl -- ./*(DR/)"
+
 alias files="print -rl -- ./*(DR.)"
 alias f="print -rl -- ./*(DR.)"
-alias links="print -rl -- ./*(DR-/)"
-alias l="print -rl -- ./*(DR-/)"
+
+alias links="print -rl -- ./*(DR@)"
+alias l="print -rl -- ./*(DR@)"
+
+# Explicit globstar recursion
 alias recursive_dirs="print -rl -- ./**/*(D/)"
 alias rd="print -rl -- ./**/*(D/)"
+
 alias recursive_files="print -rl -- ./**/*(D.)"
 alias rf="print -rl -- ./**/*(D.)"
-alias recursive_links="print -rl -- ./**/*(D-)"
-alias rl="print -rl -- ./**/*(D-)"
 
+alias recursive_links="print -rl -- ./**/*(@D)"
+alias rl="print -rl -- ./**/*(@D)"
 
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
@@ -185,7 +191,11 @@ alias iphonefix="noiphone"
 alias hexedit="hexedit --color $@"
 # alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
 MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
-BARE="$HOME/src/dinglehopper/modules/BARE/"
+MODS="$HOME/src/dinglehopper/prod"
 
 alias z="cd $Z"
+
+alias cloudflare="cloudflared"
+alias cf="cloudflared"
+
 

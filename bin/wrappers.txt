@@ -1,3 +1,4 @@
+cloudflared -> /opt/homebrew/bin/cloudflared
 nginx -> /opt/homebrew/bin/nginx
 man -> /usr/bin/man
 codex -> /opt/homebrew/bin/codex

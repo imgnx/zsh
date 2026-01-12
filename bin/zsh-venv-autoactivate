@@ -1,13 +1,10 @@
 #!/bin/zsh
-
-export ACTIVE_VENV_MSG
-
-autovenv_hook() {
-    echo -en "$ACTIVE_VENV_MSG"
+prompt_hook() {
+	echo -en "${ACTIVE_VENV_MSG:-\033[38;2;0;255;0m  Python\033[0m .venv: [${AUTOVENV_DIR}/${AUTOVENV_BASE}] (v${version:-unknown})}"
 }
 
 wrap_deactivate() {
-    add-zsh-hook -d precmd autovenv_hook
+	add-zsh-hook -d precmd prompt_hook
 }
 
 activate_venv() {
@@ -16,19 +13,22 @@ activate_venv() {
 \$REALPATH: $1
 \$ACTFILE: $2
 "
+		ls -la $ACTFILE
+
 		echo "\`venv_autoactivate\`: PS1 has venv: $PS1_HAS_VENV"
 	fi
 
 	local REALPATH="$1"
 	local ACTFILE="$2"
-	local DIR="$(basename "$(dirname "$REALPATH")")"
-	local BASE="$(basename "$REALPATH")"
+
+	export AUTOVENV_DIR="$(basename "$(dirname "$REALPATH")")"
+	local AUTOVENV_BASE="$(basename "$REALPATH")"
 	local version=""
 	local venv_python=""
 	local VENV_BIN=""
 	local VENV_ROOT=""
 	if [[ $PS1_HAS_VENV == 1 ]]; then
-		echo "Cannot activate [${DIR}/${BASE}]. .venv is $PS1_HAS_VENV for $ACTIVE_VENV_MSG"
+		echo "Cannot activate [${AUTOVENV_DIR}/${AUTOVENV_BASE}]. A .venv is already active ($PS1_HAS_VENV) for $ACTIVE_VENV_MSG"
 		return 1
 	fi
 
@@ -44,7 +44,8 @@ activate_venv() {
 		export VIRTUAL_ENV="$VENV_ROOT"
 	fi
 	if [[ "${path[1]}" != "$VENV_BIN" ]]; then
-		path=($VENV_BIN ${path:#$VENV_BIN})
+		typeset -U path
+		path=($VENV_BIN $path)
 	fi
 	hash -r 2>/dev/null
 
@@ -56,18 +57,19 @@ activate_venv() {
 	elif [[ -x "$VENV_BIN/python3" ]]; then
 		venv_python="$VENV_BIN/python3"
 	fi
+	
 	if [[ -n "$venv_python" ]]; then
-		version="$("$venv_python" -V 2>/dev/null | awk '{print $2}')"
+		version="$("$venv_python" -V 2>/dev/null | /opt/homebrew/bin/awk '{print $2}')"
 	else
-		version="$(command python -V 2>/dev/null | awk '{print $2}')"
+		version="$(command python -V 2>/dev/null | /opt/homebrew/bin/awk '{print $2}')"
 	fi
-	export PS1L1="$(print -P $PS1 | head -n 1)"
-	export PS1L2="$(print -P $PS1 | tail -n +2)"
-	export ACTIVE_VENV_MSG="\033[38;2;0;255;0m  Python\033[0m .venv: [${DIR}/${BASE}] (v${version:-unknown})"
+	# export PS1L1="$(print -P $PS1 | head -n 1)"
+	# export PS1L2="$(print -P $PS1 | tail -n +2)"
 	# export PS1='$PS1L1 $ACTIVE_VENV_MSG
-# $PS1L2'
+	# $PS1L2'
 	# export PS1_HAS_VENV=1
-	add-zsh-hook precmd autovenv_hook
+	export ACTIVE_VENV_MSG="\033[38;2;0;255;0m  Python\033[0m .venv: [${AUTOVENV_DIR}/${AUTOVENV_BASE}] (v${version:-unknown})"
+	add-zsh-hook precmd prompt_hook
 }
 
 venv_autoactivate() {
@@ -145,7 +147,7 @@ venv_autoactivate() {
 
 	case "$decision" in
 	always)
-		echo "Python .venv activated\!" | lolcat -paf
+		# echo "Python .venv activated\!" | lolcat -paf
 		activate_venv $REALPATH $ACTFILE
 		errno=0
 		return

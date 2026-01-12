@@ -14,6 +14,7 @@ export SRC="$HOME/src"
 export MONOLITH="$HOME/src/dinglehopper"
 export MODULES="$HOME/src/dinglehopper/modules"
 # export DINGLEHOPPER="cd $DINGLEHOPPER"
+export MUSIC_THEORY="$HOME/Pictures/Wallpapers/Music Theory"
 export BLUEPRINTS="$DINGLEHOPPER/blueprints";
 export bp="$DINGLEHOPPER/blueprints"
 export dh="$DINGLEHOPPER"
@@ -462,9 +463,11 @@ export VIRTUAL_ENV_DISABLE_PROMPT=1 # Custom handler in fn.sh
 
 export FONTS=/Users/donaldmoore/Library/Fonts
 
-export Z="$HOME/.config/zsh/"
+export Z="$HOME/.config/zsh"
 export TIMBRES="/Users/donaldmoore/src/dinglehopper/modules/BARE/digital-audio-workspace/assets/timbres/"
 
 export MVT=/Users/donaldmoore/src/dinglehopper/modules/BARE/digital-audio-workspace/music-visual-theory
 
 export DOCS=/Users/donaldmoore/src/dinglehopper/docs/
+export VOIDSPELL="/Users/donaldmoore/src/dinglehopper/srv/voidspell.com"
+export SRV=/Users/donaldmoore/src/dinglehopper/srv

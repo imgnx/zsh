@@ -3,80 +3,80 @@
 
 # Ensure Homebrew
 if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
-	export PATH="/opt/homebrew/bin:$PATH"
+    export PATH="/opt/homebrew/bin:$PATH"
 fi
 
 # Ensure tmux
 if ! which tmux >/dev/null; then
-	echo -n "tmux is not installed. Install now? (Y/n): "
-	read -r -k 1 todo
-	case "$todo" in
+    echo -n "tmux is not installed. Install now? (Y/n): "
+    read -r -k 1 todo
+    case "$todo" in
 	[yY])
-		brew install tmux
-		;;
+	    brew install tmux
+	    ;;
 	[nN]) ;; # no-op
 	*)
-		echo -e "\033[33mSkipped tmux installation...\033[0m"
-		;;
-	esac
+	    echo -e "\033[33mSkipped tmux installation...\033[0m"
+	    ;;
+    esac
 fi
 
 tmux-toggle() {
-	emulate -L zsh
-	local s=${TMUX_TOGGLE_SESSION:-main}
-	if [[ -n $TMUX ]]; then
-		command tmux detach-client
-		return
-	fi
+    emulate -L zsh
+    local s=${TMUX_TOGGLE_SESSION:-main}
+    if [[ -n $TMUX ]]; then
+	command tmux detach-client
+	return
+    fi
 
-	if [[ ! -t 0 || ! -t 1 ]]; then
-		command tmux new-session -A -s "$s" </dev/tty >/dev/tty 2>/dev/tty
-	else
-		command tmux new-session -A -s "$s"
-	fi
+    if [[ ! -t 0 || ! -t 1 ]]; then
+	command tmux new-session -A -s "$s" </dev/tty >/dev/tty 2>/dev/tty
+    else
+	command tmux new-session -A -s "$s"
+    fi
 }
 
 zle -N tmux-toggle
 
 if [[ -n ${terminfo[kf12]} ]]; then
-	bindkey -M emacs "${terminfo[kf12]}" tmux-toggle
-	bindkey -M viins "${terminfo[kf12]}" tmux-toggle
-	bindkey -M vicmd "${terminfo[kf12]}" tmux-toggle
+    bindkey -M emacs "${terminfo[kf12]}" tmux-toggle
+    bindkey -M viins "${terminfo[kf12]}" tmux-toggle
+    bindkey -M vicmd "${terminfo[kf12]}" tmux-toggle
 else
-	bindkey -M emacs $'\e[24~' tmux-toggle
-	bindkey -M viins $'\e[24~' tmux-toggle
-	bindkey -M vicmd $'\e[24~' tmux-toggle
+    bindkey -M emacs $'\e[24~' tmux-toggle
+    bindkey -M viins $'\e[24~' tmux-toggle
+    bindkey -M vicmd $'\e[24~' tmux-toggle
 fi
 
 if [[ "$DISABLE_TMUX" != 1 ]]; then
-	#! Launch in `tmux` by default.
-	if [[ -z "$TMUX" ]]; then
-		# ! Use F12 to open the escape hatch...
-		# bind-key -n F12 detach-client
+    #! Launch in `tmux` by default.
+    if [[ -z "$TMUX" ]]; then
+	# ! Use F12 to open the escape hatch...
+	# bind-key -n F12 detach-client
 
-		# Use a consistent name or keep your UUID logic
-		SESSION_ID="$(uuidgen)"
+	# Use a consistent name or keep your UUID logic
+	SESSION_ID="$(uuidgen)"
 
-		# -d starts it in the background so we can finish the setup
-		# -A attaches if it exists; -s names it; -n names the first window
-		if ! tmux has-session -t "$SESSION_ID" 2>/dev/null; then
-			# INITIAL SETUP: Only runs if the session is brand new
-			tmux new-session -d -s "$SESSION_ID" -n editor 'emacs'
-			tmux split-pane -t "$SESSION_ID" -h
-			tmux split-pane -t "$SESSION_ID" -v
-			tmux split-pane -t "$SESSION_ID" -v -p 33
-			tmux select-pane -t "$SESSION_ID:0.0"
-			echo "Session ID: $SESSION_ID"
-		fi
-
-		# Attach to the session (new or existing)
-		tmux attach-session -t "$SESSION_ID"
+	# -d starts it in the background so we can finish the setup
+	# -A attaches if it exists; -s names it; -n names the first window
+	if ! tmux has-session -t "$SESSION_ID" 2>/dev/null; then
+	    # INITIAL SETUP: Only runs if the session is brand new
+	    tmux new-session -d -s "$SESSION_ID" -n editor 'emacs'
+	    tmux split-pane -t "$SESSION_ID" -h
+	    tmux split-pane -t "$SESSION_ID" -v
+	    tmux split-pane -t "$SESSION_ID" -v -p 33
+	    tmux select-pane -t "$SESSION_ID:0.0"
+	    echo "Session ID: $SESSION_ID"
 	fi
+
+	# Attach to the session (new or existing)
+	tmux attach-session -t "$SESSION_ID"
+    fi
 fi
 
 # Add completions
 if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions.d:"* ]]; then
-	export FPATH="/Users/donaldmoore/.config/zsh/completions.d:$FPATH"
+    export FPATH="/Users/donaldmoore/.config/zsh/completions.d:$FPATH"
 fi
 
 source $XDG_CONFIG_HOME/zsh/completions.zsh
@@ -190,3 +190,7 @@ print -P "${RESET}"
 # bindkey '^R' reset-widget
 
 # bindkey -s '^e' 'emacs\n'
+
+if [[ ":$PATH:" != *":$DINGLEHOPPER/utils:"* ]]; then
+    export PATH="$PATH:$DINGLEHOPPER/utils"
+fi
