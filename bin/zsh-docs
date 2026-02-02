@@ -1,4 +1,5 @@
-docs() {
+# Escape to avoid alias expansion if a docs alias exists.
+\docs() {
 	emulate -L zsh
 
 	# Binaries

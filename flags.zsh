@@ -1,1 +1,2 @@
-export DISABLE_TMUX=1
+export DISABLE_TMUX=0
+export START_IN_TEXAS=0

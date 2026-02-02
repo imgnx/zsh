@@ -9,7 +9,7 @@
 # export OUTPUT_DIR=build_output
 # export JAVA_HOME=$(/usr/libexec/java_home)
 # End Java[TuxGuitar]
-
+export ISH="$DINGLEHOPPER/prod/ish"
 export SRC="$HOME/src"
 export MONOLITH="$HOME/src/dinglehopper"
 export MODULES="$HOME/src/dinglehopper/modules"
@@ -89,6 +89,7 @@ _sanitize_emacs_var EMACS_DUMP_FILE  "${XDG_STATE_HOME}/emacs/auto-save-list/.em
 # ==============================
 #  Zsh Configuration
 # ==============================
+export ZSH_CONFIG_HOME="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 export ZSHDOTDIR="${ZDOTDIR}";
 export ZINIT_HOME="${ZINIT_HOME:-$XDG_CONFIG_HOME/zinit}"
@@ -459,7 +460,7 @@ export BREW_CELLAR_HOME="/usr/local/Cellar/"
 
 # Python
 export VENVAUTO_FILE="$ZDOTDIR/.zsh_venv_auto" 
-export VIRTUAL_ENV_DISABLE_PROMPT=1 # Custom handler in fn.sh 
+export VIRTUAL_ENV_DISABLE_PROMPT=1 # Custom handler in autovenv
 
 export FONTS=/Users/donaldmoore/Library/Fonts
 

@@ -6,6 +6,8 @@ if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
     export PATH="/opt/homebrew/bin:$PATH"
 fi
 
+source $XDG_CONFIG_HOME/zsh/bin/zsh-delayed-script-loader
+
 # Ensure tmux
 if ! which tmux >/dev/null; then
     echo -n "tmux is not installed. Install now? (Y/n): "
@@ -30,13 +32,28 @@ tmux-toggle() {
     fi
 
     if [[ ! -t 0 || ! -t 1 ]]; then
-	command tmux new-session -A -s "$s" </dev/tty >/dev/tty 2>/dev/tty
-    else
 	command tmux new-session -A -s "$s"
+	
+    else
+	command tmux -d -t "$TMUX_SESSION_ID" || command tmux new-session -A -s "$s"
     fi
 }
 
 zle -N tmux-toggle
+
+texas() {
+    # -d starts it in the background so we can finish the setup
+    # -A attaches if it exists; -s names it; -n names the first window
+    if ! tmux has-session -t "$TMUX_SESSION_ID" 2>/dev/null; then
+	# INITIAL SETUP: Only runs if the session is brand new
+	tmux new-session -d -s "$TMUX_SESSION_ID" -n editor 'emacs'
+	tmux split-pane -t "$TMUX_SESSION_ID" -h
+	tmux split-pane -t "$TMUX_SESSION_ID" -v
+	tmux split-pane -t "$TMUX_SESSION_ID" -v -p 33
+	tmux select-pane -t "$TMUX_SESSION_ID:0.0"
+	echo "Session ID: $TMUX_SESSION_ID"
+    fi
+}
 
 if [[ -n ${terminfo[kf12]} ]]; then
     bindkey -M emacs "${terminfo[kf12]}" tmux-toggle
@@ -48,6 +65,28 @@ else
     bindkey -M vicmd $'\e[24~' tmux-toggle
 fi
 
+
+
+###
+### This is the counterpart to the configuration in `tmux` that handles closing `tmux` from F12.
+### If you delete it, I will fire you.
+###
+
+
+# Improved tmux launch function for Zsh widgets
+launch_tmux() {
+  # Forces all file descriptors back to the current TTY
+  # We use TMUX="" to prevent nested sessions if you're already in one
+  ( exec < /dev/tty > /dev/tty 2>&1; TMUX="" tmux attach || tmux new-session )
+  
+  # Ensure the prompt returns to a clean state
+  zle reset-prompt
+}
+
+zle -N launch_tmux
+# Using \033 for the escape prefix as requested
+bindkey '\033[24~' launch_tmux
+
 if [[ "$DISABLE_TMUX" != 1 ]]; then
     #! Launch in `tmux` by default.
     if [[ -z "$TMUX" ]]; then
@@ -56,21 +95,10 @@ if [[ "$DISABLE_TMUX" != 1 ]]; then
 
 	# Use a consistent name or keep your UUID logic
 	SESSION_ID="$(uuidgen)"
-
-	# -d starts it in the background so we can finish the setup
-	# -A attaches if it exists; -s names it; -n names the first window
-	if ! tmux has-session -t "$SESSION_ID" 2>/dev/null; then
-	    # INITIAL SETUP: Only runs if the session is brand new
-	    tmux new-session -d -s "$SESSION_ID" -n editor 'emacs'
-	    tmux split-pane -t "$SESSION_ID" -h
-	    tmux split-pane -t "$SESSION_ID" -v
-	    tmux split-pane -t "$SESSION_ID" -v -p 33
-	    tmux select-pane -t "$SESSION_ID:0.0"
-	    echo "Session ID: $SESSION_ID"
-	fi
-
+	tmux new-session -d -s "$SESSION_ID"
 	# Attach to the session (new or existing)
 	tmux attach-session -t "$SESSION_ID"
+	export TMUX_SESSION_ID="$SESSION_ID"
     fi
 fi
 
@@ -109,10 +137,12 @@ export BG_BLACK="%K{#000000}"
 export BG_WHITE="%K{#FFFFFF}"
 export BG_DARK="%K{#202020}"
 
-DIM=$'%{\e[2m%}'
+export DIM=$'%{\e[2m%}'
 export RESET_ZSH=$'%{\e[0m%}%f%k%s%b'
 export RESET_FG=$'%{\e[39m%}'
 export RESET_BG=$'%{\e[49m%}'
+export STANDOUT=$'%{\e[7m%}'
+export BLINK=$'%{\e[5m%}'
 export RESET="${RESET_ZSH}"
 
 # --- Paths / utilities ---
@@ -138,18 +168,58 @@ source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/bin/zsh-themefile"
 # ======================================================
 # ==================== PROMPT ==========================
 # ======================================================
+              
+export PS1='
+▄ ██╗▄  𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
+ ████╗ ${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_WHITE}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
+▀╚██╔▀ %B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
+  ╚═╝  ${FG_WHITE}󱚞   ${FG_GRAY} '
 
-export PS1=' 𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
-%B${FG_VAR}${DIM}${RESET}${FG_VAR}%S${BG_WHITE}%S %n@%M %s%b${FG_VAR}${RESET_BG}${RESET}
-%B ${LIME}%S NS: ${NAMESPACE} | %2~ ${DIM}%s${RESET_BG}${RESET}
-${FG_WHITE}󱚞   ${FG_GRAY} '
+
+ghost_realpath_placeholder() {
+  if [[ -z "$BUFFER" ]]; then
+      POSTDISPLAY=$"$(pwd -P)"
+  else
+      POSTDISPLAY=""
+  fi
+}
+
+# Register the function as a ZLE widget
+zle -N ghost_realpath_placeholder
+
+# Hook the widget into the Zsh line editor
+# 'self-insert' handles standard typing
+# 'backward-delete-char' handles backspacing back to empty
+add-zsh-hook_ghost() {
+  zle -N self-insert ghost_self_insert
+  zle -N backward-delete-char ghost_backward_delete
+}
+
+ghost_self_insert() {
+  zle .self-insert
+  ghost_realpath_placeholder
+}
+
+ghost_backward_delete() {
+  zle .backward-delete-char
+  ghost_realpath_placeholder
+}
+
+# Initial call to show it on a fresh prompt
+zle -N zle-line-init ghost_realpath_placeholder
+
+# autoload -Uz add-zle-hook-widget
+# add-zle-hook-widget line-pre-redraw _update_realpath_placeholder
+
+VIOLET="%F{#880088}"
+MAGENTA="%F{#FF00FF}"
 
 BLINKY="%F{#FF0000}"
 CLYDE="%F{#FEB945}"
 INKY="%F{#02FFDF}"
 PINKY="%F{#FEB9DF}"
 
-export RPROMPT="SET ROLL INIT ... _THEME ${YELLOW}󰮯${RED} · · · · ${BLINKY}󱙝 ${CLYDE}󱙝 ${INKY}󱙝 ${PINKY}󱙝${RESET}"
+export RPROMPT="${VIOLET}Powered by εmacs${RESET} ${YELLOW}󰮯 ${MAGENTA}· ${RED}· · · · · ${BLINKY}󱙝 ${CLYDE}󱙝 ${INKY}󱙝 ${PINKY}󱙝${RESET}"
 
 # ======================================================
 # ===================== ENV ============================
@@ -192,5 +262,29 @@ print -P "${RESET}"
 # bindkey -s '^e' 'emacs\n'
 
 if [[ ":$PATH:" != *":$DINGLEHOPPER/utils:"* ]]; then
-    export PATH="$PATH:$DINGLEHOPPER/utils"
+    export PATH="$PATH:$DINGLEHOPPER/bin"
 fi
+
+# bun completions
+[ -s "/Users/donaldmoore/.bun/_bun" ] && source "/Users/donaldmoore/.bun/_bun"
+
+bindkey "\033[3;5~" kill-word
+
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$PATH:$HOME/.local/bin"
+fi
+
+# Somehow allows emacs to open multiple files... 1/18/25
+emacs() {
+  if [[ -o interactive && ! -t 0 && -t 1 && "$*" != *"--batch"* && "$*" != *"-batch"* && "$*" != *"--script"* ]]; then
+    command emacs "$@" </dev/tty
+  else
+    command emacs "$@"
+  fi
+}
+
+fn.sh() {
+    emacs $XDG_CONFIG_HOME/zsh/fn.sh
+}
+
+alias fn="fn.sh \"$@\""

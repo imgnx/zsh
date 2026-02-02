@@ -7,33 +7,273 @@
 # export PY_DEBUG=
 # export HARD_RESET=
 
-debug() {
-    zsh -xv
-}
-
 ##### FLAGS AND VARIABLES GO ABOVE THIS LINE
 
 [[ ! -z "$ZSH_DEBUG" ]] && echo "" >"$HOME/Desktop/zsh_debug.log"
 
-# lolcat<<\\EOF
-# █████  █████████████ ██████▌██░
-# ▀▀███    ███ ██▘█░█████ ███░██░
-# ▀▀███   ███ █████░██ ███ ██░██░
-# ▀▀███  ███ ███░ █░██ ▝███ ████░
-# \EOF
+banner.sh
 
-# Auto-activate per-project .venv if present
 autoload -U add-zsh-hook
 
+typeset -gA BIN_SOURCED
+typeset -ga BIN_SOURCE_ERRORS BIN_SOURCE_SKIPPED
+
+ensure_zdotdir_bin_on_path() {
+    local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
+    [[ -d $dir ]] || return
+    [[ ":$PATH:" == *":$dir:"* ]] || PATH="$dir:$PATH"
+}
+
+load_zdotdir_bin_scripts() {
+    local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
+    [[ -d $dir ]] || return
+
+    local -a skip_patterns=(
+	'#*' '*~' '*.awk' '*.pl' '*.js' '*.log' '*.txt'
+	'wrappers.txt' 'codex' 'codex-shell' 'codex.log'
+	'create' 'scan_config_bins.sh' 'scan_config_bins_with_logging.sh'
+	'remove-duplicates' 'rm-dupes' 'search.pl'
+	'html2ansi.awk' 'html2ansi.js' 'colorize.awk' 'colorize.fore.awk'
+	'kram.awk' 'kram.js' 'daily' 'docalert' 'alert' 'startup_tracelog'
+	'typescript' 'typescript~' 'subdir' 'zsh-taku-fetch'
+	'venv_autoactivate.zsh~' 'zsh-git~' '#.irregular-files#'
+    )
+
+    local file base shebang
+    for file in "$dir"/*(N); do
+	base=${file:t}
+	[[ -n ${BIN_SOURCED[$base]} ]] && continue
+
+	for pat in "${skip_patterns[@]}"; do
+	    [[ $base == $pat ]] && { BIN_SOURCE_SKIPPED+="$base"; continue 2; }
+	done
+
+	[[ -f $file && -r $file ]] || { BIN_SOURCE_SKIPPED+="$base"; continue }
+	shebang=$(head -n 1 -- "$file")
+	if [[ $shebang == '#!/bin/zsh'* || $shebang == '#!/usr/bin/env zsh'* || $base == *.zsh || $base == zsh-* || $base == __wrap_notice ]]; then
+	    if source "$file"; then
+		BIN_SOURCED[$base]=1
+	    else
+		BIN_SOURCE_ERRORS+="$base"
+	    fi
+	else
+	    BIN_SOURCE_SKIPPED+="$base"
+	fi
+    done
+}
+
+ensure_zdotdir_bin_on_path
+load_zdotdir_bin_scripts
+
+#### WRITE ANY NEW FUNCTIONS BELOW THIS LINE
+
+# TOP #
+
+# Fallback prompt function so autoloaded hook "even_better_prompt" is always available.
+# To customize, edit this function or place a real one in $fpath; remove this stub then.
+# even_better_prompt() {
+#   emulate -L zsh
+#   setopt prompt_subst
+#   local ns="${NAMESPACE:-$(print -P %2~)}"
+#   local color="${THEME_COLOR:-$FG_VAR:-%F{cyan}}"
+#   local reset="%{$reset_color%}"
+#   local c="%{$color%}"
+#   PROMPT="${c}╭─ %n@%m ${reset}%~\n${c}╰─\$ ${reset}"
+#   RPROMPT="${c}${ns}${reset}"
+# }
+
+urlencode() {
+    emulate -L zsh
+    setopt extended_glob no_multibyte
+    local REPLY c
+    for c in ${(s::)1}; do
+	[[ $c == [a-zA-Z0-9/_.~-] ]] || printf -v c '%%%02X' $(( \#c ))
+	REPLY+=$c
+    done
+    echo -n "$REPLY"
+}
+
+mus() {
+    cd "$HOME/Music/Logic"
+}
+etym() {
+    cd "$DINGLEHOPPER/utils/etymologicon"
+}
+mods() {
+    cd "$DINGLEHOPPER/modules/BARE"
+}
+
+
+
+eiflong () {
+    local tmp n limit
+    tmp="$(mktemp -t eiflong.XXXXXX)" || return 1
+
+    if (( $# > 0 )); then
+	"$@" >| "$tmp"
+    else
+	cat >| "$tmp"
+    fi
+
+    n="$(wc -l < "$tmp" | tr -d ' ')"
+    limit=$(( ${LINES:-24} - 1 ))
+
+    if (( n > limit )); then
+	if command -v emacsclient >/dev/null 2>&1; then
+	    emacsclient -a "emacs -nw" -nw "$tmp"
+	else
+	    emacs -nw "$tmp"
+	fi
+    else
+	cat "$tmp"
+    fi
+
+    rm -f "$tmp"
+}
+
+alias E='eiflong'
+
+keycode () {
+    emulate -L zsh
+    setopt localoptions pipefail
+
+    cat <<'EOF' | lolcat -F 1
+▄▄ ▄▄ ▄▄▄▄▄ ▄▄ ▄▄  ▄▄▄▄  ▄▄▄  ▄▄▄▄  ▄▄▄▄▄
+██▄█▀ ██▄▄  ▀███▀ ██▀▀▀ ██▀██ ██▀██ ██▄▄
+██ ██ ██▄▄▄   █   ▀████ ▀███▀ ████▀ ██▄▄▄
+EOF
+
+    echo "---"
+    echo -e "Enter keys indefinitely. \033[31m Press C-c to exit\033[0m."
+    echo
+
+    local stty_state
+    stty_state="$(stty -g </dev/tty)"
+    stty -isig -echo </dev/tty
+
+    {
+	local k raw
+	local -a b
+
+	while true; do
+	    b=()
+
+	    # Block forever for next byte
+	    if ! read -r -s -k 1 k </dev/tty; then
+		continue
+	    fi
+
+	    # Stop on literal ^C (0x03)
+	    [[ "$k" == $'\003' ]] && break
+
+	    b+="$k"
+
+	    # If it begins an escape sequence, slurp any bytes already buffered right now.
+	    # (No "short pause" behavior; just immediate availability.)
+	    if [[ "$k" == $'\e' ]]; then
+		while read -r -s -k 1 -t 0 k </dev/tty; do
+		    [[ "$k" == $'\003' ]] && break 2
+		    b+="$k"
+		done
+	    fi
+
+	    raw="${(j::)b}"
+
+	    print -r -- "QUOTED:     ${(qqqq)raw}"
+	    print -n -- "HEX BYTES:  "
+	    print -n -- "$raw" | od -An -tx1 -v | tr -d '\n' | sed 's/^ *//; s/  */ /g'; print
+	    print -n -- "DEC BYTES:  "
+	    print -n -- "$raw" | od -An -tu1 -v | tr -d '\n' | sed 's/^ *//; s/  */ /g'; print
+	    print -n -- "cat -v:     "
+	    print -n -- "$raw" | cat -v; print
+	    print
+	done
+    } always {
+	stty "$stty_state" </dev/tty 2>/dev/null
+    }
+}
+
+bun() {
+    $XDG_CONFIG_HOME/bun/bin/bun "$@";
+}
+
+debug() {
+    zsh -xv
+}
+
+activate() {
+    source ./.venv/bin/activate
+}
+
+
+
+__wrap_notice open
+open () {
+    node - "$@" <<'NODE'
+
+let args = process.argv.slice(2)
+console.log(args);
+NODE
+    /usr/bin/open "$@"
+}
+
+
+copydir() {
+    # Same family as "copyfile"... eventually, ""copypath""
+    realpath ./ | pbcopy
+}
+
+prove() {
+    # Echo all arguments once
+    echo """$@"""
+
+    echo -e "\n\033[31m---"
+    # Loop while the count of arguments ($#) is greater than 0
+    while (( $# > 0 )); do
+	sleep 1
+	echo "$1"
+	shift  # This correctly moves to the next argument
+    done
+}
+
+__wrap_notice say
+say () {
+    args="$@"
+    shift args
+    /usr/bin/say say -v "Voice 4" ""
+}
+
+ward() {
+    echo "cd \"$(realpath ./)\"" > $HOME/teleport;
+    chmod 700 ~/teleport
+
+    # For when you need vision on a piece of real estate.
+    # If I'm thinking about this correctly, `ward` should expire, giving you time to use the name as a variable, but not any longer than, say, 30 minutes...
+    export ward="$(mktemp)"
+    echo "$(realpath ./)" > $ward
+    date "+%s" > ./.ward
+    echo "$ward" >> ./.ward # put the script's "name" into  here for safekeeping.
+}
+
+alias terran="vision"
+alias vision="ward"
+
+
+tp(){
+    # "Teleport" back to your "ward".
+    $HOME/teleport
+
+}
+
+dired() {
+    emacs ./
+}
 
 doom() {
     /opt/homebrew/bin/emacs -q -l $XDG_CONFIG_HOME/doom/early-init.el \
 			    -l $XDG_CONFIG_HOME/doom/lisp/init.el \
 			    --init-directory "$HOME/.config/doom" "$@"
 }
-
-
-##### WRITE ANY NEW FUNCTIONS UNDER THIS LINE
 
 when() {
     # Find .breadcrumb files, print mtime + path, sort newest first
@@ -49,6 +289,9 @@ when() {
     # Output contents to bat
     printf "%s\n" "$files" | xargs bat --style=plain
 }
+
+# Clear any alias to avoid "defining function based on alias 'theme'" warnings.
+unalias theme 2>/dev/null
 
 theme() {
     cmd="$1"
@@ -209,8 +452,9 @@ man() {
     LOX="${MONOLITH:-HOME}/docs/info/${command}.info"
     if [[ -f ${LOX} ]]; then
 	echo -en "A mandoc for $command already exists in$LOX. To refresh it, execute \`\033[33m/bin/rm -rf $LOX\033[0m\`."
-	$READER $LOX
-    elif /usr/bin/man -w "$command" >/dev/null 2>&1; then
+    fi
+
+    if /usr/bin/man -w "$command" >/dev/null 2>&1; then
 	/usr/bin/man "$command" | col -b >"$LOX"
 	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-HOME}/docs/info/$command.info\033[0m ."
 	echo
@@ -227,7 +471,7 @@ Press ...[1] to ...[2]
 * You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the docs with.
 "
 
-	read -r answer
+	read -r -k 1 answer
 	case $answer in
 	    a | 1)
 		$READER "$LOX"
@@ -950,11 +1194,11 @@ function daw() {
     cd "$MODULES/BARE/digital-audio-workspace/"
 }
 
-fnsh() {
-    $EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
-}
-alias functions="fnsh"
-alias fn="fnsh"
+# fnsh() {
+#   $EDITOR "/Users/donaldmoore/.config/zsh/fn.sh"
+#}
+# alias functions="fnsh"
+# alias fn="fnsh"
 
 forline() {
     emulate -L zsh
@@ -1041,18 +1285,18 @@ alert() {
     local label="$1"
     local job_status="Running."
     while true; do
-        tput bel
-        # Check if user pressed a key within 2 seconds
-        if read -t 2; then
-            echo -e "\033[38;2;0;123;255m\n--- Job Status for \033[7m\033[1m[$label]\033[0m\033[38;2;0;123;255m ---\033[0m"
-            # Use jobs -l with grep to show only the process with our UUID
+	tput bel
+	# Check if user pressed a key within 2 seconds
+	if read -t 2; then
+	    echo -e "\033[38;2;0;123;255m\n--- Job Status for \033[7m\033[1m[$label]\033[0m\033[38;2;0;123;255m ---\033[0m"
+	    # Use jobs -l with grep to show only the process with our UUID
 	    job_list="$(jobs -l)"
-            job_status="$(print -rl job_list | grep \"$label\" || echo \"Job completed.\")"
+	    job_status="$(print -rl job_list | grep \"$label\" || echo \"Job completed.\")"
 	    job_no="$(print -rl job_list | grep \"^\[(0-9)*\]\")"
 	    # echo "$job_status"
 	    [[ ! -z job_no ]] && fg "$job_no"
-            break
-        fi
+	    break
+	fi
     done
 }
 
@@ -1133,6 +1377,32 @@ alias standalone=static
 # can() extracted to bin/zsh-can
 source "${ZDOTDIR:-.}/bin/zsh-can"
 
+# Quick local search for missing commands before falling back to package managers.
+cnf_quick_search() {
+    emulate -L zsh
+    local cmd="$1"
+    [[ -z "$cmd" ]] && return 1
+
+    local search_bin=""
+    if whence -p search >/dev/null 2>&1; then
+	search_bin="search"
+    elif [[ -x "$HOME/src/dinglehopper/utils/search.d/search.d/search/dist/cli.js" ]]; then
+	search_bin="node \"$HOME/src/dinglehopper/utils/search.d/search.d/search/dist/cli.js\""
+    fi
+
+    if [[ -z "$search_bin" ]]; then
+	echo "🔍 search CLI not found; skipping quick scan."
+	return 1
+    fi
+
+    local root="${CNF_SEARCH_ROOT:-$HOME}"
+    local depth="${CNF_SEARCH_DEPTH:-6}"
+    local limit="${CNF_SEARCH_LIMIT:-12}"
+
+    echo -e "🔍 searching $root (depth ${depth}) for \"${cmd}\" ..."
+    eval "$search_bin --plain --root \"$root\" --depth $depth --limit $limit \"$cmd\""
+}
+
 # --- wrapper on "undefined": zsh hook for missing commands -------------------
 # If a command is not found, suggest brew install lines (formula vs cask)
 command_not_found_handler() {
@@ -1140,11 +1410,17 @@ command_not_found_handler() {
     local cmd="$1"
     shift
     print -r -- "🫥 undefined: \"$cmd\""
-    echo "\`can\` for the command_not_found_handler is temporarily disabled while we investigate an ongoing issue."
+
+    cnf_quick_search "$cmd" || true
+
+    echo -e "Asking \033[32mbrew\033[0m can haz."
+
+    # echo "\`can\` for the command_not_found_handler is temporarily disabled while we investigate an ongoing issue."
     # dwimnwis "$cmd"
     # Todo: Fuzzy finder --- Checkpoint --- ::whistles:: --- ::holds up red card:: not checking for typos! #dwimnwis
     # Reuse can's logic to check PATH + brew and print suggestions
-    # can use "$cmd"
+    can haz "$cmd"
+
     # Return non-zero to keep shell semantics ("command not found")
     return 127
 }
@@ -2017,7 +2293,11 @@ project-name: (default: ${basedirname})"
 	echo "Opening $EDITOR in $XDG_CONFIG_HOME/$1"
     fi
 
-    $EDITOR "$XDG_CONFIG_HOME/$1"
+    if [[ -d "$XDG_CONFIG_HOME/$1" ]]; then
+	cd $XDG_CONFIG_HOME/$1
+    else
+	$EDITOR "$XDG_CONFIG_HOME/$1"
+    fi
 }
 
 copy() {
@@ -2793,7 +3073,7 @@ _retro_indexes() {
 }
 compdef _retro_indexes retro
 
-# venv auto-activation helpers extracted to bin/zsh-venv-autoactivate
+# venv auto-activation helpers extracted to bin/autovenv (was zsh-venv-autoactivate -DWMJ)
 
 debounceBanner() {
 
@@ -2854,7 +3134,7 @@ throttleBanner() {
 	printf '%s\n' "$timestamp" >"$stampfile"
     fi
 }
- 
+
 LIVE_HOT=0
 
 tipTop() {
@@ -2966,3 +3246,29 @@ add-zsh-hook chpwd save_last_dir
 if [[ -f ~/tmp/.last_pwd ]]; then
     cd "$(cat ~/tmp/.last_pwd)"
 fi
+
+
+# F12 = attach to the most-recent tmux session (or create one)
+
+tmux_attach_mru() {
+    local s
+    s=$(tmux list-sessions -F '#{session_activity} #{session_name}' 2>/dev/null \
+	    | sort -nr \
+	    | head -n 1 \
+	    | cut -d' ' -f2-)
+
+    if [[ -n "$s" ]]; then
+	exec tmux attach -t "$s"
+    else
+	exec tmux new -s ollacodex
+    fi
+}
+
+tmux_attach_mru_widget() {
+    tmux_attach_mru
+}
+
+zle -N tmux_attach_mru_widget
+
+# F12 is usually \033[24~ (aka ^[[24~)
+bindkey $'\033[24~' tmux_attach_mru_widget

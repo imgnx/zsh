@@ -31,6 +31,37 @@ zle -N copy_last_output
 alias CLO="$(copy_last_output)"
 
 
+# Copy the most recent kill/yank buffer to the system clipboard
+copy_yank_buffer() {
+  local buf
+  if (( ${#killring[@]} )); then
+    buf=${killring[1]}
+  else
+    buf=$CUTBUFFER
+  fi
+
+  if [[ -z $buf ]]; then
+    zle -M "Kill ring is empty"
+    return 1
+  fi
+
+  if command -v pbcopy >/dev/null 2>&1; then
+    print -rn -- "$buf" | pbcopy
+  elif command -v xclip >/dev/null 2>&1; then
+    print -rn -- "$buf" | xclip -selection clipboard
+  elif command -v xsel >/dev/null 2>&1; then
+    print -rn -- "$buf" | xsel --clipboard --input
+  else
+    zle -M "No clipboard tool available (need pbcopy/xclip/xsel)"
+    return 1
+  fi
+
+  zle -M "Yank buffer copied to clipboard"
+}
+
+zle -N copy_yank_buffer
+
+
 # Key bindings (Ctrl-R to copy last command output)
 # bindkey '^[R' copy_last_output
 # bindkey '^R' copy_last_text
@@ -76,5 +107,12 @@ bindkey '^R' history-incremental-search-backward # Ctrl+R for reverse search
 bindkey '^S' history-incremental-search-forward  # Ctrl+S for forward search
 bindkey '^P' history-search-backward             # Ctrl+P for previous matching
 bindkey '^N' history-search-forward              # Ctrl+N for next matching
+
+# F11 copies the yank buffer to the clipboard (falls back to common sequences)
+if [[ -n ${terminfo[kf11]} ]]; then
+  bindkey "${terminfo[kf11]}" copy_yank_buffer
+fi
+# Common fallback for many terminals if terminfo is missing
+bindkey "^[[23~" copy_yank_buffer
 
 bindkey -e

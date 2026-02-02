@@ -1,0 +1,38 @@
+Script started on Mon Feb  2 04:58:00 2026
+
+ TABULA_RASA   DISABLE_TMUX   START_IN_TEXAS   ZSH_DEBUG   PY_DEBUG  
+
+ Tip: exec `nmap` to scan the network.
+pip: canhaz
+
+"When in doubt, use brute force."
+- Ken Thompson
+   █████  █████████████ ██████▌██░  
+   ▀▀███    ███ ██▘█░█████ ███░██░  
+   ▀▀███   ███ █████░██ ███ ██░██░  
+   ▀▀███  ███ ███░ █░██ ▝███ ████░  
+/Users/donaldmoore/.config/zsh/bin.zsh:293: defining function based on alias `theme'
+/Users/donaldmoore/.config/zsh/bin.zsh:293: parse error near `()'
+
+realpath: .                                                                     
+\033[1m\033[38;2;255;125;0mWait!\033[0m: No such file or directory
+Activate .venv in Wait!? 
+	1. (y)es
+	2. (n)o
+	3. (a)lways
+	4. (N)ever
+
+Decision:N
+Wait! set to never
+Wait! never
+
+▄ ██╗▄  𓃠  [pid:99467]    71.45.102.76 
+ ████╗  donaldmoore@dividebyseven.local 
+▀╚██╔▀   NS: donaldmoore 
+  ╚�    Powered by εmacs 󰮯 · · · · · · 󱙝 󱙝 󱙝 󱙝$/Users/donaldmoore/.config/zsh
+
+Script done on Mon Feb  2 04:58:07 2026
+
+󱚞    ls$/Users/donaldmoore/.config/zsh
+Screencast Mode is currently on.Are you sure you want to display the contents of `ls`?
+y 

@@ -129,19 +129,19 @@ hooks() {
 }
 
 
-if ! [[ "${precmd_functions[*]}" == *even_better_prompt* ]]; then
-  if typeset -f add-zsh-hook >/dev/null 2>&1; then
-    export PERIOD_SCAN_BINS=300
-    export PERIOD_ALIAS_FUNCS=600
-    add-zsh-hook periodic scan_new_config_bins
-    add-zsh-hook periodic imgnx_update_stats
-    add-zsh-hook precmd even_better_prompt
-    echo -e "Press [Enter] to load hooks."
-  fi
-else
-  echo "Hooks already loaded."
-  hooks
-fi
+# if ! [[ "${precmd_functions[*]}" == *even_better_prompt* ]]; then
+#     if typeset -f add-zsh-hook >/dev/null 2>&1; then
+# 	export PERIOD_SCAN_BINS=300
+# 	export PERIOD_ALIAS_FUNCS=600
+# 	add-zsh-hook periodic scan_new_config_bins
+# 	add-zsh-hook periodic imgnx_update_stats
+# 	add-zsh-hook precmd even_better_prompt
+# 	echo -e "Press [Enter] to load hooks."
+#     fi
+# else
+#     echo "Hooks already loaded."
+#     hooks
+# fi
 
 if ! whence add2path >/dev/null 2>&1; then
     add2path() { [[ -d $1 ]] && PATH="$1:$PATH"; }

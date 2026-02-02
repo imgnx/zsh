@@ -1,17 +1,53 @@
 alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
 alias docs="cd $DOCS"
-alias mods="cd $DINGLEHOPPER/modules/BARE"
 
-alias _M='cd "$HOME/_M";
-alias _G='cd "$DINGLEHOPPER/_GLOBAL";
+alias _M='cd "$HOME/_M"';
+alias _G='cd "$DINGLEHOPPER/_GLOBAL"';
 
-alias -s json="cat $@"
+fn.sh() {
+    emacs $XDG_CONFIG_HOME/zsh/fn.sh   
+}
+
+
+alias UTILS="$DINGLEHOPPER/utils"
+
+utils() {
+    cd $DINGLEHOPPER/utils && when
+    
+}
+
+
+z() {
+    case $arg in
+	cd)
+	    cd $Z
+	    ;;
+	fn)
+	    fn.sh
+	    ;;
+	aliases)
+	    emacs $Z/aliases.sh
+	    ;;
+	.env)
+	    emacs $z/.zshenv
+	    ;;
+	.?z?*rc)
+	    echo "Hey, get some fucking sleep or start making sense, ya fucker!"
+	    ;;
+	*)
+	    echo -ern "Talking Heads are on the \033[38;2;0;255;0m**main stage**! We're making perfectly bad sense here!\n"
+    esac
+}
+
+
+alias -s json="jq $@"
 alias -s js="node $@"
-alias -s taku="taku $@"
+alias -s gtk="gittaku $@"
 alias -s md="info $@"
 alias -s gp5=abc
 alias -s ptb=abc
 alias -s gpx=abc
+
 
 # Non-recursive (via R qualifier)
 alias dirs="print -rl -- ./*(DR/)"
@@ -95,8 +131,8 @@ alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
 alias fe='emacs' # file edit
 alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
-alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/bin.zsh"
-alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
+# alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/bin.zsh"
+# alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
 
 alias free='vm_stat' # Memory usage details on macOS
 alias frontend='cd "$SRC/dinglehopper/src/frontend"'
@@ -117,7 +153,7 @@ alias homebrew="brew"
 alias i=$ICLOUD_DRIVE
 alias icloud=$ICLOUD_DRIVE
 alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
-alias jsh='jsh || cd "$JSH"'
+alias jsh='ish || cd "$JSH"'
 unalias eza 2>/dev/null
 eza() { command eza --icons "$@"; }
 alias l="eza"
@@ -190,12 +226,12 @@ alias iphonefix="noiphone"
 
 alias hexedit="hexedit --color $@"
 # alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
-MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
-MODS="$HOME/src/dinglehopper/prod"
+alias MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
+alias MODS="$HOME/src/dinglehopper/prod"
+alias mods="cd $MODS"
 
 alias z="cd $Z"
 
 alias cloudflare="cloudflared"
 alias cf="cloudflared"
-
 

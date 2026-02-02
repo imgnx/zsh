@@ -1,0 +1,1 @@
+export PATH="$HOME/.local/bin:$PATH" tricky since .zshrc may auto-launch tmux, so verification
