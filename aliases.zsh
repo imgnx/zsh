@@ -1,3 +1,9 @@
+XDG_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+XDG_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+XDG_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+XDG_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_CONFIG_DIR XDG_DATA_DIR XDG_STATE_DIR XDG_CACHE_DIR
+
 alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
 alias docs="cd $DOCS"
 
@@ -17,27 +23,27 @@ utils() {
 }
 
 
-z() {
-    case $arg in
-	cd)
-	    cd $Z
-	    ;;
-	fn)
-	    fn.sh
-	    ;;
-	aliases)
-	    emacs $Z/aliases.sh
-	    ;;
-	.env)
-	    emacs $z/.zshenv
-	    ;;
-	.?z?*rc)
-	    echo "Hey, get some fucking sleep or start making sense, ya fucker!"
-	    ;;
-	*)
-	    echo -ern "Talking Heads are on the \033[38;2;0;255;0m**main stage**! We're making perfectly bad sense here!\n"
-    esac
-}
+# z() {
+#     case $arg in
+# 	cd)
+# 	    cd $Z
+# 	    ;;
+# 	fn)
+# 	    fn.sh
+# 	    ;;
+# 	aliases)
+# 	    emacs $Z/aliases.sh
+# 	    ;;
+# 	.env)
+# 	    emacs $z/.zshenv
+# 	    ;;
+# 	.?z?*rc)
+# 	    echo "Hey, get some fucking sleep or start making sense, ya fucker!"
+# 	    ;;
+# 	*)
+# 	    echo -ern "Talking Heads are on the \033[38;2;0;255;0m**main stage**! We're making perfectly bad sense here!\n"
+#     esac
+# }
 
 
 alias -s json="jq $@"
@@ -170,7 +176,7 @@ alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions
 alias ll='eza -la --octal-permissions --group-directories-first'
 # Remove duplicate llm (icons are provided globally)
 alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
-# alias ls='eza'
+alias ls='eza'
 alias lsd.="eza -d -a | grep -E '^\.'"
 alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"

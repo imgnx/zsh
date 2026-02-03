@@ -15,55 +15,16 @@ banner.sh
 
 autoload -U add-zsh-hook
 
-typeset -gA BIN_SOURCED
-typeset -ga BIN_SOURCE_ERRORS BIN_SOURCE_SKIPPED
-
 ensure_zdotdir_bin_on_path() {
-    local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
-    [[ -d $dir ]] || return
-    [[ ":$PATH:" == *":$dir:"* ]] || PATH="$dir:$PATH"
-}
-
-load_zdotdir_bin_scripts() {
-    local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
-    [[ -d $dir ]] || return
-
-    local -a skip_patterns=(
-	'#*' '*~' '*.awk' '*.pl' '*.js' '*.log' '*.txt'
-	'wrappers.txt' 'codex' 'codex-shell' 'codex.log'
-	'create' 'scan_config_bins.sh' 'scan_config_bins_with_logging.sh'
-	'remove-duplicates' 'rm-dupes' 'search.pl'
-	'html2ansi.awk' 'html2ansi.js' 'colorize.awk' 'colorize.fore.awk'
-	'kram.awk' 'kram.js' 'daily' 'docalert' 'alert' 'startup_tracelog'
-	'typescript' 'typescript~' 'subdir' 'zsh-taku-fetch'
-	'venv_autoactivate.zsh~' 'zsh-git~' '#.irregular-files#'
-    )
-
-    local file base shebang
-    for file in "$dir"/*(N); do
-	base=${file:t}
-	[[ -n ${BIN_SOURCED[$base]} ]] && continue
-
-	for pat in "${skip_patterns[@]}"; do
-	    [[ $base == $pat ]] && { BIN_SOURCE_SKIPPED+="$base"; continue 2; }
-	done
-
-	[[ -f $file && -r $file ]] || { BIN_SOURCE_SKIPPED+="$base"; continue }
-	shebang=$(head -n 1 -- "$file")
-	if [[ $shebang == '#!/bin/zsh'* || $shebang == '#!/usr/bin/env zsh'* || $base == *.zsh || $base == zsh-* || $base == __wrap_notice ]]; then
-	    if source "$file"; then
-		BIN_SOURCED[$base]=1
-	    else
-		BIN_SOURCE_ERRORS+="$base"
-	    fi
-	else
-	    BIN_SOURCE_SKIPPED+="$base"
-	fi
-    done
+  local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
+  [[ -d $dir ]] || return
+  [[ ":$PATH:" == *":$dir:"* ]] || PATH="$dir:$PATH"
 }
 
 ensure_zdotdir_bin_on_path
-load_zdotdir_bin_scripts
+
+# Only load the one helper that has always been sourced here; everything else in bin/ should be run as commands, not sourced.
+[[ -r "$ZDOTDIR/bin/autovenv" ]] && source "$ZDOTDIR/bin/autovenv"
 
 #### WRITE ANY NEW FUNCTIONS BELOW THIS LINE
 
@@ -237,10 +198,16 @@ prove() {
 }
 
 __wrap_notice say
-say () {
-    args="$@"
-    shift args
-    /usr/bin/say say -v "Voice 4" ""
+say() {
+    # args="$@"
+    # shift args
+    echo -e "\033[9mSay is wrapped.\033[\0m"
+    echo "Saying: $@"
+    # /usr/bin/say -v "Voice 4" "$args"
+    PHRASE="$@"
+    /usr/bin/say -v "Voice 4" "$PHRASE" -o out.aiff
+    ffmpeg -i out.aiff "say.wav"
+    rm out.aiff
 }
 
 ward() {

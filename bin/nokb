@@ -1,0 +1,67 @@
+#!/bin/env zsh
+set -euo pipefail
+
+nokbd() {
+    PHRASE="wait."
+
+    # "Aww, shit — I wanted to take my hands out of my handcuffs for a few seconds, and now I’m stuck in Willy Wonka’s Secret Wonderland."
+    # There's a problem with this script. It's running on all startups.
+
+    DRY_RUN=0
+    NO_SAY=0
+    NO_REBOOT=0
+    HARD=0
+
+    usage() {
+	print -r -- "usage: ${0:t} [--dry-run] [--no-say] [--no-reboot] [--hard] [--phrase '...']"
+    }
+
+    while (( $# )); do
+	case "$1" in
+	    --dry-run) DRY_RUN=1 ;;
+	    --no-say) NO_SAY=1 ;;
+	    --no-reboot) NO_REBOOT=1 ;;
+	    --hard) HARD=1 ;;
+	    --phrase)
+		shift
+		[[ $# -gt 0 ]] || { usage; exit 2; }
+		PHRASE="$1"
+		;;
+	    -h|--help) usage; exit 0 ;;
+	    *) print -r -- "unknown arg: $1"; usage; exit 2 ;;
+	esac
+	shift
+    done
+
+    print -r -- "$PHRASE"
+
+    if (( NO_SAY == 0 )) && command -v say >/dev/null 2>&1; then
+	say "$PHRASE" || true
+    fi
+
+    cmds=(
+	"hidutil property --set '{\"UserKeyMapping\":[]}'"
+	"sudo pkill -HUP HIDSystem"
+    )
+
+    if (( HARD == 1 )); then
+	cmds+=("sudo nvram -c")
+    fi
+
+    if (( NO_REBOOT == 0 )); then
+	cmds+=("sudo shutdown -r now")
+    fi
+
+    if (( DRY_RUN == 1 )); then
+	print -r -- ""
+	print -r -- "dry-run: would run:"
+	for c in "${cmds[@]}"; do print -r -- "  $c"; done
+	exit 0
+    fi
+
+    for c in "${cmds[@]}"; do
+	eval "$c"
+    done
+
+
+}
