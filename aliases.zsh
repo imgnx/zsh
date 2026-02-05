@@ -115,6 +115,7 @@ alias bkup="back_up"
 alias bp='cd "$BLUEPRINTS"';
 alias btstrpr="cd $DINGLEHOPPER/modules/bootstrapper"
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias c="pbcopy"
 alias cache='cd "$XDG_CACHE_HOME"'
 alias cash="$money"
 # alias cc="copy"
@@ -221,7 +222,7 @@ alias todo='cd "$HOME/Documents/ChalkBox/"'
 # Keep the simpler top alias; adjust if you prefer detailed stats
 alias top='top -o cpu'
 alias uls="/bin/ls"
-alias v="$v"
+alias v="pbpaste"
 alias wk='cd "$SRC/__CODE_WORKSPACE__"'
 alias x="sexy"
 alias xdg-open="open"

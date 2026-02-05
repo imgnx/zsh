@@ -6,6 +6,10 @@ if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
     export PATH="/opt/homebrew/bin:$PATH"
 fi
 
+if [[ ! "$PATH" =~ "$HOME/.local/bin" ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 source $XDG_CONFIG_HOME/zsh/bin/zsh-delayed-script-loader
 
 # Ensure tmux
@@ -170,43 +174,24 @@ source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/bin/zsh-themefile"
 # ======================================================
               
 export PS1='
-▄ ██╗▄  𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
- ████╗ ${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_WHITE}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
-▀╚██╔▀ %B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
-  ╚═╝  ${FG_WHITE}󱚞   ${FG_GRAY} '
+ 𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
+${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_WHITE}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
+%B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
+${FG_WHITE}󱚞   ${FG_GRAY} '
 
+
+autoload -Uz add-zle-hook-widget
 
 ghost_realpath_placeholder() {
-  if [[ -z "$BUFFER" ]]; then
-      POSTDISPLAY=$"$(pwd -P)"
+  if [[ -z $BUFFER ]]; then
+    POSTDISPLAY="$(pwd -P)"
   else
-      POSTDISPLAY=""
+    POSTDISPLAY=""
   fi
 }
 
-# Register the function as a ZLE widget
-zle -N ghost_realpath_placeholder
-
-# Hook the widget into the Zsh line editor
-# 'self-insert' handles standard typing
-# 'backward-delete-char' handles backspacing back to empty
-add-zsh-hook_ghost() {
-  zle -N self-insert ghost_self_insert
-  zle -N backward-delete-char ghost_backward_delete
-}
-
-ghost_self_insert() {
-  zle .self-insert
-  ghost_realpath_placeholder
-}
-
-ghost_backward_delete() {
-  zle .backward-delete-char
-  ghost_realpath_placeholder
-}
-
-# Initial call to show it on a fresh prompt
-zle -N zle-line-init ghost_realpath_placeholder
+add-zle-hook-widget zle-line-init ghost_realpath_placeholder
+add-zle-hook-widget zle-line-pre-redraw ghost_realpath_placeholder
 
 # autoload -Uz add-zle-hook-widget
 # add-zle-hook-widget line-pre-redraw _update_realpath_placeholder
@@ -283,8 +268,7 @@ emacs() {
   fi
 }
 
-fn.sh() {
-    emacs $XDG_CONFIG_HOME/zsh/fn.sh
-}
+source "$ZDOTDIR/fn.do"
 
+fn.sh() { fn.edit "$@" }
 alias fn="fn.sh \"$@\""

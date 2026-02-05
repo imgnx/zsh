@@ -16,9 +16,9 @@ banner.sh
 autoload -U add-zsh-hook
 
 ensure_zdotdir_bin_on_path() {
-  local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
-  [[ -d $dir ]] || return
-  [[ ":$PATH:" == *":$dir:"* ]] || PATH="$dir:$PATH"
+    local dir="${ZDOTDIR:-$HOME/.config/zsh}/bin"
+    [[ -d $dir ]] || return
+    [[ ":$PATH:" == *":$dir:"* ]] || PATH="$dir:$PATH"
 }
 
 ensure_zdotdir_bin_on_path
@@ -29,6 +29,67 @@ ensure_zdotdir_bin_on_path
 #### WRITE ANY NEW FUNCTIONS BELOW THIS LINE
 
 # TOP #
+
+# wrap() {
+#     options=("node" "zsh");
+#     if [[ -z "$1" ]]; then
+# 	echo "Argument 1 is empty."
+# 	echo "What would you like to wrap?"
+# 	echo "Options:"
+# 	for el in "${my_array[@]}"; do
+# 	    echo "$i) $el"
+# 	    ((i++))
+# 	done
+
+# 	read -k -r 1
+#     fi
+
+#     echo "Wrapping $1..."
+
+#     case "$1" in
+# 	"1|node")
+# 	    cat<<\\\NODE
+# 	    #!/usr/bin/env node
+
+# 	    // 1. Import your module
+# 	    const { numa } = require("/Users/donaldmoore/src/dinglehopper/modules/BARE/numa/bin/numa.cjs");
+
+# 	    // 2. Attach it to the REPL context
+# 	    const repl = require('repl');
+
+# 	    // Start the REPL and explicitly assign 'numa' to the context so it's available
+# const r = repl.start({
+#   prompt: 'numa > ',
+#   useGlobal: true // This makes 'global' variables in your script available in the REPL
+# });
+
+# // Explicitly adding it to context ensures it's available even if not global
+# 	    r.context.numa = numa;
+# 	    \NODE
+# 	    ;;
+# 	"2|zsh")
+# 	    echo "Not yet implemented"
+# 	    ;;
+# 	*)
+# 	    echo "Exiting."
+#     esac
+# }
+
+# __wrap_notice node	       
+
+# node() {
+#     echo -e "\033[38;2;255;205;0m\`node\` now comes with module \"wrappers\" so that you can add/remove features (think \"feature flags\") from the global scope. \033[0mTo disable this behavior, set \"$NODE_WRAPPER_BYPASS\" to \033[38;2;255;0;205m1\033[0m"
+#     NUMA="$DINGLEHOPPER/bin/js/numa.cjs"
+#     REAL_NODE="/opt/homebrew/bin/node"
+
+#     # Optional: allow bypass
+#     if [ "$NODE_WRAPPER_BYPASS" = "1" ]; then
+# 	exec "$REAL_NODE" "$@"
+#     fi
+
+#     export NODE_OPTIONS="--require $NUMA  ${NODE_OPTIONS:-}"
+#     exec "$REAL_NODE" "$@"
+# }
 
 # Fallback prompt function so autoloaded hook "even_better_prompt" is always available.
 # To customize, edit this function or place a real one in $fpath; remove this stub then.
@@ -43,26 +104,27 @@ ensure_zdotdir_bin_on_path
 #   RPROMPT="${c}${ns}${reset}"
 # }
 
-urlencode() {
-    emulate -L zsh
-    setopt extended_glob no_multibyte
-    local REPLY c
-    for c in ${(s::)1}; do
-	[[ $c == [a-zA-Z0-9/_.~-] ]] || printf -v c '%%%02X' $(( \#c ))
-	REPLY+=$c
-    done
-    echo -n "$REPLY"
-}
+# urlencode() {
+#     emulate -L zsh
+#     setopt extended_glob no_multibyte
+#     local REPLY c
+#     for c in ${(s::)1}; do
+# 	[[ $c == [a-zA-Z0-9/_.~-] ]] || printf -v c '%%%02X' $(( \#c ))
+# 	REPLY+=$c
+#     done
+#     echo -n "$REPLY"
+# }
 
 mus() {
-    cd "$HOME/Music/Logic"
+    cd "$MUSIC_THEORY"
 }
 etym() {
     cd "$DINGLEHOPPER/utils/etymologicon"
 }
-mods() {
-    cd "$DINGLEHOPPER/modules/BARE"
-}
+
+# mods() {
+#     cd "$DINGLEHOPPER/modules/BARE"
+# }
 
 
 
@@ -171,7 +233,6 @@ activate() {
 __wrap_notice open
 open () {
     node - "$@" <<'NODE'
-
 let args = process.argv.slice(2)
 console.log(args);
 NODE
@@ -415,48 +476,48 @@ export READER="bat"
 man() {
     local command="$1"
     echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
-    mkdir -p "${MONOLITH:-HOME}/docs/info"
-    LOX="${MONOLITH:-HOME}/docs/info/${command}.info"
+    mkdir -p "${MONOLITH:-HOME}/help/info"
+    lo="${MONOLITH:-HOME}/help/info/${command}.info"
     if [[ -f ${LOX} ]]; then
-	echo -en "A mandoc for $command already exists in$LOX. To refresh it, execute \`\033[33m/bin/rm -rf $LOX\033[0m\`."
+	echo -en "A helpdoc for $command already exists in $lo. To refresh it, execute \`\033[33m/bin/rm -rf $lo\033[0m\`."
     fi
 
     if /usr/bin/man -w "$command" >/dev/null 2>&1; then
-	/usr/bin/man "$command" | col -b >"$LOX"
-	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-HOME}/docs/info/$command.info\033[0m ."
+	/usr/bin/man "$command" | col -b >"$lo"
+	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-HOME}/help/info/$command.info\033[0m ."
 	echo
 	echo -e "Menu Options:
 
 Press ...[1] to ...[2]
-1. (a)     Open the doc with $READER.
-2. (b)     Open the doc in 'bat'.
-3. (c)     Open the doc with 'cat' and exit.
-4. (d)     Open the doc with 'info'.
-5. (e)     Open the doc with $EDITOR.
+1. (a)     Open the helpdoc with $READER.
+2. (b)     Open the helpdoc in 'bat'.
+3. (c)     Open the helpdoc with 'cat' and exit.
+4. (d)     Open the helpdoc with 'info'.
+5. (e)     Open the helpdoc with $EDITOR.
 
 
-* You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the docs with.
+* You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the helpdoc with.
 "
 
 	read -r -k 1 answer
 	case $answer in
 	    a | 1)
-		$READER "$LOX"
+		$READER "$lo"
 		;;
 	    b | 2)
-		bat "$LOX"
+		bat "$lo"
 		;;
 	    c | 3)
-		cat "$LOX"
+		cat "$lo"
 		;;
 	    d | 4)
-		info "$LOX"
+		info "$lo"
 		;;
 	    e | 5)
-		$EDITOR "$LOX"
+		$EDITOR "$lo"
 		;;
 	    *)
-		open "$LOX"
+		open "$lo"
 		;;
 	esac
     fi
@@ -1901,10 +1962,12 @@ dinglehopper() {
 }
 
 hop() {
+
     before="$PWD"
+    after="$(realpath ./)"
+    echo -e "\033[38;2;255;205;0mhop: \033[0m$before -> $after"
     cd $(realpath)
-    after="$PWD"
-    echo -e "\033[38;2;255;205;0m@realpath/hop: \033[0m$before -> $after"
+    echo -e "\033[38;2;255;205;0mhop: \033[0m$before -> $after"
 }
 
 clean_old() {
@@ -2232,49 +2295,8 @@ dir() {
     hash "$@"
 }
 
-cnf() {
-    if [[ "$1" == "init" ]]; then
-	local project_name
-	local basedirname="$(basename $(realpath $pwd))" # default to the basename of the current working directory.
 
-	if [[ -z "$2" ]]; then
-
-	    echo -en "\033[38;2;255;234;0mPlease enter a name for your project.\033[0m
-project-name: (default: ${basedirname})"
-	    read -r project_name
-	    if [[ -z "$project_name" ]]; then
-		project_name="$basedirname"
-	    fi
-
-	else
-
-	    project_name="$2"
-	fi
-
-	local target="$XDG_CONFIG_HOME/$project_name"
-	echo "Copying blueprints to \"${XDG_CONFIG_HOME}/${project_name}\""
-	mkdir -p "$target"
-	if [[ -d "$BLUEPRINTS" ]]; then
-	    find "$BLUEPRINTS" -maxdepth 1 -mindepth 1 -iname "*.md" | xargs -I{} cp "{}" "$target"
-	fi
-	echo "Opening $EDITOR in $XDG_CONFIG_HOME/$1"
-    fi
-
-    if [[ -d "$XDG_CONFIG_HOME/$1" ]]; then
-	cd $XDG_CONFIG_HOME/$1
-    else
-	$EDITOR "$XDG_CONFIG_HOME/$1"
-    fi
-}
-
-copy() {
-    $@ | pbcopy
-    export v=$(pbpaste)
-}
-
-# v() {
-#  echo $(pbpaste)
-# }
+# cnf() was moved to .zshrc
 
 # /usr/local/bin/git on macOsX w/ Intel chip
 alias ugit=/usr/bin/git
