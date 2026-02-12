@@ -11,7 +11,7 @@
 
 [[ ! -z "$ZSH_DEBUG" ]] && echo "" >"$HOME/Desktop/zsh_debug.log"
 
-banner.sh
+# banner.sh
 
 autoload -U add-zsh-hook
 

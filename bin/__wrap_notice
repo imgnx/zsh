@@ -2,6 +2,19 @@
 typeset -A WRAPPERS
 typeset -a WRAP_NOTICE_SUPPRESS=(
 	# Add command names here to silence duplicate wrap warnings.
+	open
+	say
+	codex
+	man
+	nginx
+	cloudflared
+	reset
+	rg
+	gsutil
+	gcloud
+	rm
+	git
+	eza
 )
 
 __WRAP_NOTICE_FILE="${${(%):-%x}:A:h}/wrappers.txt"
@@ -17,7 +30,7 @@ __write_wrappers_file() {
 }
 
 __wrap_notice() {
-	if [[ "$ZSH_DEBUG" != "0" ]]; then
+	if [[ -n "${ZSH_DEBUG:-}" && "$ZSH_DEBUG" != "0" ]]; then
 		local name="$1"
 		local current_path
 		local wrap_file="$__WRAP_NOTICE_FILE"

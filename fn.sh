@@ -11,7 +11,7 @@
 
 [[ ! -z "$ZSH_DEBUG" ]] && echo "" >"$HOME/Desktop/zsh_debug.log"
 
-banner.sh
+# banner.sh
 
 autoload -U add-zsh-hook
 
@@ -22,6 +22,24 @@ ensure_zdotdir_bin_on_path() {
 }
 
 ensure_zdotdir_bin_on_path
+
+# Suppress duplicate wrap notices for common commands even if a stale wrapper is found.
+typeset -a WRAP_NOTICE_SUPPRESS
+WRAP_NOTICE_SUPPRESS+=(
+    open
+    say
+    codex
+    man
+    nginx
+    cloudflared
+    reset
+    rg
+    gsutil
+    gcloud
+    rm
+    git
+    eza
+)
 
 # Only load the one helper that has always been sourced here; everything else in bin/ should be run as commands, not sourced.
 [[ -r "$ZDOTDIR/bin/autovenv" ]] && source "$ZDOTDIR/bin/autovenv"
@@ -1962,11 +1980,10 @@ dinglehopper() {
 }
 
 hop() {
-
     before="$PWD"
     after="$(realpath ./)"
     echo -e "\033[38;2;255;205;0mhop: \033[0m$before -> $after"
-    cd $(realpath)
+    cd "$after"
     echo -e "\033[38;2;255;205;0mhop: \033[0m$before -> $after"
 }
 
@@ -3134,7 +3151,7 @@ tipTop() {
     else
 	# Switch between debouncing/throttling by commenting/uncommenting line(s).
 	# debounceBanner
-	throttleBanner
+	# throttleBanner
     fi
     # To remove the hook:
     # add-zsh-hook -d precmd tipTop
@@ -3217,10 +3234,13 @@ keychainenv() {
 		security find-generic-password -a "$USER" -s "$service" -w 2>/dev/null
 	)"
 }
-bare() {
-    cd "$BARE"
-    when | head -n 10
-}
+
+# Replaced with `mods`.
+# unalias bare 2>/dev/null || true
+# bare() {
+#    cd "$BARE"
+#    when | head -n 10
+#}
 
 # Function to save current directory to a hidden file
 save_last_dir() {
@@ -3261,3 +3281,6 @@ zle -N tmux_attach_mru_widget
 
 # F12 is usually \033[24~ (aka ^[[24~)
 bindkey $'\033[24~' tmux_attach_mru_widget
+
+
+banner.sh

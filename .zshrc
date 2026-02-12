@@ -1,6 +1,8 @@
 # If this zsh session is non-interactive, exit quietly.
 [[ ! -o interactive || "$TABULA_RASA" == "1|true" ]] && return
 
+source /Users/donaldmoore/.config/zsh/variables.zsh
+
 # Ensure Homebrew
 if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
     export PATH="/opt/homebrew/bin:$PATH"
@@ -91,12 +93,42 @@ zle -N launch_tmux
 # Using \033 for the escape prefix as requested
 bindkey '\033[24~' launch_tmux
 
+is_vscode_term() {
+    [[ "$TERM_PROGRAM" == "vscode" || -n "$VSCODE_PID" || -n "$VSCODE_GIT_IPC_HANDLE" ]]
+}
+
+
+emacs() {
+    # In VS Code integrated terminal, prefer emacsclient so you reuse your existing frame/server.
+    if is_vscode_term; then
+	command emacsclient -n -a "emacs" "$@"
+	return $?
+    fi
+
+    # Somehow allows emacs to open multiple files... 1/18/26
+    # Your original logic: if interactive but stdin is piped, attach stdin to tty
+    if [[ -o interactive && ! -t 0 && -t 1 && "$*" != *"--batch"* && "$*" != *"-batch"* && "$*" != *"--script"* ]]; then
+	command emacs "$@" </dev/tty
+    else
+	command emacs "$@"
+    fi
+}
+
 if [[ "$DISABLE_TMUX" != 1 ]]; then
     #! Launch in `tmux` by default.
+
+    if is_vscode_term; then
+	echo -e "\033[38;2;255;205;0mzsh is starting in a VS Code Integrated Terminal.\033[0m This means..."
+	echo
+	echo "1. It will not launch in \`tmux\` by default."
+	echo "2. Running \`emacs\` will open the \`emacsclient\`."
+    else
+	
+
+
     if [[ -z "$TMUX" ]]; then
 	# ! Use F12 to open the escape hatch...
 	# bind-key -n F12 detach-client
-
 	# Use a consistent name or keep your UUID logic
 	SESSION_ID="$(uuidgen)"
 	tmux new-session -d -s "$SESSION_ID"
@@ -104,7 +136,8 @@ if [[ "$DISABLE_TMUX" != 1 ]]; then
 	tmux attach-session -t "$SESSION_ID"
 	export TMUX_SESSION_ID="$SESSION_ID"
     fi
-fi
+    fi
+    fi
 
 # Add completions
 if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions.d:"* ]]; then
@@ -155,7 +188,6 @@ local ZDOTDIR="/Users/donaldmoore/.config/zsh"
 [[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
 
 source /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
-source $ZDOTDIR/variables.zsh
 source $ZDOTDIR/bin.zsh
 source "$ZDOTDIR/aliases.zsh"
 source "$ZDOTDIR/history.zsh"
@@ -263,14 +295,8 @@ if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$PATH:$HOME/.local/bin"
 fi
 
-# Somehow allows emacs to open multiple files... 1/18/25
-emacs() {
-    if [[ -o interactive && ! -t 0 && -t 1 && "$*" != *"--batch"* && "$*" != *"-batch"* && "$*" != *"--script"* ]]; then
-	command emacs "$@" </dev/tty
-    else
-	command emacs "$@"
-    fi
-}
+# Avoid alias/function parse conflicts inside fn.sh
+# unalias bare 2>/dev/null || true
 
 source "$ZDOTDIR/fn.sh"
 

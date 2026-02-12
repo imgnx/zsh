@@ -153,7 +153,8 @@ alias ll='eza -la --octal-permissions --group-directories-first'
 alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
 alias ls='eza'
 alias lsd.="eza -d -a | grep -E '^\.'"
-alias lsd='eza -d --color=always --group-directories-first --icons'
+alias lsd="print -rl -- ./*(/@-/:)" # List directories (and links to directories) only.
+# alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"
 alias lsdh="eza -d | grep -E '^\.'"
 # Remove duplicate lx (icons are provided globally)
@@ -212,4 +213,5 @@ alias cf="cloudflared"
 alias lisp="sbcl"
 alias ql="sbcl --load /Users/donaldmoore/lib/quicklisp/quicklisp.lisp"
 alias qls="sbcl --load /Users/donaldmoore/quicklisp/setup.lisp"
-alias bare="cd /Users/donaldmoore/src/dinglehopper/modules/BARE"
+# bare is implemented as a function in fn.sh (and needs to remain un-aliased for parse safety)
+# alias bare="cd /Users/donaldmoore/src/dinglehopper/modules/BARE"
