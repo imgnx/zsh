@@ -10,6 +10,35 @@ ZSH_THEMEFILE_LOADED=1
 # Clear any aliases that would cause "defining function based on alias 'theme'" warnings.
 unalias theme 2>/dev/null
 
+# Pick readable text against THEME_COLOR: black on light, white on dark.
+apply_theme_vars() {
+    local c="$1"
+
+    export THEME_COLOR="$c"
+    export COLOR_VAR="$THEME_COLOR"
+    export FG_VAR="%F{$THEME_COLOR}"
+    export BG_VAR="%K{$THEME_COLOR}"
+
+    local hex="${c#\#}"
+    if [[ ${#hex} -eq 3 ]]; then
+        hex="${hex[1,1]}${hex[1,1]}${hex[2,1]}${hex[2,1]}${hex[3,1]}${hex[3,1]}"
+    fi
+
+    local r=$(( 16#${hex:0:2} ))
+    local g=$(( 16#${hex:2:2} ))
+    local b=$(( 16#${hex:4:2} ))
+    local brightness=$(( (r * 299 + g * 587 + b * 114) / 1000 ))
+    local threshold=$(( 0x88 ))
+    if (( brightness > threshold )); then
+        export FG_THEME_TEXT="%F{#000000}"
+    else
+        export FG_THEME_TEXT="%F{#FFFFFF}"
+    fi
+
+    export PS1="$PS1"
+}
+
+
 THEMEFILE() {
 	local dir="${1:-$PWD}"
 	echo "$(realpath "$dir")/.themefile"
@@ -35,16 +64,6 @@ normalize_hex() {
 	c="${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}"
     fi
     echo "#${c:u}"
-}
-
-apply_theme_vars() {
-	# THEME_COLOR is the canonical name; COLOR_VAR kept for compatibility.
-	local c="$1"
-	export THEME_COLOR="$c"
-	export COLOR_VAR="$THEME_COLOR"
-	export FG_VAR="%F{$THEME_COLOR}"
-	export BG_VAR="%K{$THEME_COLOR}"
-	export PS1="$PS1"
 }
 
 PROMPT_COLOR() {

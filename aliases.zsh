@@ -3,26 +3,18 @@ XDG_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
 XDG_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
 XDG_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CONFIG_DIR XDG_DATA_DIR XDG_STATE_DIR XDG_CACHE_DIR
-
 alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
 alias docs="cd $DOCS"
-
 alias _M='cd "$HOME/_M"';
 alias _G='cd "$DINGLEHOPPER/_GLOBAL"';
-
 fn.sh() {
     emacs $XDG_CONFIG_HOME/zsh/fn.sh   
 }
-
-
 alias UTILS="$DINGLEHOPPER/utils"
-
 utils() {
     cd $DINGLEHOPPER/utils && when
     
 }
-
-
 # z() {
 #     case $arg in
 # 	cd)
@@ -44,8 +36,6 @@ utils() {
 # 	    echo -ern "Talking Heads are on the \033[38;2;0;255;0m**main stage**! We're making perfectly bad sense here!\n"
 #     esac
 # }
-
-
 alias -s json="jq $@"
 alias -s js="node $@"
 alias -s gtk="gittaku $@"
@@ -53,50 +43,35 @@ alias -s md="info $@"
 alias -s gp5=abc
 alias -s ptb=abc
 alias -s gpx=abc
-
-
 # Non-recursive (via R qualifier)
 alias dirs="print -rl -- ./*(DR/)"
 alias d="print -rl -- ./*(DR/)"
-
 alias files="print -rl -- ./*(DR.)"
 alias f="print -rl -- ./*(DR.)"
-
 alias links="print -rl -- ./*(DR@)"
 alias l="print -rl -- ./*(DR@)"
-
 # Explicit globstar recursion
 alias recursive_dirs="print -rl -- ./**/*(D/)"
 alias rd="print -rl -- ./**/*(D/)"
-
 alias recursive_files="print -rl -- ./**/*(D.)"
 alias rf="print -rl -- ./**/*(D.)"
-
 alias recursive_links="print -rl -- ./**/*(@D)"
 alias rl="print -rl -- ./**/*(@D)"
-
 # alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
 # alias taku="cd $TAKU" # Now a setup.sh as a function
 # alias tr="tabula_rasa"
-
 # alias taku='node taku.js' # /secret/top
-
-
 alias -s taku=cat
 # Normal mode - verbose, detailed output with all information
 # Only define aliases here. No functions or script sourcing.
-
 alias rest="reset"
 alias rset="reset"
 alias rs="reset"
 alias r="reset"
-
 # alias src="cd $SRC"
 # alias dh="cd $DINGLEHOPPER"
 # alias triage="cd $DINGLEHOPPER/triage"
 # alias srv="cd $DINGLEHOPPER/srv"
-
-
 alias .......='cd ../../../../../..'
 alias ......='cd ../../../../..'
 alias .....='cd ../../../..'
@@ -140,7 +115,6 @@ alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
 # alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/bin.zsh"
 # alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
-
 alias free='vm_stat' # Memory usage details on macOS
 alias frontend='cd "$SRC/dinglehopper/src/frontend"'
 alias ga='git add'
@@ -227,18 +201,15 @@ alias wk='cd "$SRC/__CODE_WORKSPACE__"'
 alias x="sexy"
 alias xdg-open="open"
 alias xdg='cd "$XDG_CONFIG_HOME"'
-
 alias wallpapers="cd $HOME/Pictures/Wallpapers"
 alias iphonefix="noiphone"
-
 alias hexedit="hexedit --color $@"
 # alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
 alias MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
-alias MODS="$HOME/src/dinglehopper/prod"
-alias mods="cd $MODS"
-
 alias z="cd $Z"
-
 alias cloudflare="cloudflared"
 alias cf="cloudflared"
-
+alias lisp="sbcl"
+alias ql="sbcl --load /Users/donaldmoore/lib/quicklisp/quicklisp.lisp"
+alias qls="sbcl --load /Users/donaldmoore/quicklisp/setup.lisp"
+alias bare="cd /Users/donaldmoore/src/dinglehopper/modules/BARE"

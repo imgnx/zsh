@@ -11,6 +11,13 @@ _complete_my_dir() {
 # 2. Register the completion for your command
 compdef _complete_my_dir cnf
 
+# mods completion: list files/dirs under $MODULES/BARE
+_complete_mods_dir() {
+  local base="${MODULES:-$HOME/src}/BARE"
+  _files -W "$base"
+}
+compdef _complete_mods_dir mods
+
 # Codex prompt completion: `codex /prompts:<TAB>` lists files under ~/.config/codex/prompts.
 _codex_prompt_complete() {
   local prompts_dir="${XDG_CONFIG_HOME:-$HOME/.config}/codex/prompts"

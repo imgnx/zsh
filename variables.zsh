@@ -12,10 +12,11 @@
 export ISH="$DINGLEHOPPER/prod/ish"
 export SRC="$HOME/src"
 export MONOLITH="$HOME/src/dinglehopper"
-export MODULES="$HOME/src/dinglehopper/modules"
+
 # export DINGLEHOPPER="cd $DINGLEHOPPER"
 export MUSIC_THEORY="$HOME/Pictures/Wallpapers/Music Theory"
 export BLUEPRINTS="$DINGLEHOPPER/blueprints";
+export MODULES="$DINGLEHOPPER/modules"
 export bp="$DINGLEHOPPER/blueprints"
 export dh="$DINGLEHOPPER"
 export srv="cd $DINGLEHOPPER/srv"

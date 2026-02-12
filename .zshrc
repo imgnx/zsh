@@ -37,7 +37,7 @@ tmux-toggle() {
 
     if [[ ! -t 0 || ! -t 1 ]]; then
 	command tmux new-session -A -s "$s"
-	
+
     else
 	command tmux -d -t "$TMUX_SESSION_ID" || command tmux new-session -A -s "$s"
     fi
@@ -79,12 +79,12 @@ fi
 
 # Improved tmux launch function for Zsh widgets
 launch_tmux() {
-  # Forces all file descriptors back to the current TTY
-  # We use TMUX="" to prevent nested sessions if you're already in one
-  ( exec < /dev/tty > /dev/tty 2>&1; TMUX="" tmux attach || tmux new-session )
-  
-  # Ensure the prompt returns to a clean state
-  zle reset-prompt
+    # Forces all file descriptors back to the current TTY
+    # We use TMUX="" to prevent nested sessions if you're already in one
+    ( exec < /dev/tty > /dev/tty 2>&1; TMUX="" tmux attach || tmux new-session )
+
+    # Ensure the prompt returns to a clean state
+    zle reset-prompt
 }
 
 zle -N launch_tmux
@@ -136,6 +136,7 @@ export NEUTRAL8="%F{#777777}"
 export FG_WHITE="$NEUTRAL14"
 export FG_GRAY="$NEUTRAL8"
 export FG_DARK="%F{#202020}"
+export FG_THEME_TEXT="$FG_WHITE"
 
 export BG_BLACK="%K{#000000}"
 export BG_WHITE="%K{#FFFFFF}"
@@ -169,13 +170,16 @@ export IP="$(echo ' 71.45.102.76' | tee $tmpIpFile)"
 # ======================================================
 source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/bin/zsh-themefile"
 
+# If THEME_COLOR already exists (from external source), sync derived vars now.
+[[ -n "${THEME_COLOR:-${COLOR_VAR:-}}" ]] && apply_theme_vars "${THEME_COLOR:-$COLOR_VAR}"
+
 # ======================================================
 # ==================== PROMPT ==========================
 # ======================================================
-              
+
 export PS1='
  𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
-${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_WHITE}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
+${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_THEME_TEXT}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
 %B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
 ${FG_WHITE}󱚞   ${FG_GRAY} '
 
@@ -183,11 +187,11 @@ ${FG_WHITE}󱚞   ${FG_GRAY} '
 autoload -Uz add-zle-hook-widget
 
 ghost_realpath_placeholder() {
-  if [[ -z $BUFFER ]]; then
-    POSTDISPLAY="$(pwd -P)"
-  else
-    POSTDISPLAY=""
-  fi
+    if [[ -z $BUFFER ]]; then
+	POSTDISPLAY="$(pwd -P)"
+    else
+	POSTDISPLAY=""
+    fi
 }
 
 add-zle-hook-widget zle-line-init ghost_realpath_placeholder
@@ -261,14 +265,42 @@ fi
 
 # Somehow allows emacs to open multiple files... 1/18/25
 emacs() {
-  if [[ -o interactive && ! -t 0 && -t 1 && "$*" != *"--batch"* && "$*" != *"-batch"* && "$*" != *"--script"* ]]; then
-    command emacs "$@" </dev/tty
-  else
-    command emacs "$@"
-  fi
+    if [[ -o interactive && ! -t 0 && -t 1 && "$*" != *"--batch"* && "$*" != *"-batch"* && "$*" != *"--script"* ]]; then
+	command emacs "$@" </dev/tty
+    else
+	command emacs "$@"
+    fi
 }
 
-source "$ZDOTDIR/fn.do"
+source "$ZDOTDIR/fn.sh"
 
-fn.sh() { fn.edit "$@" }
-alias fn="fn.sh \"$@\""
+
+cnf() {
+    if [[ -d "$XDG_CONFIG_HOME/$1" ]]; then
+	cd $XDG_CONFIG_HOME/$1
+    elif [[ -f "$XDG_CONFIG_HOME/$1" ]]; then
+	$EDITOR "$XDG_CONFIG_HOME/$1"
+    else
+	echo -e "\033[38;2;255;205;0mWarning: \033[0m$1 not found"
+	cd $XDG_CONFIG_HOME
+	echo -e "\033[38;2;255;205;0mWarning: \033[0m$1 not found"
+    fi
+}
+
+mods() {
+    local base="${MODULES:-$HOME/src}/BARE"
+    local target="$1"
+    if [[ -z "$target" ]]; then
+	cd "$base"
+	return
+    fi
+
+    if [[ -d "$base/$target" ]]; then
+	cd "$base/$target"
+    elif [[ -f "$base/$target" ]]; then
+	${EDITOR:-vi} "$base/$target"
+    else
+	echo -e "\033[38;2;255;205;0mWarning: \033[0m$target not found"
+	cd "$base"
+    fi
+}
