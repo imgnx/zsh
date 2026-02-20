@@ -1,77 +1,15 @@
-XDG_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
-XDG_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
-XDG_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
-XDG_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
-export XDG_CONFIG_DIR XDG_DATA_DIR XDG_STATE_DIR XDG_CACHE_DIR
-alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
-alias docs="cd $DOCS"
-alias _M='cd "$HOME/_M"';
 alias _G='cd "$DINGLEHOPPER/_GLOBAL"';
-fn.sh() {
-    emacs $XDG_CONFIG_HOME/zsh/fn.sh   
-}
-alias UTILS="$DINGLEHOPPER/utils"
-utils() {
-    cd $DINGLEHOPPER/utils && when
-    
-}
-# z() {
-#     case $arg in
-# 	cd)
-# 	    cd $Z
-# 	    ;;
-# 	fn)
-# 	    fn.sh
-# 	    ;;
-# 	aliases)
-# 	    emacs $Z/aliases.sh
-# 	    ;;
-# 	.env)
-# 	    emacs $z/.zshenv
-# 	    ;;
-# 	.?z?*rc)
-# 	    echo "Hey, get some fucking sleep or start making sense, ya fucker!"
-# 	    ;;
-# 	*)
-# 	    echo -ern "Talking Heads are on the \033[38;2;0;255;0m**main stage**! We're making perfectly bad sense here!\n"
-#     esac
-# }
-alias -s json="jq $@"
-alias -s js="node $@"
-alias -s gtk="gittaku $@"
-alias -s md="info $@"
+alias _M='cd "$HOME/_M"';
 alias -s gp5=abc
-alias -s ptb=abc
+alias -s pbcopy="pbcopy"
 alias -s gpx=abc
-# Non-recursive (via R qualifier)
-alias dirs="print -rl -- ./*(DR/)"
-alias d="print -rl -- ./*(DR/)"
-alias files="print -rl -- ./*(DR.)"
-alias f="print -rl -- ./*(DR.)"
-alias links="print -rl -- ./*(DR@)"
-alias l="print -rl -- ./*(DR@)"
-# Explicit globstar recursion
-alias recursive_dirs="print -rl -- ./**/*(D/)"
-alias rd="print -rl -- ./**/*(D/)"
-alias recursive_files="print -rl -- ./**/*(D.)"
-alias rf="print -rl -- ./**/*(D.)"
-alias recursive_links="print -rl -- ./**/*(@D)"
-alias rl="print -rl -- ./**/*(@D)"
-# alias emacs='emacs --init-directory=$XDG_CONFIG_HOME/emacs'
-# alias taku="cd $TAKU" # Now a setup.sh as a function
-# alias tr="tabula_rasa"
-# alias taku='node taku.js' # /secret/top
+alias -s gtk="gittaku $@"
+alias -s js="node $@"
+alias -s json="jq $@"
+alias -s md="info $@"
+alias -s ptb=abc
 alias -s taku=cat
-# Normal mode - verbose, detailed output with all information
-# Only define aliases here. No functions or script sourcing.
-alias rest="reset"
-alias rset="reset"
-alias rs="reset"
-alias r="reset"
-# alias src="cd $SRC"
-# alias dh="cd $DINGLEHOPPER"
-# alias triage="cd $DINGLEHOPPER/triage"
-# alias srv="cd $DINGLEHOPPER/srv"
+alias 3.='cd ../../../'
 alias .......='cd ../../../../../..'
 alias ......='cd ../../../../..'
 alias .....='cd ../../../..'
@@ -88,33 +26,35 @@ alias bk="back_up"
 alias bkgd='afplay "$BKGD" &'
 alias bkup="back_up"
 alias bp='cd "$BLUEPRINTS"';
-alias btstrpr="cd $DINGLEHOPPER/modules/bootstrapper"
 alias btldr="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
+alias btstrpr="cd $DINGLEHOPPER/modules/bootstrapper"
 alias c="pbcopy"
 alias cache='cd "$XDG_CACHE_HOME"'
-alias cash="$money"
-# alias cc="copy"
+# alias cash="$money"
 alias cdspc='codespace'
 alias ce="emacs \"$(which $1)\"" # command edit
 alias cedit="emacs \"$(which $1)\"" # command edit
+alias cf="cloudflared"
 alias clean-precmd="precmd_functions=()"
 alias cli='cd "$SRC/dinglehopper/src/cli"'
+alias cloudflare="cloudflared"
 alias cnt='cd "$HOME/src"'
-alias pb="pbcopy || pbpaste"
 alias copycat="copy"
+alias d="print -rl -- ./*(DR/)"
 alias data='cd "$XDG_DATA_HOME"'
-# Keep a single df alias
 alias df='df -h'
+alias dirs="print -rl -- ./*(DR/)"
+alias docs="cd $DOCS"
 alias dw="$DOWNLOADS"
-alias dwn="$DOWNLOADS"
 alias dwm="/opt/homebrew/bin/dwm";
+alias dwn="$DOWNLOADS"
 alias env='env | sort' # Sorted environment variables
 alias eq="cd /Users/donaldmoore/Documents/Aequilibrium"
+alias f="print -rl -- ./*(DR.)"
 alias fe='emacs' # file edit
 alias fedit='emacs' # file edit
 alias fend='cd "$SRC/dinglehopper/src/frontend"'
-# alias fn.sh="emacs $XDG_CONFIG_HOME/zsh/bin.zsh"
-# alias fnx="emacs $XDG_CONFIG_HOME/zsh/functions.zsh"
+alias files="print -rl -- ./*(DR.)"
 alias free='vm_stat' # Memory usage details on macOS
 alias frontend='cd "$SRC/dinglehopper/src/frontend"'
 alias ga='git add'
@@ -126,92 +66,69 @@ alias git-branch="git branch -v"
 alias git-remote="git remote -v"
 alias gl='git pull'
 alias gp='git push'
-# alias grep='rg -p' # Promoted to function
 alias gs='git status'
 alias h='history'
+alias hexedit="hexedit --color $@"
 alias history='fc -l 1' # Full history
 alias homebrew="brew"
 alias i=$ICLOUD_DRIVE
 alias icloud=$ICLOUD_DRIVE
 alias imgnxlog=" 70960C40-F14F-49E5-ABE6-EACEAE25F79B $@"
+alias iphonefix="noiphone"
 alias jsh='ish || cd "$JSH"'
-unalias eza 2>/dev/null
-eza() { command eza --icons "$@"; }
-alias l="eza"
 alias l.="eza './.??*'" # l. (you might see a bullet point because of a common ligature)
+alias l="eza"
+alias l="print -rl -- ./*(DR@)"
 alias la='eza --long --all -bGF --header --git --color=always --group-directories-first --icons'
-alias lsa='ls -lahO' # long, all, human-readable, and output flags (macOS)
 alias labs='cd "$LABS"'
+alias launch="cd $HOME/Library/LaunchAgents/"
+alias launchagents="cd $HOME/Library/LaunchAgents/"
 alias ld='eza -1 --color=always --group-directories-first --icons'
+alias lear="clear"
 alias lh="eza -a | grep -E '^\.|^total'"
 alias lib='cd "$LIB"'
+alias links="print -rl -- ./*(DR@)"
+alias lisp="sbcl"
 alias list-hooks="echo 'All hooks:'; echo 'precmd:' \"\${precmd_functions[@]}\"; echo 'preexec:' \"\${preexec_functions[@]}\"; echo 'periodic:' \"\${periodic_functions[@]}\""
 alias list-precmd="echo 'precmd_functions:'; printf '%s\n' \"\${precmd_functions[@]}\""
-# Keep the more detailed ll variant (octal-permissions)
 alias ll='eza -la --octal-permissions --group-directories-first'
-# Remove duplicate llm (icons are provided globally)
 alias llm='eza -lbGd --header --git --sort=modified --color=always --group-directories-first'
+alias localhost="cd $DINGLEHOPPER/srv && ./serve.local"
 alias ls='eza'
+alias lsa='ls -lahO' # long, all, human-readable, and output flags (macOS)
 alias lsd.="eza -d -a | grep -E '^\.'"
-alias lsd="print -rl -- ./*(/@-/:)" # List directories (and links to directories) only.
-# alias lsd='eza -d --color=always --group-directories-first --icons'
 alias lsdh.="eza -d -a | grep -E '^\.'"
 alias lsdh="eza -d | grep -E '^\.'"
-# Remove duplicate lx (icons are provided globally)
+alias lsrv="cd $DINGLEHOPPER/srv && ./serve.local"
 alias lx='eza -lbhHigUmuSa@ --time-style=long-iso --git --color-scale --color=always --group-directories-first'
 alias m='"$MEDIA"'
+alias MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
+alias midi="cd /Users/donaldmoore/src/dinglehopper/triage/digital-audio-workspace/components/midi/navigators-wheel-circle-of-fifths-instrument.d/"
 alias mkdir='mkdir -p'
 alias money='"$HOME/Library/Mobile Documents/com~apple~CloudDocs/_____WORKBENCH/src/utils/financial/calculator"'
 alias mount='mount | column -t' # Formatted mount points
 alias mx="code -r $XDG_CONFIG_HOME/hammerspoon/init.lua"
 alias netstat='netstat -tuln' # Network connections with details
-# alias p="$v"
-# alias pastecat="$v"
-# alias pc="$v"
-alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
 alias p="python3"
-alias pins=". ./.venv/bin/activate"
+alias pb="pbcopy || pbpaste"
+alias pcnf="doom /Users/donaldmoore/.config/_____CONFIG.JSON_HOOMAN_BOOTLOADER"
 alias pi="ssh pi@zero2w.local"
+alias pins=". ./.venv/bin/activate"
 alias pip="python -m pip"
-alias rl="readlink"
-alias rp=realpath
-alias rt='cd "$XDG_RUNTIME_DIR"'
-alias s='cd "$HOME/src"'
-alias sam=$SAMPLES
-alias samples='cd "/Users/donaldmoore/Library/Mobile Documents/com~apple~CloudDocs/Media/_____SAMPLES"'
-alias scr=$SCRIPTS
-alias sexy="open https://terminal.sexy/"
-alias src='cd "$SRC"'
-alias state='cd "$XDG_STATE_HOME"'
-alias stdln='cd "$HOME/src/dinglehopper/stdln/"'
-alias SURGE="$HOME/Library/Containers/com.apple.garageband10/Data/Documents/Surge XT/Patches/Templates"
-alias surge='cd "$SURGE"'
-# Spicy system sampler
-alias sync_icloud="isync"
-alias t='cd "$HOME/test"'
-alias tabula="tabula_rasa"
-alias test='cd "$TEST"'
-alias tk=$TAKU
-alias tmp='cd "$HOME/tmp"'
-alias todo='cd "$HOME/Documents/ChalkBox/"'
-# Keep the simpler top alias; adjust if you prefer detailed stats
-alias top='top -o cpu'
-alias uls="/bin/ls"
-alias v="pbpaste"
-alias wk='cd "$SRC/__CODE_WORKSPACE__"'
-alias x="sexy"
-alias xdg-open="open"
-alias xdg='cd "$XDG_CONFIG_HOME"'
-alias wallpapers="cd $HOME/Pictures/Wallpapers"
-alias iphonefix="noiphone"
-alias hexedit="hexedit --color $@"
-# alias codexlog="cd /Users/donaldmoore/.config/zsh/codex.conf.d"
-alias MAGICEYE="/Users/donaldmoore/src/dinglehopper/utils/magic-eye"
-alias z="cd $Z"
-alias cloudflare="cloudflared"
-alias cf="cloudflared"
-alias lisp="sbcl"
+alias plist="cd $HOME/Library/LaunchAgents/"
 alias ql="sbcl --load /Users/donaldmoore/lib/quicklisp/quicklisp.lisp"
 alias qls="sbcl --load /Users/donaldmoore/quicklisp/setup.lisp"
-# bare is implemented as a function in fn.sh (and needs to remain un-aliased for parse safety)
-# alias bare="cd /Users/donaldmoore/src/dinglehopper/modules/BARE"
+alias r="\033[0m"
+alias rd="print -rl -- ./**/*(D/)"
+alias re="reset"
+alias recursive_dirs="print -rl -- ./**/*(D/)"
+alias recursive_files="print -rl -- ./**/*(D.)"
+alias recursive_links="print -rl -- ./**/*(@D)"
+alias rest="reset"
+alias rf="print -rl -- ./**/*(D.)"
+alias srv="cd /Users/donaldmoore/src/dinglehopper/srv"
+alias tsrv="cd /Users/donaldmoore/src/dinglehopper/srv && ./serve"
+alias xdg-open="open"
+alias xdg='cd "$XDG_CONFIG_HOME"'
+alias z="cd $Z"
+

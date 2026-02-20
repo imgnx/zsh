@@ -195,11 +195,19 @@ export TAKU="$SRC/taku-4"
 export TEST="$HOME/test"
 export WORKBENCH="$HOME/_____WORKBENCH"
 export WORKSPACE="$WORKBENCH"
-export XDG_CACHE_HOME="$HOME/.cache"
+
+
+# XDG
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_RUNTIME_DIR="$HOME/.local/run"
 export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
+export DG_RUNTIME_DIR="$HOME/.local/run"
+export XDG_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+export XDG_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_RUNTIME_DIR="${XDG_STATE_HOME:-$HOME/.local/run}"
 export ZDOTDIR="$HOME/.config/zsh"
 export ZINIT_HOME="$XDG_CONFIG_HOME/zinit"
 export ZSH="$XDG_CONFIG_HOME/zsh"
@@ -473,3 +481,7 @@ export MVT=/Users/donaldmoore/src/dinglehopper/modules/BARE/digital-audio-worksp
 export DOCS=/Users/donaldmoore/src/dinglehopper/docs/
 export VOIDSPELL="/Users/donaldmoore/src/dinglehopper/srv/voidspell.com"
 export SRV=/Users/donaldmoore/src/dinglehopper/srv
+
+
+export BARE="/Users/donaldmoore/src/dinglehopper/modules/BARE"
+export WORKTREES="/Users/donaldmoore/src/dinglehopper/modules/WORKTREES"

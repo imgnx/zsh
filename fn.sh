@@ -11,7 +11,7 @@
 
 [[ ! -z "$ZSH_DEBUG" ]] && echo "" >"$HOME/Desktop/zsh_debug.log"
 
-# banner.sh
+banner.sh
 
 autoload -U add-zsh-hook
 
@@ -24,29 +24,144 @@ ensure_zdotdir_bin_on_path() {
 ensure_zdotdir_bin_on_path
 
 # Suppress duplicate wrap notices for common commands even if a stale wrapper is found.
-typeset -a WRAP_NOTICE_SUPPRESS
-WRAP_NOTICE_SUPPRESS+=(
-    open
-    say
-    codex
-    man
-    nginx
-    cloudflared
-    reset
-    rg
-    gsutil
-    gcloud
-    rm
-    git
-    eza
-)
+# typeset -a WRAP_NOTICE_SUPPRESS
+# WRAP_NOTICE_SUPPRESS+=(
+#     open
+#     say
+#     codex
+#     man
+#     nginx
+#     cloudflared
+#     reset
+#     rg
+#     gsutil
+#     gcloud
+#     rm
+#     git
+#     eza
+# )
 
 # Only load the one helper that has always been sourced here; everything else in bin/ should be run as commands, not sourced.
 [[ -r "$ZDOTDIR/bin/autovenv" ]] && source "$ZDOTDIR/bin/autovenv"
 
 #### WRITE ANY NEW FUNCTIONS BELOW THIS LINE
 
-# TOP #
+# TOP
+
+ghawk() {
+    open "$(git remote | head -n 1 | awk '{ print $2 }')"
+}
+
+tunnel_server_cmd_not_found_fuzzy_match()
+{
+    echo -e "Command $0 not found. Did you mean \`tsrv\`? (Y/n)"
+    read && tsrv
+}
+#
+
+google() {
+    open "https://google.com"
+}
+
+x() {
+    /bin/cp $HOME/exclude.lst $(realpath ./)
+}
+
+# zip() {
+#     typeset -a previousArgs
+#     previousArgs+=($0)
+#     shift
+#     zipfile=""
+
+#     findDotZip() {
+# 	if [[ $0 == "-r" ]]
+# 	then
+# 	    shift
+# 	    echo -e "You don't have to pass \033[38;2;150;0;205m-r\033[0m to xip. It's implied."
+# 	    findDotZip
+# 	elif [[ "$0" =~ '.zip' ]] then
+# 	   zipfile="$0"
+# 	elif [[ ! -d "$0" && ! -f "$0" ]]; then
+# 	    echo -e "\033[33mInvalid argument: $0\033[0m"
+# 	    return 1
+# 	fi
+#     }
+
+#     findDotZip
+
+#     if [[ -z "$zipfile" ]]
+#     then
+#        zip --help
+#        return 1
+#     fi
+
+#     target="$1"
+
+#     shift
+
+#     /bin/cp $HOME/exclude.lst $(realpath ./) &> /dev/null  &&
+# 	zip -vPr $target "$@" --exclude @exclude.lst
+
+# }
+
+# alias xip="zipx"
+
+lear() {
+    clear
+}
+__wrap_notice pandoc
+pandoc() {
+    /opt/homebrew/bin/pandoc -s $@
+}
+
+
+await() {
+    echo "$@"
+}
+
+__wrap_notice zip
+zip() {
+    # Keep references but do not recurse into symlinks.
+    ln -s $HOME/exclude.lst ./exclude.lst &>/dev/null
+
+    help() {
+	echo -e "Usage: \`\033[38;2;205;120;205mzip stuff ./* -x@exclude.lst\033[0m\` creates an archive called \`\033[38;2;20;240;180mstuff.zip\033[0m\` including files \
+recursively in the current directory and in subdirectories, excluding files from the patterns in \033[38;2;0;123;255mexclude.lst\033[0m, without \
+following symbolic links (pass by \033[3mreference\033[0m, \033[1mnot by value\033[0m).
+
+"
+    }
+    # /usr/bin/zip -ry -sd "$@" -x@exclude.lst
+    local zipfile zipbase
+
+    zipfile="$(
+    /usr/bin/zip -ry -sd "$@" -x@exclude.lst 2>&1 \
+    | awk -F"'" '/^sd: Zipfile name /{z=$2} END{if(z!="") print z}'
+  )"
+    zipbase="${zipfile%.zip}"
+
+    await() {
+	if [[ -z "$zipfile" || ! -f "$zipfile" ]]
+	then
+	    sleep 1
+	    await
+	else
+	    sha256sum -- "$zipfile" > "${zipbase}.sha256"
+	fi
+    }
+    await
+}
+
+lsd() {
+    while IFS= read -r line; do
+        linkOrDir="$(stat $line | cut -d' ' -f 3 | cut -c 1)"
+        if [[ $linkOrDir == "l" ]]; then
+            echo -e "\033[38;2;205;0;205m$line\033[0m"
+        else
+	    echo -e "\033[38;2;0;205;205m$line\033[0m"
+	fi
+    done <<< "$(print -rl -- ./*(N-/))"
+}
 
 # wrap() {
 #     options=("node" "zsh");
@@ -93,7 +208,7 @@ WRAP_NOTICE_SUPPRESS+=(
 #     esac
 # }
 
-# __wrap_notice node	       
+# __wrap_notice node
 
 # node() {
 #     echo -e "\033[38;2;255;205;0m\`node\` now comes with module \"wrappers\" so that you can add/remove features (think \"feature flags\") from the global scope. \033[0mTo disable this behavior, set \"$NODE_WRAPPER_BYPASS\" to \033[38;2;255;0;205m1\033[0m"
@@ -321,20 +436,7 @@ doom() {
 			    --init-directory "$HOME/.config/doom" "$@"
 }
 
-when() {
-    # Find .breadcrumb files, print mtime + path, sort newest first
-    local files
-    files=$(find "$HOME" -type f -name ".breadcrumb" -print0 |
-		xargs -0 stat -f "%m %N" |
-		sort -rn |
-		cut -d' ' -f2-)
 
-    # If nothing found, exit quietly
-    [ -z "$files" ] && return 0
-
-    # Output contents to bat
-    printf "%s\n" "$files" | xargs bat --style=plain
-}
 
 # Clear any alias to avoid "defining function based on alias 'theme'" warnings.
 unalias theme 2>/dev/null
@@ -491,18 +593,23 @@ alias trax="trip"
 
 __wrap_notice man
 export READER="bat"
-man() {
+man () {
     local command="$1"
+    local answer="$2"
+
     echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
-    mkdir -p "${MONOLITH:-HOME}/help/info"
-    lo="${MONOLITH:-HOME}/help/info/${command}.info"
-    if [[ -f ${LOX} ]]; then
+    mkdir -p "${MONOLITH:-$HOME}/help/info"
+    local lo="${MONOLITH:-$HOME}/help/info/${command}.info"
+
+    if [[ -f "$lo" ]]
+    then
 	echo -en "A helpdoc for $command already exists in $lo. To refresh it, execute \`\033[33m/bin/rm -rf $lo\033[0m\`."
     fi
 
-    if /usr/bin/man -w "$command" >/dev/null 2>&1; then
-	/usr/bin/man "$command" | col -b >"$lo"
-	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-HOME}/help/info/$command.info\033[0m ."
+    if /usr/bin/man -w "$command" > /dev/null 2>&1
+    then
+	/usr/bin/man "$command" | col -b > "$lo"
+	echo -e "\033[48;2;0;255;127mDone\!\033[48;2;69;17;255m You can find a copy in \033[38;2;255;205;0m${MONOLITH:-$HOME}/help/info/$command.info\033[0m ."
 	echo
 	echo -e "Menu Options:
 
@@ -512,31 +619,23 @@ Press ...[1] to ...[2]
 3. (c)     Open the helpdoc with 'cat' and exit.
 4. (d)     Open the helpdoc with 'info'.
 5. (e)     Open the helpdoc with $EDITOR.
-
+xsx
 
 * You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the helpdoc with.
 "
 
-	read -r -k 1 answer
+	if [[ -z "$answer" ]]
+	then
+	    read -r -k 1 answer
+	fi
+
 	case $answer in
-	    a | 1)
-		$READER "$lo"
-		;;
-	    b | 2)
-		bat "$lo"
-		;;
-	    c | 3)
-		cat "$lo"
-		;;
-	    d | 4)
-		info "$lo"
-		;;
-	    e | 5)
-		$EDITOR "$lo"
-		;;
-	    *)
-		open "$lo"
-		;;
+	    (a | 1) $READER "$lo" ;;
+	    (b | 2) bat "$lo" ;;
+	    (c | 3) cat "$lo" ;;
+	    (d | 4) info "$lo" ;;
+	    (e | 5) $EDITOR "$lo" ;;
+	    (*) open "$lo" ;;
 	esac
     fi
 }
@@ -1122,6 +1221,14 @@ Up to 50..."
     done
 }
 
+
+serve() {
+    lolcat "Don't forget about ttyd"
+    cd $DINGLEHOPPER/serve && ./serve
+
+}
+
+
 bhamjobs() {
     srv && pushd bhamjobs.com && texas ./serve
 }
@@ -1302,9 +1409,6 @@ exitall() {
 dh() {
     cd "$DINGLEHOPPER"
 }
-srv() {
-    cd "$DINGLEHOPPER/srv"
-}
 
 activate() {
     . ./.venv/bin/activate
@@ -1385,9 +1489,6 @@ daily() {
     fg %+
 }
 
-srv() {
-    cd "$SRC/dinglehopper/srv"
-}
 
 salsa() {
     echo "=== 🌶️ Salsa Sampler ==="
@@ -1451,23 +1552,112 @@ cnf_quick_search() {
 
 # --- wrapper on "undefined": zsh hook for missing commands -------------------
 # If a command is not found, suggest brew install lines (formula vs cask)
-command_not_found_handler() {
-    emulate -L zsh
-    local cmd="$1"
-    shift
-    print -r -- "🫥 undefined: \"$cmd\""
 
-    cnf_quick_search "$cmd" || true
+tunnel_server_cmd_not_found_fuzzy_match () {
+    local tried="$1"
+    echo -e "Command ${tried} not found. Did you mean \`tsrv\`? (Y/n) "
+    local reply
+    IFS= read -r reply
+    [[ -z "$reply" || "$reply" == [Yy]* ]] && tsrv
+}
 
-    echo -e "Asking \033[32mbrew\033[0m can haz."
+if typeset -f command_not_found_handler >/dev/null 2>&1; then
+    functions[_cnf_prev_command_not_found_handler]="$functions[command_not_found_handler]"
+fi
 
-    # echo "\`can\` for the command_not_found_handler is temporarily disabled while we investigate an ongoing issue."
-    # dwimnwis "$cmd"
-    # Todo: Fuzzy finder --- Checkpoint --- ::whistles:: --- ::holds up red card:: not checking for typos! #dwimnwis
-    # Reuse can's logic to check PATH + brew and print suggestions
-    can haz "$cmd"
+typeset -g _CNF_LAST_PM_LOOKUP_EPOCH=0
+typeset -g CNF_PM_THROTTLE_SECONDS=${CNF_PM_THROTTLE_SECONDS:-3}
 
-    # Return non-zero to keep shell semantics ("command not found")
+tunnel_server_cmd_not_found_fuzzy_match () {
+    local tried="$1"
+    echo -e "Command ${tried} not found. Did you mean \`tsrv\`? (Y/n) "
+    local reply
+    IFS= read -r reply
+    [[ -z "$reply" || "$reply" == [Yy]* ]] && tsrv
+}
+
+if typeset -f command_not_found_handler >/dev/null 2>&1; then
+    functions[_cnf_prev_command_not_found_handler]="$functions[command_not_found_handler]"
+fi
+
+typeset -g _CNF_LAST_PM_LOOKUP_EPOCH=0
+typeset -g CNF_PM_THROTTLE_SECONDS=${CNF_PM_THROTTLE_SECONDS:-3}
+
+command_not_found_handler () {
+    local tried="$1"
+    local dist
+    dist="$(
+  python - "$tried" 2>/dev/null <<'PY'
+import sys
+a = sys.argv[1]
+b = "src"
+dp = list(range(len(b)+1))
+for i, ca in enumerate(a, 1):
+    prev = dp[0]
+    dp[0] = i
+    for j, cb in enumerate(b, 1):
+        cur = dp[j]
+        dp[j] = min(dp[j] + 1, dp[j-1] + 1, prev + (ca != cb))
+        prev = cur
+print(dp[-1])
+PY
+)"
+
+    if [[ -n "$dist" && "$dist" -le 1 ]]; then
+	tunnel_server_cmd_not_found_fuzzy_match "$tried"
+	return 0
+    fi
+
+    if typeset -f _cnf_prev_command_not_found_handler >/dev/null 2>&1; then
+	local now=$EPOCHSECONDS
+	local window=$CNF_PM_THROTTLE_SECONDS
+	if (( window <= 0 || now - _CNF_LAST_PM_LOOKUP_EPOCH >= window )); then
+	    _CNF_LAST_PM_LOOKUP_EPOCH=$now
+	    _cnf_prev_command_not_found_handler "$@"
+	    return $?
+	fi
+    fi
+
+    print -u2 -- "zsh: command not found: $tried"
+    return 127
+}
+
+mmand_not_found_handler () {
+    local tried="$1"
+
+    local dist
+    dist="$(python - <<'PY'
+import sys
+a = sys.argv[1]
+b = "src"
+dp = list(range(len(b)+1))
+for i, ca in enumerate(a, 1):
+    prev = dp[0]
+    dp[0] = i
+    for j, cb in enumerate(b, 1):
+        cur = dp[j]
+        dp[j] = min(dp[j] + 1, dp[j-1] + 1, prev + (ca != cb))
+        prev = cur
+print(dp[-1])
+PY
+"$tried" 2>/dev/null)"
+
+    if [[ -n "$dist" && "$dist" -le 1 ]]; then
+	tunnel_server_cmd_not_found_fuzzy_match "$tried"
+	return 0
+    fi
+
+    if typeset -f _cnf_prev_command_not_found_handler >/dev/null 2>&1; then
+	local now=$EPOCHSECONDS
+	local window=$CNF_PM_THROTTLE_SECONDS
+	if (( window <= 0 || now - _CNF_LAST_PM_LOOKUP_EPOCH >= window )); then
+	    _CNF_LAST_PM_LOOKUP_EPOCH=$now
+	    _cnf_prev_command_not_found_handler "$@"
+	    return $?
+	fi
+    fi
+
+    print -u2 -- "zsh: command not found: $tried"
     return 127
 }
 
@@ -1601,10 +1791,9 @@ cpn() {
     cp "$@"
 }
 cp() {
-    echo "The \`cp\` command is configured to **not** overwrite files. Use \`ucp\` if you **do** want it to overwrite Enter."
-    echo -n "Press [ENTER] to continue."
-    read
-    /bin/cp -v -n "$@"
+    echo -e "Running: \033[38;2;205;0;255m/bin/cp\033[0m\033[38;2;255;205;0m -nPrv \"\033[0m\033[38;2;0;255;255m$@\033[38;2;255;205;0m\".\033[0m"
+    # This used to prompt the user to hit enter to continue after explicitly stating that it doesn't clobber files.
+    /bin/cp -nPrv "$@"
 }
 
 fnx_C6EE3E7B-5EB4-45F9-B13D-B451E169B079() {
@@ -3026,14 +3215,96 @@ statusls() {
     fi
 }
 
-when() {
-    find "${1:-.}" -maxdepth 1 -exec stat -f "%B %N" {} + |
-	sort -nr |
-	head -n 10 |
-	while read ts file; do
-	    echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
-	done
-}
+
+# ! when was move to $DINGLEHOPPER/bin
+# when() {
+# 	local depth=1
+# 	local use_bat=0
+
+# 	if [[ ${argv[(r)-vvv]} == "-vvv" ]]
+# 	then
+# 		depth=999
+# 		use_bat=1
+# 	elif [[ ${argv[(r)-vv]} == "-vv" ]]
+# 	then
+# 		depth=6
+# 		use_bat=1
+# 	elif [[ ${argv[(r)-v]} == "-v" ]]
+# 	then
+# 		depth=3
+# 		use_bat=1
+# 	fi
+
+# 	# Always run in the current directory (git-style)
+# 	local target="."
+
+# 	local prune_dirs=(.git node_modules dist build .next .out .cache coverage vendor venv __pycache__)
+# 	local prune_expr=()
+# 	local d
+# 	for d in $prune_dirs
+# 	do
+# 		prune_expr+=(-name "$d" -o)
+# 	done
+# 	(( ${#prune_expr} )) && prune_expr[-1]=()
+
+# 	local -a bc_files
+# 	bc_files=()
+# 	while IFS= read -r bc
+# 	do
+# 		bc_files+=("$bc")
+# 	done < <(
+# 		find "$target" \
+    # 			\( -type d \( ${prune_expr[@]} \) -prune \) -o \
+    # 			\( -type f -name ".breadcrumb" -print \)
+# 	)
+
+# 	if (( ${#bc_files} ))
+# 	then
+# 		echo "== .breadcrumb hits =="
+# 		local bc
+# 		for bc in $bc_files
+# 		do
+# 			local dir="${bc:h}"
+# 			local changed
+# 			changed="$(stat -f "%Sc" -t "%Y-%m-%d %H:%M:%S" "$bc" 2>/dev/null || echo "?")"
+# 			echo "-- $dir  (.breadcrumb changed: $changed)"
+
+# 			if command -v eza > /dev/null 2>&1
+# 			then
+# 				eza --tree --all --color=always --sort=changed --reverse --time=changed --time-style=long-iso \
+    # 					--ignore-glob='.git|node_modules|dist|build|.next|.out|.cache|coverage|vendor|venv|__pycache__' \
+    # 					--level "$depth" "$dir"
+# 			elif command -v tree > /dev/null 2>&1
+# 			then
+# 				tree -a -C -t -D -L "$depth" \
+    # 					-I '.git|node_modules|dist|build|.next|.out|.cache|coverage|vendor|venv|__pycache__' \
+    # 					"$dir"
+# 			else
+# 				find "$dir" -mindepth 1 -maxdepth 2 \
+    # 					\( -type d \( ${prune_expr[@]} \) -prune \) -o -print 2> /dev/null \
+    # 				| while IFS= read -r p
+# 					do
+# 						printf "%s\t%s\n" "$(stat -f "%c" "$p" 2>/dev/null || echo 0)" "$p"
+# 					done \
+    # 				| sort -nr | cut -f2-
+# 			fi
+# 			echo
+# 		done
+# 	fi
+
+# 	local find_cmd=(find "$target")
+# 	[[ $depth -ne 999 ]] && find_cmd+=(-maxdepth "$depth")
+# 	find_cmd+=(-exec stat -f "%B %N" {} +)
+
+# 	"${find_cmd[@]}" | sort -nr | {
+# 		[[ $use_bat -eq 0 ]] && head -n 10 || cat
+# 	} | while read ts file
+# 	do
+# 		echo "$(date -r "$ts" '+%Y-%m-%d %H:%M:%S')  $file"
+# 	done | {
+# 		[[ $use_bat -eq 1 ]] && bat || cat
+# 	}
+# }
 
 spinner() {
     local pid=$1
@@ -3141,11 +3412,11 @@ throttleBanner() {
     fi
 }
 
-LIVE_HOT=0
+BANNER_GUARDVAR=0
 
 tipTop() {
-    if [[ LIVE_HOT == 0 ]]; then
-	export LIVE_HOT=1
+    if [[ BANNER_GUARDVAR == 0 ]]; then
+	export BANNER_GUARDVAR=1
 	banner.sh
 	return
     else
@@ -3281,6 +3552,3 @@ zle -N tmux_attach_mru_widget
 
 # F12 is usually \033[24~ (aka ^[[24~)
 bindkey $'\033[24~' tmux_attach_mru_widget
-
-
-banner.sh

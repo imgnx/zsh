@@ -1,15 +1,52 @@
 # If this zsh session is non-interactive, exit quietly.
 [[ ! -o interactive || "$TABULA_RASA" == "1|true" ]] && return
 
+export warn="\033[38;2;255;205;0m"
 source /Users/donaldmoore/.config/zsh/variables.zsh
 
-# Ensure Homebrew
-if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
-    export PATH="/opt/homebrew/bin:$PATH"
-fi
+export DEBUG_PATH="0"
 
-if [[ ! "$PATH" =~ "$HOME/.local/bin" ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
+
+# Already done early on in .zshenv
+# eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# 1. Prevent duplicate entries in your PATH
+typeset -U path
+
+# 2. Add your local bin to the FRONT of the array
+path=(
+    /opt/homebrew/bin
+    /Users/donaldmoore/.local/bin
+    /Users/donaldmoore/bin # mempurge
+    /Users/donaldmoore/src/dinglehopper/bin
+    /opt/homebrew/opt/openjdk@21/bin
+    $path
+)
+
+# 3. Export it (Zsh automatically syncs 'path' array and 'PATH' string)
+export PATH
+
+
+# Ensure Homebrew
+# if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
+#     export PATH="/opt/homebrew/bin:$PATH"
+#     if [[ $DEBUG_PATH == "1" ]]; then
+# 	echo "Brew was not on the path..."
+#     fi
+
+# fi
+
+# if [[ ! "$PATH" =~ "$HOME/.local/bin" ]]; then
+#     export PATH="$HOME/.local/bin:$PATH"
+#     if [[ $DEBUG_PATH == "1" ]]; then
+# 	echo "\~/.local/bin was not on the path..."
+#     fi
+# fi
+
+
+
+if [[ $DEBUG_PATH == "1" ]]; then
+    echo "PATH: $PATH"
 fi
 
 source $XDG_CONFIG_HOME/zsh/bin/zsh-delayed-script-loader
@@ -85,6 +122,9 @@ launch_tmux() {
     # We use TMUX="" to prevent nested sessions if you're already in one
     ( exec < /dev/tty > /dev/tty 2>&1; TMUX="" tmux attach || tmux new-session )
 
+    cd "/Users/donaldmoore/Music/When The Going Gets Tough, The Tough Get Going."
+
+
     # Ensure the prompt returns to a clean state
     zle reset-prompt
 }
@@ -94,14 +134,15 @@ zle -N launch_tmux
 bindkey '\033[24~' launch_tmux
 
 is_vscode_term() {
-    [[ "$TERM_PROGRAM" == "vscode" || -n "$VSCODE_PID" || -n "$VSCODE_GIT_IPC_HANDLE" ]]
+    [[ "$TERM_PROGRAM" == "vscode" || -n "${VSCODE_PID:-}" || -n "${VSCODE_GIT_IPC_HANDLE:-}" ]]
 }
 
 
 emacs() {
     # In VS Code integrated terminal, prefer emacsclient so you reuse your existing frame/server.
     if is_vscode_term; then
-	command emacsclient -n -a "emacs" "$@"
+	command emacsclient
+	open -a "Terminal"
 	return $?
     fi
 
@@ -123,21 +164,21 @@ if [[ "$DISABLE_TMUX" != 1 ]]; then
 	echo "1. It will not launch in \`tmux\` by default."
 	echo "2. Running \`emacs\` will open the \`emacsclient\`."
     else
-	
 
 
-    if [[ -z "$TMUX" ]]; then
-	# ! Use F12 to open the escape hatch...
-	# bind-key -n F12 detach-client
-	# Use a consistent name or keep your UUID logic
-	SESSION_ID="$(uuidgen)"
-	tmux new-session -d -s "$SESSION_ID"
-	# Attach to the session (new or existing)
-	tmux attach-session -t "$SESSION_ID"
-	export TMUX_SESSION_ID="$SESSION_ID"
+
+	if [[ -z "$TMUX" ]]; then
+	    # ! Use F12 to open the escape hatch...
+	    # bind-key -n F12 detach-client
+	    # Use a consistent name or keep your UUID logic
+	    SESSION_ID="$(uuidgen)"
+	    tmux new-session -d -s "$SESSION_ID"
+	    # Attach to the session (new or existing)
+	    tmux attach-session -t "$SESSION_ID"
+	    export TMUX_SESSION_ID="$SESSION_ID"
+	fi
     fi
-    fi
-    fi
+fi
 
 # Add completions
 if [[ ":$FPATH:" != *":/Users/donaldmoore/.config/zsh/completions.d:"* ]]; then
@@ -185,10 +226,14 @@ export RESET="${RESET_ZSH}"
 
 # --- Paths / utilities ---
 local ZDOTDIR="/Users/donaldmoore/.config/zsh"
-[[ ! $(command -v mempurge) ]] && export PATH="$PATH:$HOME/bin"
 
 source /Users/donaldmoore/src/dinglehopper/triage/shed/contrib/zsh/focus-burst.zsh
-source $ZDOTDIR/bin.zsh
+source "$ZDOTDIR/fn.sh"
+eza() { command eza --icons "$@"; }
+fn.sh() {
+    emacs $XDG_CONFIG_HOME/zsh/fn.sh
+}
+unalias eza 2>/dev/null
 source "$ZDOTDIR/aliases.zsh"
 source "$ZDOTDIR/history.zsh"
 
@@ -210,7 +255,7 @@ source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/bin/zsh-themefile"
 # ======================================================
 
 export PS1='
- 𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DK}%S $IP ${DIM}%s${RESET_BG}${RESET}
+ 𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DARK}%S $IP ${DIM}%s${RESET_BG}${RESET}
 ${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_THEME_TEXT}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
 %B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
 ${FG_WHITE}󱚞   ${FG_GRAY} '
@@ -248,15 +293,13 @@ export RPROMPT="${VIOLET}Powered by εmacs${RESET} ${YELLOW}󰮯 ${MAGENTA}· ${
 
 export SRC="/Users/donaldmoore/src"
 export DINGLEHOPPER="$SRC/dinglehopper"
+export MODULES="$DINGLEHOPPER/modules"
 export TRIAGE="$DINGLEHOPPER/triage"
 
 export XDG_DATA_HOME="$HOME/.local/share"
 export HISTFILE="$HOME/.local/state/zsh/history"
 export LESSHISTFILE="$HOME/.config/less/history"
 export PYTHONHISTFILE="$HOME/.config/python/history"
-
-export OPEN_JDK_PATH="/opt/homebrew/opt/openjdk@21/bin"
-[[ "$PATH" != *"$OPEN_JDK_PATH"* ]] && export PATH="$OPEN_JDK_PATH:$PATH"
 
 [ -f "$HOME/.ghcup/env" ] && source "$HOME/.ghcup/env"
 [ -f "$ZDOTDIR/.iterm2_shell_integration.zsh" ] && source "$ZDOTDIR/.iterm2_shell_integration.zsh"
@@ -282,23 +325,10 @@ print -P "${RESET}"
 
 # bindkey -s '^e' 'emacs\n'
 
-if [[ ":$PATH:" != *":$DINGLEHOPPER/utils:"* ]]; then
-    export PATH="$PATH:$DINGLEHOPPER/bin"
-fi
-
 # bun completions
 [ -s "/Users/donaldmoore/.bun/_bun" ] && source "/Users/donaldmoore/.bun/_bun"
 
 bindkey "\033[3;5~" kill-word
-
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    export PATH="$PATH:$HOME/.local/bin"
-fi
-
-# Avoid alias/function parse conflicts inside fn.sh
-# unalias bare 2>/dev/null || true
-
-source "$ZDOTDIR/fn.sh"
 
 
 cnf() {
@@ -330,3 +360,6 @@ mods() {
 	cd "$base"
     fi
 }
+
+
+eval "$(direnv hook zsh)"
