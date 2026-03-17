@@ -31,3 +31,4 @@ register_autoload_hook() {
 # Example: automatically run ./.automx when entering a directory.
 register_autoload_hook chpwd chpwd_automx
 register_autoload_hook chpwd chpwd_breadcrumbs
+register_autoload_hook chpwd chpwd_git

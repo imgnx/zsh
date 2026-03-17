@@ -23,33 +23,197 @@ ensure_zdotdir_bin_on_path() {
 
 ensure_zdotdir_bin_on_path
 
-# Suppress duplicate wrap notices for common commands even if a stale wrapper is found.
-# typeset -a WRAP_NOTICE_SUPPRESS
-# WRAP_NOTICE_SUPPRESS+=(
-#     open
-#     say
-#     codex
-#     man
-#     nginx
-#     cloudflared
-#     reset
-#     rg
-#     gsutil
-#     gcloud
-#     rm
-#     git
-#     eza
-# )
-
 # Only load the one helper that has always been sourced here; everything else in bin/ should be run as commands, not sourced.
 [[ -r "$ZDOTDIR/bin/autovenv" ]] && source "$ZDOTDIR/bin/autovenv"
+
+# --- themefile overrides ----------------------------------------------------
+# Keep namespace writes stable and warn on unreadable/invalid .themefile entries.
+if (( $+functions[THEMEFILE] )); then
+    save_themefile() {
+	emulate -L zsh
+
+	local file="$(THEMEFILE)"
+	local ns="$(default_namespace)"
+	local color="${THEME_COLOR:-${COLOR_VAR:-$(rHex)}}"
+	local -a extras=()
+
+	if [[ -f "$file" ]]; then
+	    local line
+	    while IFS= read -r line; do
+		[[ -z "$line" ]] && continue
+		[[ "$line" == THEME_COLOR=* || "$line" == NAMESPACE=* ]] && continue
+		extras+=("$line")
+	    done <"$file"
+	fi
+
+	export NAMESPACE="$ns"
+	apply_theme_vars "$(normalize_hex "$color")"
+
+	{
+	    echo "THEME_COLOR=\"${THEME_COLOR}\""
+	    echo "NAMESPACE=\"${NAMESPACE}\""
+	    ((${#extras[@]})) && printf '%s\n' "${extras[@]}"
+	} >|"$file" || {
+	    print -u2 "theme: failed to write $file"
+	    return 1
+	}
+    }
+
+    load_themefile() {
+	emulate -L zsh
+	local file="$(THEMEFILE)"
+	[[ -f "$file" ]] || return 0
+
+	if [[ ! -r "$file" ]]; then
+	    print -u2 "theme: cannot read $file"
+	    return 1
+	fi
+
+	local lineno=0 applied=0
+	while IFS= read -r line; do
+	    ((lineno++))
+	    [[ -z "$line" || "$line" == \#* ]] && continue
+	    if [[ "$line" != *"="* ]]; then
+		print -u2 "theme: $file:$lineno: invalid line (no '='): $line"
+		continue
+	    fi
+	    local k="${line%%=*}"
+	    local v="${line#*=}"
+	    v="${v#\"}"; v="${v%\"}"
+	    case "$k" in
+		THEME_COLOR)
+		    if is_hex "${v#\#}"; then
+			apply_theme_vars "$(normalize_hex "$v")"
+			applied=1
+		    else
+			print -u2 "theme: $file:$lineno: invalid THEME_COLOR '$v'"
+		    fi
+		    ;;
+		NAMESPACE)
+		    export NAMESPACE="$v"
+		    applied=1
+		    ;;
+		*)
+		    ;;
+	    esac
+	done <"$file"
+
+	if (( ! applied )); then
+	    print -u2 "theme: warning: no usable values in $file"
+	fi
+
+	# Ensure namespace is never empty.
+	[[ -z "${NAMESPACE:-}" ]] && export NAMESPACE="$(default_namespace)"
+    }
+
+    # Reload with the stricter loader once per shell start.
+    load_themefile
+fi
 
 #### WRITE ANY NEW FUNCTIONS BELOW THIS LINE
 
 # TOP
 
-ghawk() {
-    open "$(git remote | head -n 1 | awk '{ print $2 }')"
+scratch() {
+    print -rl -- $HOME/test/scratch/ | while IFS= read -r line;
+    do
+        rm -rf $line
+    done
+
+}
+
+
+gittree () {
+    command git ls-files --cached --others --exclude-standard | python - <<'PY'
+import sys
+paths=[p.strip() for p in sys.stdin if p.strip()]
+root={}
+for p in paths:
+    cur=root
+    parts=p.split('/')
+    for i,part in enumerate(parts):
+        cur=cur.setdefault(part, {} if i < len(parts)-1 else None)
+
+def walk(node, prefix=""):
+    items=list(node.items()) if isinstance(node, dict) else []
+    for idx,(name,child) in enumerate(sorted(items, key=lambda x:x[0].lower())):
+        last = idx == len(items)-1
+        branch = "└── " if last else "├── "
+        print(prefix + branch + name)
+        if isinstance(child, dict):
+            ext = "    " if last else "│   "
+            walk(child, prefix + ext)
+
+walk(root)
+PY
+}
+
+new() {
+    echo "Making $(realpath $BARE)/$@..."
+    mkdir -p "$BARE/$@"
+    echo "Done. Attempting to \`cd\` into it..."
+    cd "$BARE/$@" || pushd "$BARE/$@"
+    echo "Done. Would you like to start with a file or a command?
+
+    Options:
+
+    1) [(f)ile]: \`$EDITOR <filename>\`
+    2) [(c)ommand]: Return to terminal
+    *) <command> Everything else is interpreted as a command."
+}
+
+alarm() {
+    message="$1"
+    while true;
+    do
+	clear
+	sleep 0.5
+	echo -e "\033[38;2;255;25;0m"
+	figlet "$message"
+	echo -e "\033[0m"
+	say "$message"
+	tput bel;
+    done
+}
+
+
+repurpose() {
+    if [[ -f $HOME/.local/bin/$1 ]];
+    then
+	echo "$HOME/.local/bin/$1 alerady exists. Press Enter to overwrite or \033[38;2;255;205;0mctrl+c\033[0m to quit."
+	read
+    fi
+    unalias $1;
+    unfunction $1;
+    echo "
+#\!/usr/bin/env zsh
+
+$2
+" > $HOME/.local/bin/$1
+}
+
+bare() {
+    cd "$BARE"
+}
+
+__wrap_notice ttyd
+ttyd() {
+    /Applications/ttyd || /opt/homebrew/bin/ttyd -i 127.0.0.1 -p 8000 zsh -l
+}
+
+gr() {
+    rg $@
+}
+
+remote() {
+    OUT="$(git remote | head -n 1 | awk '{ print $2 }')"
+    echo $OUT | pbcopy
+    echo "Copied remote ($OUT) to clipboard."
+    if [[ $1 == "-o" ]]; then
+	open "$OUT"
+    else
+	echo -e "\033[38;2;255;205;0mPass the -o flag to view remote in a browser.\033[0m"
+    fi
 }
 
 tunnel_server_cmd_not_found_fuzzy_match()
@@ -120,37 +284,62 @@ await() {
 }
 
 __wrap_notice zip
-zip() {
-    # Keep references but do not recurse into symlinks.
-    ln -s $HOME/exclude.lst ./exclude.lst &>/dev/null
+zip () {
+    local exclude_file log zipfile zipbase
 
-    help() {
-	echo -e "Usage: \`\033[38;2;205;120;205mzip stuff ./* -x@exclude.lst\033[0m\` creates an archive called \`\033[38;2;20;240;180mstuff.zip\033[0m\` including files \
-recursively in the current directory and in subdirectories, excluding files from the patterns in \033[38;2;0;123;255mexclude.lst\033[0m, without \
-following symbolic links (pass by \033[3mreference\033[0m, \033[1mnot by value\033[0m).
+    exclude_file="${HOME}/exclude.lst"
+    [[ -f "$exclude_file" ]] || { print -u2 -- "zip: missing exclude file: $exclude_file"; return 1; }
 
-"
-    }
-    # /usr/bin/zip -ry -sd "$@" -x@exclude.lst
-    local zipfile zipbase
+
+    log="$(mktemp)" || { print -u2 -- "zip: mktemp failed"; return 1; }
+    trap 'rm -f -- "$log"' RETURN
+
+    /usr/bin/zip -v -ry -sd "$@" -x@"$exclude_file" 2>&1 | tee "$log"
 
     zipfile="$(
-    /usr/bin/zip -ry -sd "$@" -x@exclude.lst 2>&1 \
-    | awk -F"'" '/^sd: Zipfile name /{z=$2} END{if(z!="") print z}'
+    awk -F"'" '/^sd: Zipfile name /{z=$2} END{if(z!="") print z}' "$log"
   )"
-    zipbase="${zipfile%.zip}"
 
-    await() {
-	if [[ -z "$zipfile" || ! -f "$zipfile" ]]
-	then
-	    sleep 1
-	    await
-	else
-	    sha256sum -- "$zipfile" > "${zipbase}.sha256"
-	fi
-    }
-    await
+    rm -f -- "$log"
+
+    [[ -n "$zipfile" ]] || { print -u2 -- "zip: -sd did not report a zipfile name"; return 1; }
+    [[ -f "$zipfile" ]] || { print -u2 -- "zip: reported zipfile not found: $zipfile"; return 1; }
+
+    zipbase="${zipfile%.zip}"
+    sha256sum -- "$zipfile" > "${zipbase}.sha256"
 }
+
+# zip() {
+#     # Keep references but do not recurse into symlinks.
+#     ln -s $HOME/exclude.lst ./exclude.lst &>/dev/null
+
+#     help() {
+# 	echo -e "Usage: \`\033[38;2;205;120;205mzip stuff ./* -x@exclude.lst\033[0m\` creates an archive called \`\033[38;2;20;240;180mstuff.zip\033[0m\` including files \
+    # recursively in the current directory and in subdirectories, excluding files from the patterns in \033[38;2;0;123;255mexclude.lst\033[0m, without \
+    # following symbolic links (pass by \033[3mreference\033[0m, \033[1mnot by value\033[0m).
+
+# "
+#     }
+#     # /usr/bin/zip -ry -sd "$@" -x@exclude.lst
+#     local zipfile zipbase
+
+#     zipfile="$(
+#     /usr/bin/zip -ry -sd -v "$@" -x@exclude.lst 2>&1 \
+    #     | awk -F"'" '/^sd: Zipfile name /{z=$2} END{if(z!="") print z}'
+#   )"
+#     zipbase="${zipfile%.zip}"
+
+#     await() {
+# 	if [[ -z "$zipfile" || ! -f "$zipfile" ]]
+# 	then
+# 	    sleep 1
+# 	    await
+# 	else
+# 	    sha256sum -- "$zipfile" > "${zipbase}.sha256"
+# 	fi
+#     }
+#     await
+# }
 
 lsd() {
     while IFS= read -r line; do
@@ -391,17 +580,19 @@ prove() {
     done
 }
 
-__wrap_notice say
-say() {
+say2file() {
     # args="$@"
     # shift args
-    echo -e "\033[9mSay is wrapped.\033[\0m"
-    echo "Saying: $@"
-    # /usr/bin/say -v "Voice 4" "$args"
-    PHRASE="$@"
-    /usr/bin/say -v "Voice 4" "$PHRASE" -o out.aiff
-    ffmpeg -i out.aiff "say.wav"
-    rm out.aiff
+    if [[]]
+       echo -e "\033[38;2;255;205;0mSay is wrapped.\033[\0m"
+       echo "Saying: $@"
+       # /usr/bin/say -v "Voice 4" "$args"
+       PHRASE="$@"
+       /usr/bin/say -v "Voice 4" "$PHRASE" -o out.aiff
+       id="$(uuidgen)"
+       ffmpeg -i out.aiff "$id.wav"
+       rm out.aiff
+       afplay "$id.wav"
 }
 
 ward() {
@@ -439,46 +630,46 @@ doom() {
 
 
 # Clear any alias to avoid "defining function based on alias 'theme'" warnings.
-unalias theme 2>/dev/null
+# unalias theme 2>/dev/null
 
-theme() {
-    cmd="$1"
-    case $cmd in
-	init)
-	    THEME_INIT "$@"
-	    ;;
-	set)
-	    SET_THEME "$@"
-	    ;;
-	roll | reroll)
-	    THEME_ROLL "$@"
-	    ;;
-	*)
-	    echo -en "Please select an action:
+# theme() {
+#     cmd="$1"
+#     case $cmd in
+# 	init)
+# 	    THEME_INIT "$@"
+# 	    ;;
+# 	set)
+# 	    SET_THEME "$@"
+# 	    ;;
+# 	roll | reroll)
+# 	    THEME_ROLL "$@"
+# 	    ;;
+# 	*)
+# 	    echo -en "Please select an action:
 
-1. \033[38;2;0;123;255m(i) \033[33mtheme init\033[0m
-2. \033[38;2;0;123;255m(s) \033[33mtheme set\033[0m
-3. \033[38;2;0;123;255m(r) \033[33mtheme roll/reroll\033[0m
+# 1. \033[38;2;0;123;255m(i) \033[33mtheme init\033[0m
+# 2. \033[38;2;0;123;255m(s) \033[33mtheme set\033[0m
+# 3. \033[38;2;0;123;255m(r) \033[33mtheme roll/reroll\033[0m
 
-Your selection: "
-	    read -r -k 1 res
-	    case $res in
-		[1i])
-		    theme init
-		    ;;
-		[2s])
-		    theme set
-		    ;;
-		[3r])
-		    theme roll
-		    ;;
-		*)
-		    echo "Invalid response \`$res\`. Exiting."
-		    ;;
-	    esac
-	    ;;
-    esac
-}
+# Your selection: "
+# 	    read -r -k 1 res
+# 	    case $res in
+# 		[1i])
+# 		    theme init
+# 		    ;;
+# 		[2s])
+# 		    theme set
+# 		    ;;
+# 		[3r])
+# 		    theme roll
+# 		    ;;
+# 		*)
+# 		    echo "Invalid response \`$res\`. Exiting."
+# 		    ;;
+# 	    esac
+# 	    ;;
+#     esac
+# }
 
 modules() {
     cd "$MODULES"
@@ -593,13 +784,13 @@ alias trax="trip"
 
 __wrap_notice man
 export READER="bat"
-man () {
+man() {
     local command="$1"
     local answer="$2"
 
     echo -e "\033[48;2;69;17;255mGathering documentation for ${command}... \033[0m"
-    mkdir -p "${MONOLITH:-$HOME}/help/info"
-    local lo="${MONOLITH:-$HOME}/help/info/${command}.info"
+    mkdir -p "${MONOLITH:-$HOME}/docs/info"
+    local lo="${MONOLITH:-$HOME}/docs/info/${command}.info"
 
     if [[ -f "$lo" ]]
     then
@@ -614,12 +805,12 @@ man () {
 	echo -e "Menu Options:
 
 Press ...[1] to ...[2]
-1. (a)     Open the helpdoc with $READER.
+1. (a)     Open the helpdoc with \$READER (${READER:-undefined}).
 2. (b)     Open the helpdoc in 'bat'.
 3. (c)     Open the helpdoc with 'cat' and exit.
-4. (d)     Open the helpdoc with 'info'.
-5. (e)     Open the helpdoc with $EDITOR.
-xsx
+4. (d)     Open the helpdoc with \$DIFFTOOL (${DIFFTOOL:-undefined}).
+5. (e)     Open the helpdoc with \$EDITOR (${EDITOR:-undefined}).
+6. (i)	   Open the helpdoc with 'info'.
 
 * You can set which app opens the doc by setting the default application for .info files to whichever app you'd like to open the helpdoc with.
 "
@@ -633,8 +824,9 @@ xsx
 	    (a | 1) $READER "$lo" ;;
 	    (b | 2) bat "$lo" ;;
 	    (c | 3) cat "$lo" ;;
-	    (d | 4) info "$lo" ;;
+	    (d | 4) $DIFFTOOL "$lo" ;;
 	    (e | 5) $EDITOR "$lo" ;;
+	    (i | 6) info "$lo" ;;
 	    (*) open "$lo" ;;
 	esac
     fi

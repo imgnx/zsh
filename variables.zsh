@@ -176,6 +176,7 @@ fi
 export CONFIG="$XDG_CACHE_HOME"
 export CONTAINERS="$HOME/_____CONTAINERS"
 export COPILOT_MODE="${COPILOT_MODE:-false}" # Default to false if not set
+export DIFFTOOL="code"
 export DOOMDIR="$XDG_CONFIG_HOME/doom"
 export DOWNLOADS="$HOME/Downloads"
 export EDITOR="emacs"
@@ -482,6 +483,7 @@ export DOCS=/Users/donaldmoore/src/dinglehopper/docs/
 export VOIDSPELL="/Users/donaldmoore/src/dinglehopper/srv/voidspell.com"
 export SRV=/Users/donaldmoore/src/dinglehopper/srv
 
+export MODS="/Users/donaldmoore/src/dinglehopper/modules/BARE"
 
 export BARE="/Users/donaldmoore/src/dinglehopper/modules/BARE"
 export WORKTREES="/Users/donaldmoore/src/dinglehopper/modules/WORKTREES"

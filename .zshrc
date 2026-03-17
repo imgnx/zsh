@@ -141,7 +141,7 @@ is_vscode_term() {
 emacs() {
     # In VS Code integrated terminal, prefer emacsclient so you reuse your existing frame/server.
     if is_vscode_term; then
-	command emacsclient
+	command emacsclient || open -a "Emacs"
 	open -a "Terminal"
 	return $?
     fi
@@ -210,6 +210,7 @@ export NEUTRAL8="%F{#777777}"
 export FG_WHITE="$NEUTRAL14"
 export FG_GRAY="$NEUTRAL8"
 export FG_DARK="%F{#202020}"
+export FG_LIGHT="%F{#DDDDDD}"
 export FG_THEME_TEXT="$FG_WHITE"
 
 export BG_BLACK="%K{#000000}"
@@ -223,6 +224,9 @@ export RESET_BG=$'%{\e[49m%}'
 export STANDOUT=$'%{\e[7m%}'
 export BLINK=$'%{\e[5m%}'
 export RESET="${RESET_ZSH}"
+
+export DEFAULT_FG="%F{#EEEEEE}"
+export DEFAULT_BG="%K{#202020}"
 
 # --- Paths / utilities ---
 local ZDOTDIR="/Users/donaldmoore/.config/zsh"
@@ -242,22 +246,13 @@ tmpIpFile="$(mktemp)"
 export IP="$(echo ' 71.45.102.76' | tee $tmpIpFile)"
 
 # ======================================================
-# =============== THEME SYSTEM (SINGLE) =================
-
-# ======================================================
-source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/bin/zsh-themefile"
-
-# If THEME_COLOR already exists (from external source), sync derived vars now.
-[[ -n "${THEME_COLOR:-${COLOR_VAR:-}}" ]] && apply_theme_vars "${THEME_COLOR:-$COLOR_VAR}"
-
-# ======================================================
 # ==================== PROMPT ==========================
 # ======================================================
 
 export PS1='
- 𓃠  %B[pid:$$] %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${FG_DARK}%S $IP ${DIM}%s${RESET_BG}${RESET}
-${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_THEME_TEXT}%B %n@%M ${FG_VAR}${RESET_BG}${RESET}
-%B ${LIME}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
+ 𓃠  %B${LIME}[pid:$$]${RESET}%B %(?..%F{RED}[exit:%?]%f) %(1j.\${JOBS}[jobs:%j]%f.)${DEFAULT_FG}${DEFAULT_BG}%S $IP ${DIM}%s${RESET_BG}${RESET}
+${RESET}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_VAR}${DIM}${RESET}${BG_VAR}${FG_THEME_TEXT}%B%n@%M ${FG_VAR}${RESET_BG}${RESET}
+%B${DEFAULT_BG} ${DEFAULT_FG}%S $( [[ -n "$NAMESPACE" ]] && print -r -- "NS: $NAMESPACE" || print -r -- "%2~" ) ${DIM}%s${RESET_BG}${RESET}
 ${FG_WHITE}󱚞   ${FG_GRAY} '
 
 

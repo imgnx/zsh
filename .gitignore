@@ -1,23 +1,32 @@
+# Any dotfile
+**/.*
+
+# Except .zshrc, .zshenv, and .zprofile
+!.zshrc
+!.zshenv
+!.zprofile
+!**/.git*
+
 # macOS system files
-.DS_Store
-.DS_Store?
-.DS_Store*
-._*
-.Spotlight-V100
-.Trashes
+# .DS_Store
+# .DS_Store?
+# .DS_Store*
+# ._*
+# .Spotlight-V100
+# .Trashes
 ehthumbs.db
 Thumbs.db
 
 # Zsh specific files that should not be committed
-.zcompdump*
-.zsh_history*
+# .zcompdump*
+# .zsh_history*
 zsh_history*
 history/
 history/.zsh_history*
 cache
 compdump/
 sessions/
-.zsh_sessions/
+# .zsh_sessions/
 
 *history*
 **/*history*
@@ -37,14 +46,14 @@ sessions/
 *#
 
 # Cache files
-.cache_*
+# .cache_*
 
 # Environment-specific files
-.env
-.env.local
-.env.*.local
+# .env
+# .env.local
+# .env.*.local
 
 # Personal/sensitive data
-secrets/
-private/
-
+**/secrets
+**/private
+**/codex*
