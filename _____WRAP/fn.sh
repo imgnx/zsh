@@ -27,7 +27,7 @@ ensure_zdotdir_bin_on_path() {
 ensure_zdotdir_bin_on_path
 
 # Only load the one helper that has always been sourced here; everything else in bin/ should be run as commands, not sourced.
-[[ -r "$ZDOTDIR/bin/autovenv" ]] && source "$ZDOTDIR/bin/autovenv"
+[[ -r "$ZDOTDIR/src/autovenv" ]] && source "$ZDOTDIR/src/autovenv"
 
 # --- themefile overrides ----------------------------------------------------
 # Keep namespace writes stable and warn on unreadable/invalid .themefile entries.

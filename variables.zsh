@@ -499,3 +499,5 @@ export BARE="/Users/donaldmoore/src/dinglehopper/modules/BARE"
 export WORKTREES="/Users/donaldmoore/src/dinglehopper/modules/WORKTREES"
 
 export DRAFTS="/Users/donaldmoore/src/dinglehopper/drafts"
+
+export WORDS="/Users/donaldmoore/src/dinglehopper/modules/BARE/words/en_US.words"

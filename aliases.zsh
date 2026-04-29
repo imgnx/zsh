@@ -47,6 +47,7 @@ alias dash="code /Users/donaldmoore/src/dinglehopper/modules/BARE/imgnx-universe
 alias dashboard="code /Users/donaldmoore/src/dinglehopper/modules/BARE/imgnx-universe/dashboard.code-workspace"
 alias data='cd "$XDG_DATA_HOME"'
 alias df='df -h'
+# alias dict='f(){ open "dict://${1}"; unset -f f; }; f'
 alias dirs="print -rl -- ./*(DR/)"
 alias docs="cd $DOCS"
 alias drafts="/Users/donaldmoore/src/dinglehopper/draft"
@@ -137,7 +138,7 @@ alias rf="print -rl -- ./**/*(D.)"
 alias src="cd /Users/donaldmoore/src"
 alias test="cd /Users/donaldmoore/test"
 alias tmp="cd /Users/donaldmoore/tmp"
-
+alias tmuxkill="killtmux"
 alias v4="uuidgen"
 alias wkg="wreckage"
 alias worktrees="cd /Users/donaldmoore/src/dinglehopper/modules/WORKTREES"

@@ -31,6 +31,8 @@ path=(
 export PATH
 
 
+
+
 # Ensure Homebrew
 # if [[ ! "$PATH" =~ "/opt/homebrew/bin" ]]; then
 #     export PATH="/opt/homebrew/bin:$PATH"
