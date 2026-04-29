@@ -1,8 +1,6 @@
 # If this zsh session is non-interactive, exit quietly.
 [[ ! -o interactive || "$TABULA_RASA" == "1|true" ]] && return
 
-export DICPATH="/opt/local/share/hunspell/"
-
 export warn="\033[38;2;255;205;0m"
 source /Users/donaldmoore/.config/zsh/variables.zsh
 
@@ -243,7 +241,14 @@ source /Users/donaldmoore/src/dinglehopper/modules/BARE/shed/contrib/zsh/focus-b
 eza() { command eza --icons "$@"; }
 
 fn.sh() {
-    #  emacs /Users/donaldmoore/.config/zsh/_____WRAP/fn.sh
+    echo -e "\033[48;2;255;123;0mfn.sh was disabled because it was taking too long to load. Please copy the function that you want into \033[5m$XDG_CONFIG_HOME/zsh/functions.zsh\033[0m\033[48;2;255;123;0m.\033[0m"
+    echo "This prompt will guide you through the process. First, go find the old function that you want to change and copy it to the kill ring."
+    echo "Press any key to continue..."
+    read -k 1
+    emacs /Users/donaldmoore/.config/zsh/_____WRAP/fn.sh
+    echo "Now, \033[38;2;255;205;0myank\033[0m that into the new file."
+    echo "Press any key to continue..."
+    read -k 1
     emacs /Users/donaldmoore/.config/zsh/functions.zsh
 
 
@@ -377,14 +382,4 @@ eval "$(direnv hook zsh)"
 
 source $XDG_CONFIG_HOME/zsh/functions.zsh
 
-time=$(node -e "console.log(new Date().getMinutes() % 10 === 0)")
-
 banner.sh
-
-echo
-
-echo -e "\n\033[48;2;30;30;33m\"When in doubt, use brute force.\"
-- Ken Thompson\033[0m";
-
-echo
-

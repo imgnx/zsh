@@ -1,2 +1,0 @@
-Use the root level .z* files in production and store other (older, backups, etc.) configurtions in config
-idsort

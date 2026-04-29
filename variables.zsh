@@ -16,11 +16,21 @@ export MONOLITH="$HOME/src/dinglehopper"
 # export DINGLEHOPPER="cd $DINGLEHOPPER"
 export MUSIC_THEORY="$HOME/Pictures/Wallpapers/Music Theory"
 export BLUEPRINTS="$DINGLEHOPPER/blueprints";
-export MODULES="$DINGLEHOPPER/modules"
+export MODULES="/Users/donaldmoore/src/dinglehopper/modules"
 export bp="$DINGLEHOPPER/blueprints"
 export dh="$DINGLEHOPPER"
 export srv="cd $DINGLEHOPPER/srv"
 export triage="cd $DINGLEHOPPER/triage"
+
+typeset -gA MODULE_NAV_MODULES=(
+    bare BARE
+    worktrees WORKTREES
+    codespaces CODESPACES
+)
+typeset -gA MODULE_NAV_ALIASES=(
+    wt worktrees
+    cs codespaces
+)
 
 export CODEXDOTDIR="$XDG_CONFIG_HOME/codex"
 export TAKUDOTDIR="$XDG_CONFIG_HOME/taku"
@@ -483,7 +493,9 @@ export DOCS=/Users/donaldmoore/src/dinglehopper/docs/
 export VOIDSPELL="/Users/donaldmoore/src/dinglehopper/srv/voidspell.com"
 export SRV=/Users/donaldmoore/src/dinglehopper/srv
 
-export MODS="/Users/donaldmoore/src/dinglehopper/modules/BARE"
+export MODS="/Users/donaldmoore/src/dinglehopper/modules"
 
 export BARE="/Users/donaldmoore/src/dinglehopper/modules/BARE"
 export WORKTREES="/Users/donaldmoore/src/dinglehopper/modules/WORKTREES"
+
+export DRAFTS="/Users/donaldmoore/src/dinglehopper/drafts"

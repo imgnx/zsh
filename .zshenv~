@@ -42,10 +42,10 @@ export NVM_DIR="$HOME/.config/nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && source "/opt/homebrew/opt/nvm/nvm.sh"
 [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && source "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
 
-# # Python sanity check
-# python -c "import sys; print(sys.executable); print(sys.prefix)" >/dev/null &&
-#     echo -en "\033[2mpip:\033[0m\033[32m canhaz\033[0m\n" ||
-# 	echo -en "\033[2mpip:\033[0m\033[5m\033[31m cannothaz\!\033[0m\n"
+# Python sanity check
+python -c "import sys; print(sys.executable); print(sys.prefix)" >/dev/null &&
+    echo -en "\033[2mpip:\033[0m\033[32m canhaz\033[0m\n" ||
+	echo -en "\033[2mpip:\033[0m\033[5m\033[31m cannothaz\!\033[0m\n"
 
 autoload -Uz compinit
 compinit

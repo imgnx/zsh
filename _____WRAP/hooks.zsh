@@ -32,31 +32,3 @@ register_autoload_hook() {
 register_autoload_hook chpwd chpwd_automx
 register_autoload_hook chpwd chpwd_breadcrumbs
 register_autoload_hook chpwd chpwd_git
-
-# dimensions_row_precmd() {
-#     export DIMENSIONS=$(stty size | awk '{
-# print "\033[3m\033[2m"$2"×"$1"\033[0m"
-# }')
-#     local rows
-#     rows=$(tmux display-message -p '#{pane_height}')
-#     print -n -- $'\e7'
-#     print -n -- $'\e[1;'"$(( rows - 1 ))"$'r'
-#     print -n -- $'\e['"${rows};1H"
-#     print -n -- $'\e[2K'
-#     print -n -- "${DIMENSIONS}"
-#     print -n -- $'\e8'
-# }
-
-# add-zsh-hook precmd dimensions_row_precmd
-
-# # precmd_dimensions() {
-# #     export DIMENSIONS=$(stty size | awk '{
-# #      print "[3m"$2"×"$1"[0m"
-# # }')
-# #     print -n -- $'\e7'
-# #     print -n -- $'\e[999;1H'
-# #     print -n -- "${DIMENSIONS}"
-# #     print -n -- $'\e8'
-# # }
-
-# # register_autoload_hook precmd precmd_dimensions

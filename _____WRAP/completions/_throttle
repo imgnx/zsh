@@ -1,0 +1,30 @@
+#compdef throttle
+
+_throttle() {
+  local -a apps limits
+  local cache="${XDG_CACHE_HOME:-$HOME/.cache}/throttle-apps.txt"
+  local ttl=86400
+
+  if [[ ! -r "$cache" || $(( EPOCHSECONDS - $(zstat -L +mtime -- "$cache" 2>/dev/null || echo 0) )) -gt $ttl ]]; then
+    mdfind "kMDItemContentType == 'com.apple.application-bundle'" \
+    | sed -n 's#.*/##; s/\.app$//p' \
+    | sort -fu \
+    >| "$cache" 2>/dev/null || true
+  fi
+
+  if (( CURRENT == 2 )); then
+    apps=("${(@f)$(<"$cache")}")
+    _describe -t applications "applications" apps
+    return
+  fi
+
+  if (( CURRENT == 3 )); then
+    limits=({1..100})
+    _describe -t limits "cpu limit (%)" limits
+    return
+  fi
+
+  _default
+}
+
+_throttle "$@"

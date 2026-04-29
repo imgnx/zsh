@@ -1,0 +1,129 @@
+# Already done early on in .zshenv
+ # eval "$(/opt/homebrew/bin/brew shellenv)"
+
+
+
+#!/bin/zsh
+
+# echo "$PATH"
+
+# 1. Prevent duplicate entries in your PATH
+# typeset -U path
+
+# # 2. Add your local bin to the FRONT of the array
+# path=(
+#   /Users/donaldmoore/.local/bin
+#   $path
+# )
+
+# # 3. Export it (Zsh automatically syncs 'path' array and 'PATH' string)
+# export PATH
+
+boxify() {
+    awk '
+  BEGIN {
+    width = 103
+    inner = width - 8
+    border = ""
+    for (i = 1; i <= width; i++) border = border "#"
+    print border | "lolcat"
+    close("lolcat")
+  }
+  {
+    line = substr($0, 1, inner)
+    printf "###\n%s\n###\n", line
+  }
+  END {
+    print border | "lolcat"
+    close("lolcat")
+  }' | awk '
+    NR % 3 == 1 {
+      printf "%s", $0 | "lolcat"
+      close("lolcat")
+      next
+    }
+    NR % 3 == 2 {
+      printf "\033[97m %-*s \033[0m\n", 95, $0
+      next
+    }
+    NR % 3 == 0 {
+      printf "%s\n", $0 | "lolcat"
+      close("lolcat")
+    }'
+}
+
+echo
+
+export AGERES="# ---                                                                              Set Nudge value to _____ buttons in the Logic Pro panel.
+Something was frustrating you earlier. It was like.. some way to reset coreaudiod, I guess... ?
+How about a dancer! :3
+Oh! It was to create the Codex/Claude Automation app on automxtion.com so that people can buy it.
+Ummm... oh, and just gonna drop this here... Harenae -- Skydome --
+/Users/donaldmoore/.config/emacs/plugins/emacspeak/sounds
+
+"
+
+# printf "%s" "
+# Age Res (Y/n)?
+
+# Answer: "
+
+# read -r -k 1 "debug?:3"         #
+
+# if [[ ! ( ${debug} === "n" || ${debug} === "N" ) ]]
+
+if [[ -n "$AGERES" ]]; then
+    cat <<EOF | lolcat
+     ..                                               ..      ...                   .x+=:.     ..   
+  :**888H: *: .xH*                            :~*8888x :*%888x                z*    ^%   888B. 
+ X   *8888k XX888                             8    8888Xf  8888>                  .   <k 48888E 
+;8hx  48888 ?8888         uL          .u     X88x. ?8888k  8888X       .u       .@8Ned8* ;8888; 
+;8888 ;8888 *8888     .ue888Nc..   ud8888.   ;8888L;8888X  ;%88X    ud8888.   .@^%8888*   Y88F  
+ %888>;8888  8888    d88E**888E* :888;8888.   *888X 8888X:xnHH(** :888;8888. x88:  *)8b.  ;88   
+*8 ;888*  8888    888E  888E  d888 ;88%*     ?8~ 8888X X8888   d888 ;88%* 8888N=*8888   8F   
+  .-* X**    8888    888E  888E  8888.+*      -~*   8888> X8888   8888.+*     %8*    R88   4    
+    .xhx.    8888    888E  888E  8888L        :H8x  8888  X8888   8888L        @8Wou 9%    .    
+  .H88888h.~*8888.>  888& .888E  ;8888c. .+   8888> 888~  X8888   ;8888c. .+ .888888P*    u8N.  
+ .~  *%88!* ;888*~   *888* 888&   *88888%     48** ;8*~   *8888!*  *88888%   *   ^*F     **88%  
+       **     *      **   *888E    *YP;       ^-==*      **       *YP;                  *   
+                     .dWi   *88E                                                                
+                     4888~  J8%                                                                     
+                      ^*===***                                                                      
+EOF
+
+else
+    cat <<EOF | lolcat
+
+           ....                x88x x88x               .
+   .xH888888Hx.            ***~ ***~      .8u     @88>
+ .H8888888888888:         ..             m888R-   %8P      ..    .     :
+ 888**?**88888X     :**888H: *: .xH*  98P      .     .888: x888  x888.
+;f     d8x.   ^%88k   X   *8888k XX888    ^8     .@88u  ~*8888~;888X*?888f*
+;>    <88888X   ;?8   8hx  48888 ?8888    J*    ;;888E*   X888  888X ;888>
+ *:..:*888888>    8>  8888  8888 *8888   +*       888E    X888  888X ;888>
+        ***88     X   %888>;8888  8888            888E    X888  888X ;888>
+   .xHHhx..*      !     *8 ;888*  8888            888E    X888  888X ;888>
+  X88888888hx. ..!     .-* X**    8888            888&   **88%**88* ;888!*
+ !   **888888888*        .xhx.    8888            R888*    *~    *    ***
+        ^******        .H88888h.~*8888.>           *
+                      .~  *%88!* ;888*~
+                            **     *
+EOF
+fi
+
+
+
+
+
+# Setting PATH for Python 3.12
+# The original version is saved in .zprofile.pysave
+PATH="/Library/Frameworks/Python.framework/Versions/3.12/bin:${PATH}"
+export PATH
+
+##
+# Your previous /Users/donaldmoore/.zprofile file was backed up as /Users/donaldmoore/.zprofile.macports-saved_2026-04-08_at_11:36:56
+##
+
+# MacPorts Installer addition on 2026-04-12_at_08:11:43: adding an appropriate PATH variable for use with MacPorts.
+export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+# Finished adapting your PATH environment variable for use with MacPorts.

@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-exec /opt/homebrew/bin/codex -c history.persistence=none resume 019bbe38-af9b-70a0-ad11-09add26687c4 "$@"
